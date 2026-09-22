@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   TESLA APP — GLOBAL STYLES
+   Dark mode, Tesla red accent
+   ============================================================ */
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background-color: #0A0A0A;
+  color: #FFFFFF;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto,
+    Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+  overscroll-behavior-y: none;
+}
+
+/* Prevent zoom on input focus (mobile) */
+input,
+select,
+textarea,
+button {
+  font-size: 16px;
+  font-family: inherit;
+}
+
+/* Hide scrollbars but keep scrolling */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* Remove default number input arrows */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+/* Remove tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ============================================================
+   COMPONENT UTILITIES
+   ============================================================ */
+
+@layer components {
+  /* Full-width red pill CTA button */
+  .btn-red {
+    @apply w-full bg-[#E31937] text-white font-semibold py-3 rounded-2xl transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Outlined secondary button */
+  .btn-outline {
+    @apply w-full border border-[#2A2A2A] text-white font-semibold py-3 rounded-2xl transition active:scale-[0.98] disabled:opacity-50;
+  }
+
+  /* Standard dark card */
+  .card {
+    @apply bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl;
+  }
+
+  /* Input field (dark) */
+  .input-dark {
+    @apply w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl px-4 py-3 text-white placeholder-[#5A5A5A] outline-none focus:border-[#E31937] transition;
+  }
+
+  /* Small label chip */
+  .chip {
+    @apply inline-flex items-center gap-1 bg-[#1A1A1A] border border-[#2A2A2A] rounded-full px-3 py-1 text-xs text-[#8A8A8A];
+  }
+
+  /* Section title */
+  .section-title {
+    @apply text-2xl font-bold text-white;
+  }
+
+  /* Muted subtitle */
+  .muted {
+    @apply text-[#8A8A8A];
+  }
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes pulseRed {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(227, 25, 55, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(227, 25, 55, 0);
+  }
+}
+
+.animate-pulse-red {
+  animation: pulseRed 2s infinite;
+}
