@@ -2,19 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ============================================================
-   TESLA APP — GLOBAL STYLES
-   Dark mode, Tesla red accent
-   ============================================================ */
-
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 html,
 body {
-  background-color: #0A0A0A;
-  color: #FFFFFF;
+  background-color: #F7F8F5;
+  color: #1F2A1B;
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto,
     Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -24,7 +19,6 @@ body {
   overscroll-behavior-y: none;
 }
 
-/* Prevent zoom on input focus (mobile) */
 input,
 select,
 textarea,
@@ -33,7 +27,6 @@ button {
   font-family: inherit;
 }
 
-/* Hide scrollbars but keep scrolling */
 ::-webkit-scrollbar {
   width: 0;
   height: 0;
@@ -43,9 +36,9 @@ button {
 * {
   scrollbar-width: none;
   -ms-overflow-style: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Remove default number input arrows */
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -55,55 +48,42 @@ input[type='number'] {
   -moz-appearance: textfield;
 }
 
-/* Remove tap highlight on mobile */
-* {
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* ============================================================
-   COMPONENT UTILITIES
-   ============================================================ */
-
 @layer components {
-  /* Full-width red pill CTA button */
-  .btn-red {
-    @apply w-full bg-[#E31937] text-white font-semibold py-3 rounded-2xl transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  /* Full-width sage pill CTA button */
+  .btn-primary {
+    @apply w-full bg-[#7C9070] text-white font-semibold py-3 rounded-2xl transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   /* Outlined secondary button */
   .btn-outline {
-    @apply w-full border border-[#2A2A2A] text-white font-semibold py-3 rounded-2xl transition active:scale-[0.98] disabled:opacity-50;
+    @apply w-full border border-[#E3E8DE] text-[#1F2A1B] font-semibold py-3 rounded-2xl transition active:scale-[0.98] disabled:opacity-50 bg-white;
   }
 
-  /* Standard dark card */
+  /* Standard card */
   .card {
-    @apply bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl;
+    @apply bg-white border border-[#E3E8DE] rounded-2xl;
   }
 
-  /* Input field (dark) */
-  .input-dark {
-    @apply w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl px-4 py-3 text-white placeholder-[#5A5A5A] outline-none focus:border-[#E31937] transition;
+  /* Input field */
+  .input-light {
+    @apply w-full bg-white border border-[#E3E8DE] rounded-2xl px-4 py-3 text-[#1F2A1B] placeholder-[#9AA89A] outline-none focus:border-[#7C9070] transition;
   }
 
-  /* Small label chip */
+  /* Small chip */
   .chip {
-    @apply inline-flex items-center gap-1 bg-[#1A1A1A] border border-[#2A2A2A] rounded-full px-3 py-1 text-xs text-[#8A8A8A];
+    @apply inline-flex items-center gap-1 bg-white border border-[#E3E8DE] rounded-full px-3 py-1 text-xs text-[#6B7A62];
   }
 
   /* Section title */
   .section-title {
-    @apply text-2xl font-bold text-white;
+    @apply text-2xl font-bold text-[#1F2A1B];
   }
 
-  /* Muted subtitle */
+  /* Muted text */
   .muted {
-    @apply text-[#8A8A8A];
+    @apply text-[#6B7A62];
   }
 }
-
-/* ============================================================
-   ANIMATIONS
-   ============================================================ */
 
 @keyframes fadeIn {
   from {
@@ -118,17 +98,4 @@ input[type='number'] {
 
 .animate-fade-in {
   animation: fadeIn 0.25s ease-out;
-}
-
-@keyframes pulseRed {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(227, 25, 55, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(227, 25, 55, 0);
-  }
-}
-
-.animate-pulse-red {
-  animation: pulseRed 2s infinite;
 }
