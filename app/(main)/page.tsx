@@ -54,7 +54,7 @@ export default function HomePage() {
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <div className="text-[#8A8A8A]">Loading…</div>
+        <div className="text-[#6B7A62]">Loading…</div>
       </main>
     );
   }
@@ -64,22 +64,19 @@ export default function HomePage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6 px-2">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-[#E31937] flex items-center justify-center text-white font-bold">
+          <div className="w-9 h-9 rounded-xl bg-[#7C9070] flex items-center justify-center text-white font-bold">
             T
           </div>
-          <span className="text-xl font-bold">Tesla</span>
+          <span className="text-xl font-bold text-[#1F2A1B]">Tesla</span>
         </div>
         <div className="text-right">
-          <div className="text-[11px] text-[#8A8A8A]">Welcome back</div>
-          <div className="text-sm font-semibold">{me?.name}</div>
+          <div className="text-[11px] text-[#6B7A62]">Welcome back</div>
+          <div className="text-sm font-semibold text-[#1F2A1B]">{me?.name}</div>
         </div>
       </div>
 
       {/* Products */}
-      <h2 className="text-2xl font-bold mb-1 px-2">Products</h2>
-      <p className="text-[#8A8A8A] text-sm mb-4 px-2">
-        100-day cycle. Daily profit credited after 24 hours.
-      </p>
+      <h2 className="text-2xl font-bold mb-4 px-2 text-[#1F2A1B]">Products</h2>
 
       <div className="grid grid-cols-2 gap-3">
         {products.map((p) => (
