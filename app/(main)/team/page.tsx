@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-type LevelStats = { count: number; earnings: number };
+type LevelStats = { count: number; earnings: number; validCount: number; invest: number };
 
 type TeamData = {
   referralCode: string;
@@ -46,7 +46,7 @@ export default function TeamPage() {
   if (loading || !data) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <div className="text-[#8A8A8A]">Loading…</div>
+        <div className="text-[#6B7A62]">Loading…</div>
       </main>
     );
   }
@@ -56,66 +56,50 @@ export default function TeamPage() {
   const referralLink = `https://teslauganda-invest.vercel.app/register?ref=${data.referralCode}`;
 
   return (
-    <main
-      className="min-h-screen animate-fade-in"
-      style={{ background: '#0A1628' }}
-    >
+    <main className="min-h-screen px-4 py-6 animate-fade-in">
       {/* Header */}
-      <div className="px-6 pt-10 pb-6 text-center">
-        <h1 className="text-3xl font-bold text-white">My Team</h1>
-        <p className="text-[#8A9AB8] text-sm mt-1">
+      <div className="px-2 pt-4 pb-6 text-center">
+        <h1 className="text-3xl font-bold text-[#1F2A1B]">My Team</h1>
+        <p className="text-[#6B7A62] text-sm mt-1">
           Invite friends &amp; earn commissions
         </p>
       </div>
 
-      <div className="px-4 pb-6 space-y-4">
+      <div className="space-y-4">
         {/* Top summary cards */}
         <div className="grid grid-cols-2 gap-3">
-          <div
-            className="rounded-2xl p-4 text-center"
-            style={{ background: '#0F1E3A', border: '1px solid #F5C518' }}
-          >
-            <div className="text-[10px] tracking-wider text-[#F5C518] font-semibold mb-1">
+          <div className="card p-4 text-center">
+            <div className="text-[10px] tracking-wider text-[#6B7A62] font-semibold mb-1">
               TOTAL INCOME
             </div>
-            <div className="text-2xl font-bold text-[#F5C518]">
+            <div className="text-2xl font-bold text-[#7C9070]">
               UGX {data.totalEarnings.toLocaleString()}
             </div>
           </div>
-          <div
-            className="rounded-2xl p-4 text-center"
-            style={{ background: '#0F1E3A', border: '1px solid #F5C518' }}
-          >
-            <div className="text-[10px] tracking-wider text-[#F5C518] font-semibold mb-1">
+          <div className="card p-4 text-center">
+            <div className="text-[10px] tracking-wider text-[#6B7A62] font-semibold mb-1">
               TOTAL INVITATIONS
             </div>
-            <div className="text-2xl font-bold text-[#F5C518]">
+            <div className="text-2xl font-bold text-[#7C9070]">
               {data.totalInvites}
             </div>
           </div>
         </div>
 
         {/* Invitation code + link */}
-        <div
-          className="rounded-2xl p-5 space-y-4"
-          style={{ background: '#0F1E3A' }}
-        >
+        <div className="card p-5 space-y-4">
           {/* Code */}
           <div>
-            <div className="text-[11px] tracking-wider text-[#F5C518] font-semibold mb-2">
+            <div className="text-[11px] tracking-wider text-[#6B7A62] font-semibold mb-2">
               INVITATION CODE
             </div>
             <div className="flex gap-2">
-              <div
-                className="flex-1 rounded-xl px-4 py-3 font-bold text-[#F5C518]"
-                style={{ background: '#0A1628', border: '1px solid #1E3255' }}
-              >
+              <div className="flex-1 rounded-xl px-4 py-3 font-bold text-[#1F2A1B] bg-[#F7F8F5] border border-[#E3E8DE]">
                 {data.referralCode}
               </div>
               <button
                 onClick={() => copy(data.referralCode, 'code')}
-                className="px-5 rounded-xl font-bold text-[#0A1628] text-sm"
-                style={{ background: '#F5C518' }}
+                className="px-5 rounded-xl font-bold text-white text-sm bg-[#7C9070] active:scale-[0.97] transition"
               >
                 {copied === 'code' ? '✓' : 'COPY'}
               </button>
@@ -124,20 +108,16 @@ export default function TeamPage() {
 
           {/* Link */}
           <div>
-            <div className="text-[11px] tracking-wider text-[#F5C518] font-semibold mb-2">
+            <div className="text-[11px] tracking-wider text-[#6B7A62] font-semibold mb-2">
               INVITATION LINK
             </div>
             <div className="flex gap-2">
-              <div
-                className="flex-1 rounded-xl px-4 py-3 text-[#F5C518] text-xs truncate"
-                style={{ background: '#0A1628', border: '1px solid #1E3255' }}
-              >
+              <div className="flex-1 rounded-xl px-4 py-3 text-[#6B7A62] text-xs truncate bg-[#F7F8F5] border border-[#E3E8DE]">
                 {referralLink}
               </div>
               <button
                 onClick={() => copy(referralLink, 'link')}
-                className="px-5 rounded-xl font-bold text-[#0A1628] text-sm"
-                style={{ background: '#F5C518' }}
+                className="px-5 rounded-xl font-bold text-white text-sm bg-[#7C9070] active:scale-[0.97] transition"
               >
                 {copied === 'link' ? '✓' : 'COPY'}
               </button>
@@ -154,11 +134,11 @@ export default function TeamPage() {
               <button
                 key={lvl}
                 onClick={() => setActiveLevel(lvl)}
-                className="rounded-xl py-3 text-sm font-semibold transition"
+                className="rounded-xl py-3 text-sm font-semibold transition border"
                 style={{
-                  background: active ? '#2563EB' : '#0F1E3A',
-                  color: active ? '#FFFFFF' : '#8A9AB8',
-                  border: active ? '1px solid #2563EB' : '1px solid #1E3255',
+                  background: active ? '#7C9070' : '#FFFFFF',
+                  color: active ? '#FFFFFF' : '#6B7A62',
+                  borderColor: active ? '#7C9070' : '#E3E8DE',
                 }}
               >
                 Level {lvl} ({pct}%)
@@ -168,20 +148,17 @@ export default function TeamPage() {
         </div>
 
         {/* Level stats grid */}
-        <div
-          className="rounded-2xl p-4"
-          style={{ background: '#0F1E3A' }}
-        >
+        <div className="card p-4">
           <div className="grid grid-cols-2 gap-3">
             <StatBox label="TOTAL INVITE" value={levelStats.count.toString()} />
-            <StatBox label="VALID INVITE" value={levelStats.count.toString()} />
+            <StatBox label="VALID INVITE" value={levelStats.validCount.toString()} />
             <StatBox
               label="TOTAL INCOME"
               value={`UGX ${levelStats.earnings.toLocaleString()}`}
             />
             <StatBox
               label="TEAM INVEST"
-              value={`UGX ${(levelStats.earnings * (100 / levelPercent)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+              value={`UGX ${levelStats.invest.toLocaleString()}`}
             />
           </div>
         </div>
@@ -192,14 +169,11 @@ export default function TeamPage() {
 
 function StatBox({ label, value }: { label: string; value: string }) {
   return (
-    <div
-      className="rounded-xl p-3 text-center"
-      style={{ background: '#0A1628', border: '1px solid #1E3255' }}
-    >
-      <div className="text-[9px] tracking-wider text-[#8A9AB8] font-semibold mb-1">
+    <div className="rounded-xl p-3 text-center bg-[#F7F8F5] border border-[#E3E8DE]">
+      <div className="text-[9px] tracking-wider text-[#6B7A62] font-semibold mb-1">
         {label}
       </div>
-      <div className="text-lg font-bold text-[#F5C518]">{value}</div>
+      <div className="text-lg font-bold text-[#7C9070]">{value}</div>
     </div>
   );
-              }
+}
