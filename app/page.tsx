@@ -1,8 +1,16 @@
-export default function Home() {
-  return (
-    <main className="p-6">
-      <h1 className="text-3xl font-bold text-tesla-red">Tesla</h1>
-      <p className="text-tesla-muted mt-2">Setup complete. Building next...</p>
-    </main>
-  );
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { verifySession, SESSION_COOKIE } from '@/lib/auth';
+
+export default async function RootPage() {
+  const token = cookies().get(SESSION_COOKIE)?.value;
+
+  if (token) {
+    const session = await verifySession(token);
+    if (session) {
+      redirect('/(main)');
+    }
+  }
+
+  redirect('/login');
 }
