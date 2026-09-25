@@ -4,16 +4,17 @@ module.exports = {
     './app/**/*.{js,ts,jsx,tsx}',
     './components/**/*.{js,ts,jsx,tsx}',
   ],
-  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        tesla: {
-          red: '#E31937',
-          black: '#0A0A0A',
-          card: '#1A1A1A',
-          border: '#2A2A2A',
-          muted: '#8A8A8A',
+        sage: {
+          bg: '#F7F8F5',
+          card: '#FFFFFF',
+          primary: '#7C9070',
+          light: '#9CAF88',
+          soft: '#E3E8DE',
+          text: '#1F2A1B',
+          muted: '#6B7A62',
         },
       },
       borderRadius: {
