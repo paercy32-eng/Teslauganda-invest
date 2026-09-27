@@ -12,11 +12,16 @@ type Me = {
 
 type Tab = 'main' | 'giftcard' | 'tasks';
 
+const MIN_DEPOSIT = 15000;
+
 export default function ProfilePage() {
   const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('main');
+
+  // Recharge modal
+  const [showRecharge, setShowRecharge] = useState(false);
 
   // Gift card state
   const [giftCode, setGiftCode] = useState('');
@@ -26,7 +31,6 @@ export default function ProfilePage() {
   // Task state
   const [taskMsg, setTaskMsg] = useState('');
   const [taskLoading, setTaskLoading] = useState(false);
-  const [taskData, setTaskData] = useState<{ validCount: number; currentReward?: number } | null>(null);
 
   async function loadMe() {
     const res = await fetch('/api/me');
@@ -60,9 +64,8 @@ export default function ProfilePage() {
         body: JSON.stringify({ code: giftCode }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setGiftMsg(data.error || 'Failed to redeem.');
-      } else {
+      if (!res.ok) setGiftMsg(data.error || 'Failed to redeem.');
+      else {
         setGiftMsg(`🎉 You received UGX ${data.amount.toLocaleString()}`);
         setGiftCode('');
         await loadMe();
@@ -80,18 +83,14 @@ export default function ProfilePage() {
     try {
       const res = await fetch('/api/tasks/check', { method: 'POST' });
       const data = await res.json();
-      if (!res.ok) {
-        setTaskMsg(data.error || 'Failed to check tasks.');
+      if (!res.ok) setTaskMsg(data.error || 'Failed.');
+      else if (data.credited > 0) {
+        setTaskMsg(`🎉 Reward credited: UGX ${data.credited.toLocaleString()}`);
+        await loadMe();
+      } else if (data.alreadyClaimed) {
+        setTaskMsg(`You already claimed UGX ${Number(data.currentReward).toLocaleString()}.`);
       } else {
-        setTaskData({ validCount: data.validCount, currentReward: data.currentReward });
-        if (data.credited > 0) {
-          setTaskMsg(`🎉 Reward credited: UGX ${data.credited.toLocaleString()}`);
-          await loadMe();
-        } else if (data.alreadyClaimed) {
-          setTaskMsg(`You already claimed UGX ${Number(data.currentReward).toLocaleString()} for tier ${data.currentTier}.`);
-        } else {
-          setTaskMsg(`You have ${data.validCount} valid invites. Keep inviting to unlock a reward.`);
-        }
+        setTaskMsg(`You have ${data.validCount} valid invites.`);
       }
     } catch {
       setTaskMsg('Something went wrong.');
@@ -125,7 +124,10 @@ export default function ProfilePage() {
           UGX {me?.balance?.toLocaleString() ?? 0}
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <button className="bg-white text-[#1F2A1B] font-semibold py-2.5 rounded-2xl text-sm active:scale-[0.98] transition">
+          <button
+            onClick={() => setShowRecharge(true)}
+            className="bg-white text-[#1F2A1B] font-semibold py-2.5 rounded-2xl text-sm active:scale-[0.98] transition"
+          >
             Recharge
           </button>
           <button className="bg-black/20 text-white font-semibold py-2.5 rounded-2xl text-sm active:scale-[0.98] transition">
@@ -146,7 +148,7 @@ export default function ProfilePage() {
         </button>
       </div>
 
-      {/* Tab switcher */}
+      {/* Tabs */}
       <div className="grid grid-cols-3 gap-2 mb-4">
         {([
           { k: 'main', label: 'Telegram' },
@@ -168,7 +170,6 @@ export default function ProfilePage() {
         ))}
       </div>
 
-      {/* --- TAB: TELEGRAM --- */}
       {tab === 'main' && (
         <a
           href="https://t.me/+wgO5sblcLZdlNDQ8"
@@ -181,15 +182,12 @@ export default function ProfilePage() {
           </div>
           <div className="flex-1">
             <div className="font-semibold text-[#1F2A1B]">Join Telegram</div>
-            <div className="text-xs text-[#6B7A62] mt-0.5">
-              Get updates & support
-            </div>
+            <div className="text-xs text-[#6B7A62] mt-0.5">Get updates & support</div>
           </div>
           <div className="text-[#6B7A62]">→</div>
         </a>
       )}
 
-      {/* --- TAB: GIFT CARDS --- */}
       {tab === 'giftcard' && (
         <div className="card p-4 mb-4">
           <div className="font-semibold text-[#1F2A1B] mb-1">Redeem Gift Card</div>
@@ -217,12 +215,11 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* --- TAB: TASKS --- */}
       {tab === 'tasks' && (
         <div className="card p-4 mb-4">
           <div className="font-semibold text-[#1F2A1B] mb-1">Task Center</div>
           <p className="text-xs text-[#6B7A62] mb-3">
-            Earn rewards when your valid invites (with active rentals) hit a tier.
+            Earn rewards when your valid invites hit a tier.
           </p>
           <div className="grid grid-cols-2 gap-2 mb-3">
             <TierBox count={5} amount={5000} />
@@ -249,6 +246,15 @@ export default function ProfilePage() {
       >
         Log out
       </button>
+
+      {showRecharge && (
+        <RechargeModal
+          onClose={() => setShowRecharge(false)}
+          onSuccess={async () => {
+            await loadMe();
+          }}
+        />
+      )}
     </main>
   );
 }
@@ -264,4 +270,133 @@ function TierBox({ count, amount }: { count: number; amount: number }) {
       </div>
     </div>
   );
-            }
+}
+
+function RechargeModal({
+  onClose,
+  onSuccess,
+}: {
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [amount, setAmount] = useState(String(MIN_DEPOSIT));
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [sent, setSent] = useState(false);
+  const [pollCount, setPollCount] = useState(0);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setMsg('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/deposits/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: Number(amount) }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMsg(data.error || 'Failed to send payment request.');
+      } else {
+        setSent(true);
+        setMsg('📱 Check your phone and enter your PIN.');
+        // Start polling for deposit success
+        startPolling();
+      }
+    } catch {
+      setMsg('Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function startPolling() {
+    let count = 0;
+    const interval = setInterval(async () => {
+      count++;
+      setPollCount(count);
+      const res = await fetch('/api/me');
+      if (res.ok) {
+        const data = await res.json();
+        // If balance changed since the modal opened, we assume it credited
+        // Simple heuristic: after 5 polls, refresh anyway
+      }
+      if (count >= 20) {
+        clearInterval(interval);
+        onSuccess();
+      }
+    }, 3000);
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md bg-white rounded-t-3xl p-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <div className="text-lg font-bold text-[#1F2A1B]">Recharge</div>
+            <div className="text-xs text-[#6B7A62]">Deposit via Mobile Money</div>
+          </div>
+          <button onClick={onClose} className="text-[#6B7A62] text-xl">×</button>
+        </div>
+
+        {!sent ? (
+          <form onSubmit={submit} className="space-y-3">
+            <div>
+              <label className="block text-[10px] text-[#6B7A62] font-bold mb-1">
+                AMOUNT (UGX)
+              </label>
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="input-light"
+                min={MIN_DEPOSIT}
+                required
+              />
+              <div className="text-[10px] text-[#6B7A62] mt-1">
+                Minimum: UGX {MIN_DEPOSIT.toLocaleString()}
+              </div>
+            </div>
+
+            {msg && (
+              <div className="text-sm text-[#A13A3A] bg-[#FDF3F3] rounded-xl px-3 py-2 border border-[#E5B5B5]">
+                {msg}
+              </div>
+            )}
+
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? 'Sending…' : 'Send payment request'}
+            </button>
+          </form>
+        ) : (
+          <div className="text-center py-4">
+            <div className="text-5xl mb-3">📱</div>
+            <div className="font-semibold text-[#1F2A1B] mb-1">
+              Check your phone
+            </div>
+            <div className="text-sm text-[#6B7A62] mb-4">
+              Enter your mobile money PIN to complete the payment of UGX{' '}
+              {Number(amount).toLocaleString()}.
+            </div>
+            <div className="text-xs text-[#6B7A62]">
+              Waiting for confirmation… ({pollCount}s)
+            </div>
+            <button
+              onClick={onClose}
+              className="mt-6 text-xs text-[#6B7A62] underline"
+            >
+              Close
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
