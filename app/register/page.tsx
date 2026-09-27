@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [form, setForm] = useState({
@@ -17,7 +17,6 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Auto-fill referral code from ?ref=XXXXX
   useEffect(() => {
     const ref = searchParams.get('ref');
     if (ref) {
@@ -29,16 +28,25 @@ export default function RegisterPage() {
     setForm((f) => ({ ...f, [k]: v }));
   }
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError('');
+
+    const formEl = e.currentTarget;
+    const fd = new FormData(formEl);
+    const name = String(fd.get('name') || form.name || '').trim();
+    const phone = String(fd.get('phone') || form.phone || '').trim();
+    const password = String(fd.get('password') || form.password || '');
+    const confirmPassword = String(fd.get('confirmPassword') || form.confirmPassword || '');
+    const referralCode = String(fd.get('referralCode') || form.referralCode || '').trim();
+
     setLoading(true);
 
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ name, phone, password, confirmPassword, referralCode }),
       });
       const data = await res.json();
 
@@ -68,15 +76,17 @@ export default function RegisterPage() {
       <h1 className="text-3xl font-bold mb-2 text-[#1F2A1B]">Create account</h1>
       <p className="text-[#6B7A62] mb-8">Start renting. Start earning.</p>
 
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-4" autoComplete="off">
         <div>
           <label className="block text-sm text-[#6B7A62] mb-2">Full Name</label>
           <input
             type="text"
+            name="name"
             className="input-light"
             placeholder="John Doe"
             value={form.name}
             onChange={(e) => update('name', e.target.value)}
+            autoComplete="off"
             required
           />
         </div>
@@ -85,10 +95,12 @@ export default function RegisterPage() {
           <label className="block text-sm text-[#6B7A62] mb-2">Phone Number</label>
           <input
             type="tel"
+            name="phone"
             className="input-light"
             placeholder="0700123456"
             value={form.phone}
             onChange={(e) => update('phone', e.target.value)}
+            autoComplete="off"
             required
           />
         </div>
@@ -97,10 +109,12 @@ export default function RegisterPage() {
           <label className="block text-sm text-[#6B7A62] mb-2">Password</label>
           <input
             type="password"
+            name="password"
             className="input-light"
             placeholder="At least 6 characters"
             value={form.password}
             onChange={(e) => update('password', e.target.value)}
+            autoComplete="new-password"
             required
           />
         </div>
@@ -109,10 +123,12 @@ export default function RegisterPage() {
           <label className="block text-sm text-[#6B7A62] mb-2">Confirm Password</label>
           <input
             type="password"
+            name="confirmPassword"
             className="input-light"
             placeholder="Repeat password"
             value={form.confirmPassword}
             onChange={(e) => update('confirmPassword', e.target.value)}
+            autoComplete="new-password"
             required
           />
         </div>
@@ -123,10 +139,12 @@ export default function RegisterPage() {
           </label>
           <input
             type="text"
+            name="referralCode"
             className="input-light uppercase"
             placeholder="TSLAXXXXX"
             value={form.referralCode}
             onChange={(e) => update('referralCode', e.target.value.toUpperCase())}
+            autoComplete="off"
           />
         </div>
 
@@ -148,5 +166,19 @@ export default function RegisterPage() {
         </Link>
       </p>
     </main>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen flex items-center justify-center">
+          <div className="text-[#6B7A62]">Loading…</div>
+        </main>
+      }
+    >
+      <RegisterForm />
+    </Suspense>
   );
 }
