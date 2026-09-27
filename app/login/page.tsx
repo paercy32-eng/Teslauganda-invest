@@ -11,16 +11,28 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError('');
+
+    // Read directly from the form (handles browser autofill)
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const phoneValue = String(formData.get('phone') || phone || '').trim();
+    const passwordValue = String(formData.get('password') || password || '');
+
+    if (!phoneValue || !passwordValue) {
+      setError('Please enter both phone and password.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, password }),
+        body: JSON.stringify({ phone: phoneValue, password: passwordValue }),
       });
       const data = await res.json();
 
@@ -40,7 +52,6 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen px-6 py-10 animate-fade-in">
-      {/* Brand */}
       <div className="flex items-center gap-2 mb-8">
         <div className="w-10 h-10 rounded-xl bg-[#7C9070] flex items-center justify-center text-white font-bold text-xl">
           T
@@ -51,15 +62,17 @@ export default function LoginPage() {
       <h1 className="text-3xl font-bold mb-2 text-[#1F2A1B]">Welcome back</h1>
       <p className="text-[#6B7A62] mb-8">Log in to continue.</p>
 
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-4" autoComplete="off">
         <div>
           <label className="block text-sm text-[#6B7A62] mb-2">Phone Number</label>
           <input
             type="tel"
+            name="phone"
             className="input-light"
             placeholder="0700123456"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
+            autoComplete="off"
             required
           />
         </div>
@@ -68,10 +81,12 @@ export default function LoginPage() {
           <label className="block text-sm text-[#6B7A62] mb-2">Password</label>
           <input
             type="password"
+            name="password"
             className="input-light"
             placeholder="Your password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
             required
           />
         </div>
