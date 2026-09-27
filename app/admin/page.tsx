@@ -9,7 +9,6 @@ type Stats = {
   totalDeposited: number;
   totalInvested: number;
   totalWithdrawn: number;
-  pendingDeposits: number;
   pendingWithdrawals: number;
 };
 
@@ -21,10 +20,6 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function load() {
       const res = await fetch('/api/admin/stats');
-      if (res.status === 401) {
-        router.replace('/admin/login');
-        return;
-      }
       if (!res.ok) {
         router.replace('/admin/login');
         return;
@@ -85,11 +80,6 @@ export default function AdminDashboard() {
           value={`UGX ${stats.totalWithdrawn.toLocaleString()}`}
         />
         <StatCard
-          label="Pending Deposits"
-          value={stats.pendingDeposits.toString()}
-          highlight={stats.pendingDeposits > 0}
-        />
-        <StatCard
           label="Pending Withdrawals"
           value={stats.pendingWithdrawals.toString()}
           highlight={stats.pendingWithdrawals > 0}
@@ -100,7 +90,6 @@ export default function AdminDashboard() {
       <h2 className="text-lg font-bold text-[#1F2A1B] mb-3 px-2">Manage</h2>
       <div className="space-y-2">
         <NavCard href="/admin/users" title="Users" subtitle="View, ban, adjust balance, grant/remove Tesla" />
-        <NavCard href="/admin/deposits" title="Deposits" subtitle="Approve or reject incoming deposits" />
         <NavCard href="/admin/withdrawals" title="Withdrawals" subtitle="Approve or reject withdrawal requests" />
         <NavCard href="/admin/giftcards" title="Gift Codes" subtitle="Generate redeemable codes" />
         <NavCard href="/admin/products" title="Products" subtitle="Manage pricing, images, active status" />
@@ -146,7 +135,7 @@ function NavCard({
   return (
     <Link
       href={href}
-      className="card p-4 flex items-center justify-between active:scale-[0.99] transition block"
+      className="card p-4 flex items-center justify-between active:scale-[0.99] transition"
     >
       <div>
         <div className="font-semibold text-[#1F2A1B]">{title}</div>
