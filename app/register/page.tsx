@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -15,6 +16,14 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Auto-fill referral code from ?ref=XXXXX
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    if (ref) {
+      setForm((f) => ({ ...f, referralCode: ref.toUpperCase() }));
+    }
+  }, [searchParams]);
 
   function update(k: string, v: string) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -49,7 +58,6 @@ export default function RegisterPage() {
 
   return (
     <main className="min-h-screen px-6 py-10 animate-fade-in">
-      {/* Brand */}
       <div className="flex items-center gap-2 mb-8">
         <div className="w-10 h-10 rounded-xl bg-[#7C9070] flex items-center justify-center text-white font-bold text-xl">
           T
