@@ -15,8 +15,8 @@ export async function POST(req: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
 
     // 2. Parse amount
-    const { amount } = await req.json();
-    const numAmount = Number(amount);
+    const { amount, phone: customPhone } = await req.json();
+const numAmount = Number(amount);
 
     if (!numAmount || isNaN(numAmount)) {
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         amount: numAmount,
-        phone_number: user.phone,
+        phone_number: customPhone || user.phone,
         customer_name: user.name,
         customer_email: email,
         reference,
