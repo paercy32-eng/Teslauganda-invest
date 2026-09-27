@@ -13,6 +13,7 @@ type Me = {
 type Tab = 'main' | 'giftcard' | 'tasks';
 
 const MIN_DEPOSIT = 15000;
+const MIN_WITHDRAW = 4000;
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('main');
   const [showRecharge, setShowRecharge] = useState(false);
+  const [showWithdraw, setShowWithdraw] = useState(false);
 
   const [giftCode, setGiftCode] = useState('');
   const [giftMsg, setGiftMsg] = useState('');
@@ -84,7 +86,9 @@ export default function ProfilePage() {
         setTaskMsg(`🎉 Reward credited: UGX ${data.credited.toLocaleString()}`);
         await loadMe();
       } else if (data.alreadyClaimed) {
-        setTaskMsg(`You already claimed UGX ${Number(data.currentReward).toLocaleString()}.`);
+        setTaskMsg(
+          `You already claimed UGX ${Number(data.currentReward).toLocaleString()}.`
+        );
       } else {
         setTaskMsg(`You have ${data.validCount} valid invites.`);
       }
@@ -112,6 +116,7 @@ export default function ProfilePage() {
         </p>
       </div>
 
+      {/* Balance card */}
       <div className="rounded-3xl p-5 bg-gradient-to-br from-[#7C9070] to-[#5A6E50] mb-4">
         <div className="text-xs text-white/80 mb-1">Account Balance</div>
         <div className="text-3xl font-bold text-white mb-4">
@@ -124,12 +129,16 @@ export default function ProfilePage() {
           >
             Recharge
           </button>
-          <button className="bg-black/20 text-white font-semibold py-2.5 rounded-2xl text-sm active:scale-[0.98] transition">
+          <button
+            onClick={() => setShowWithdraw(true)}
+            className="bg-black/20 text-white font-semibold py-2.5 rounded-2xl text-sm active:scale-[0.98] transition"
+          >
             Withdraw
           </button>
         </div>
       </div>
 
+      {/* Deposit / Withdraw details */}
       <div className="grid grid-cols-2 gap-2 mb-4">
         <button className="card p-3 text-left">
           <div className="text-[10px] text-[#6B7A62] mb-1">Deposit details</div>
@@ -141,6 +150,7 @@ export default function ProfilePage() {
         </button>
       </div>
 
+      {/* Tabs */}
       <div className="grid grid-cols-3 gap-2 mb-4">
         {([
           { k: 'main', label: 'Telegram' },
@@ -241,6 +251,18 @@ export default function ProfilePage() {
       {showRecharge && (
         <RechargeModal
           onClose={() => setShowRecharge(false)}
+          onSuccess={async () => {
+            await loadMe();
+          }}
+        />
+      )}
+
+      {showWithdraw && (
+        <WithdrawModal
+          balance={me?.balance ?? 0}
+          defaultPhone={me?.phone ?? ''}
+          defaultName={me?.name ?? ''}
+          onClose={() => setShowWithdraw(false)}
           onSuccess={async () => {
             await loadMe();
           }}
@@ -423,4 +445,192 @@ function RechargeModal({
       </div>
     </div>
   );
-        }
+}
+
+function WithdrawModal({
+  balance,
+  defaultPhone,
+  defaultName,
+  onClose,
+  onSuccess,
+}: {
+  balance: number;
+  defaultPhone: string;
+  defaultName: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [amount, setAmount] = useState(String(MIN_WITHDRAW));
+  const [phone, setPhone] = useState(defaultPhone);
+  const [fullName, setFullName] = useState(defaultName);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [done, setDone] = useState(false);
+
+  const numAmount = Number(amount) || 0;
+  const fee = Math.round(numAmount * 0.15);
+  const net = Math.round(numAmount * 0.85);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setMsg('');
+
+    if (numAmount < MIN_WITHDRAW) {
+      setMsg(`Minimum withdrawal is UGX ${MIN_WITHDRAW.toLocaleString()}`);
+      return;
+    }
+
+    if (numAmount > balance) {
+      setMsg('Amount exceeds your balance');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/withdrawals/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: numAmount,
+          phone: phone.trim(),
+          fullName: fullName.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMsg(data.error || 'Failed to submit request.');
+      } else {
+        setDone(true);
+      }
+    } catch {
+      setMsg('Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md bg-white rounded-t-3xl p-5 max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <div className="text-lg font-bold text-[#1F2A1B]">Withdraw</div>
+            <div className="text-xs text-[#6B7A62]">
+              Balance: UGX {balance.toLocaleString()}
+            </div>
+          </div>
+          <button onClick={onClose} className="text-[#6B7A62] text-xl">×</button>
+        </div>
+
+        {!done ? (
+          <form onSubmit={submit} className="space-y-3">
+            <div>
+              <label className="block text-[10px] text-[#6B7A62] font-bold mb-1">
+                AMOUNT (UGX)
+              </label>
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="input-light"
+                min={MIN_WITHDRAW}
+                required
+              />
+              <div className="text-[10px] text-[#6B7A62] mt-1">
+                Minimum: UGX {MIN_WITHDRAW.toLocaleString()}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] text-[#6B7A62] font-bold mb-1">
+                MOBILE MONEY NUMBER
+              </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="0700123456"
+                className="input-light"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] text-[#6B7A62] font-bold mb-1">
+                FULL REGISTERED NAME
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="As registered on mobile money"
+                className="input-light"
+                required
+              />
+            </div>
+
+            {numAmount >= MIN_WITHDRAW && (
+              <div className="bg-[#F7F8F5] border border-[#E3E8DE] rounded-2xl p-3 text-xs">
+                <div className="flex justify-between mb-1">
+                  <span className="text-[#6B7A62]">You request</span>
+                  <span className="font-semibold text-[#1F2A1B]">
+                    UGX {numAmount.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-[#6B7A62]">Fee (15%)</span>
+                  <span className="font-semibold text-[#A13A3A]">
+                    -UGX {fee.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-[#E3E8DE] pt-1 mt-1">
+                  <span className="text-[#6B7A62]">You receive</span>
+                  <span className="font-bold text-[#7C9070]">
+                    UGX {net.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {msg && (
+              <div className="text-sm text-[#A13A3A] bg-[#FDF3F3] rounded-xl px-3 py-2 border border-[#E5B5B5]">
+                {msg}
+              </div>
+            )}
+
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? 'Submitting…' : 'Request withdrawal'}
+            </button>
+
+            <p className="text-[10px] text-[#6B7A62] text-center">
+              Your balance will be deducted immediately. Withdrawals are processed
+              after admin review.
+            </p>
+          </form>
+        ) : (
+          <div className="text-center py-4">
+            <div className="text-5xl mb-3">✅</div>
+            <div className="font-semibold text-[#1F2A1B] mb-1">
+              Request submitted
+            </div>
+            <div className="text-sm text-[#6B7A62] mb-4">
+              You'll receive UGX {net.toLocaleString()} once approved.
+            </div>
+            <button
+              onClick={onSuccess}
+              className="mt-2 text-xs text-[#6B7A62] underline"
+            >
+              Close
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+            }
