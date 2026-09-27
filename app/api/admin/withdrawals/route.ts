@@ -104,14 +104,60 @@ export async function POST(req: NextRequest) {
       });
 
       await supabaseAdmin.from('tesla_admin_logs').insert({
-        admin_action: 'approve_withdrawal',
-        target_user_id: wd.user_id,
-        amount: Number(wd.amount),
-        reason: null,
-        meta: { withdrawal_id: withdrawalId },
-      });
+  admin_action: 'approve_withdrawal',
+  target_user_id: wd.user_id,
+  amount: Number(wd.amount),
+  reason: null,
+  meta: { withdrawal_id: withdrawalId },
+});
 
-      return NextResponse.json({ success: true, status: 'approved' });
+// Trigger Obpay payout — sends 85% of the requested amount
+try {
+  const { data: user } = await supabaseAdmin
+    .from('users')
+    .select('phone, name')
+    .eq('id', wd.user_id)
+    .maybeSingle();
+
+  const payoutPhone = wd.phone || user?.phone;
+  const payoutName = wd.full_name || user?.name || 'User';
+  const payoutAmount = Math.round(Number(wd.amount) * 0.85);
+
+  if (!payoutPhone) {
+    console.error('No phone for payout on withdrawal', withdrawalId);
+  } else {
+    const obpayRes = await fetch('https://obpay.online/api/public/v1/payout', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OBPAY_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        amount: payoutAmount,
+        phone_number: payoutPhone,
+        customer_name: payoutName,
+        customer_email: `payout-${payoutPhone.replace(/\D/g, '')}@teslauganda.app`,
+        reference: `WD-${withdrawalId.slice(0, 8)}-${Date.now()}`,
+        callback_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://teslauganda-invest.vercel.app'}/api/webhooks/obpay`,
+        description: `Tesla withdrawal payout`,
+      }),
+    });
+
+    const obpayData = await obpayRes.json();
+    console.log('Obpay payout response:', obpayData);
+
+    await supabaseAdmin
+      .from('tesla_withdrawals')
+      .update({
+        meta: { obpay_payout: obpayData?.data ?? obpayData },
+      })
+      .eq('id', withdrawalId);
+  }
+} catch (obpayErr) {
+  console.error('Obpay payout error (non-fatal):', obpayErr);
+}
+
+return NextResponse.json({ success: true, status: 'approved' });
     }
 
     // action === 'reject' — refund the balance
