@@ -1,0 +1,106 @@
+export const dynamic = 'force-dynamic';
+
+import { NextRequest, NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import { verifySession, SESSION_COOKIE } from '@/lib/auth';
+
+const MIN_WITHDRAW = 4000;
+
+export async function POST(req: NextRequest) {
+  try {
+    // 1. Auth
+    const token = req.cookies.get(SESSION_COOKIE)?.value;
+    if (!token) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    const session = await verifySession(token);
+    if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+
+    // 2. Parse
+    const { amount, phone, fullName } = await req.json();
+    const numAmount = Number(amount);
+
+    if (!numAmount || isNaN(numAmount)) {
+      return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
+    }
+
+    if (numAmount < MIN_WITHDRAW) {
+      return NextResponse.json(
+        { error: `Minimum withdrawal is UGX ${MIN_WITHDRAW.toLocaleString()}` },
+        { status: 400 }
+      );
+    }
+
+    if (!phone || !fullName) {
+      return NextResponse.json(
+        { error: 'Phone and full name are required' },
+        { status: 400 }
+      );
+    }
+
+    // 3. Load user
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('id, balance, is_banned')
+      .eq('id', session.userId)
+      .maybeSingle();
+
+    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
+    if (user.is_banned) {
+      return NextResponse.json({ error: 'Account suspended' }, { status: 403 });
+    }
+
+    if (Number(user.balance) < numAmount) {
+      return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
+    }
+
+    // 4. Deduct balance immediately
+    await supabaseAdmin
+      .from('users')
+      .update({ balance: Number(user.balance) - numAmount })
+      .eq('id', session.userId);
+
+    // 5. Create the withdrawal request
+    const { data: withdrawal, error: insErr } = await supabaseAdmin
+      .from('tesla_withdrawals')
+      .insert({
+        user_id: session.userId,
+        amount: numAmount,
+        status: 'pending',
+        phone: phone.trim(),
+        full_name: fullName.trim(),
+      })
+      .select('id, amount, status, created_at')
+      .single();
+
+    if (insErr || !withdrawal) {
+      // Refund if the insert failed
+      await supabaseAdmin
+        .from('users')
+        .update({ balance: Number(user.balance) })
+        .eq('id', session.userId);
+
+      console.error('Withdrawal insert error:', insErr);
+      return NextResponse.json({ error: 'Failed to create request' }, { status: 500 });
+    }
+
+    // 6. Log transaction
+    await supabaseAdmin.from('tesla_transactions').insert({
+      user_id: session.userId,
+      type: 'withdrawal_request',
+      amount: numAmount,
+      status: 'pending',
+      meta: { withdrawal_id: withdrawal.id, phone, full_name: fullName },
+    });
+
+    return NextResponse.json({
+      success: true,
+      withdrawalId: withdrawal.id,
+      amount: numAmount,
+      netAmount: Math.round(numAmount * 0.85),
+      fee: Math.round(numAmount * 0.15),
+    });
+  } catch (err) {
+    console.error('Withdrawal create error:', err);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
+}
