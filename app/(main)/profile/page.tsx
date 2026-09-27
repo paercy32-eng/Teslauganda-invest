@@ -19,16 +19,12 @@ export default function ProfilePage() {
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('main');
-
-  // Recharge modal
   const [showRecharge, setShowRecharge] = useState(false);
 
-  // Gift card state
   const [giftCode, setGiftCode] = useState('');
   const [giftMsg, setGiftMsg] = useState('');
   const [giftLoading, setGiftLoading] = useState(false);
 
-  // Task state
   const [taskMsg, setTaskMsg] = useState('');
   const [taskLoading, setTaskLoading] = useState(false);
 
@@ -109,7 +105,6 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in">
-      {/* Header */}
       <div className="px-2 mb-5">
         <h1 className="text-3xl font-bold text-[#1F2A1B]">Profile</h1>
         <p className="text-[#6B7A62] text-sm mt-1">
@@ -117,7 +112,6 @@ export default function ProfilePage() {
         </p>
       </div>
 
-      {/* Balance card */}
       <div className="rounded-3xl p-5 bg-gradient-to-br from-[#7C9070] to-[#5A6E50] mb-4">
         <div className="text-xs text-white/80 mb-1">Account Balance</div>
         <div className="text-3xl font-bold text-white mb-4">
@@ -136,7 +130,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Deposit / Withdraw details */}
       <div className="grid grid-cols-2 gap-2 mb-4">
         <button className="card p-3 text-left">
           <div className="text-[10px] text-[#6B7A62] mb-1">Deposit details</div>
@@ -148,7 +141,6 @@ export default function ProfilePage() {
         </button>
       </div>
 
-      {/* Tabs */}
       <div className="grid grid-cols-3 gap-2 mb-4">
         {([
           { k: 'main', label: 'Telegram' },
@@ -239,7 +231,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Logout */}
       <button
         onClick={logout}
         className="w-full border border-[#E3E8DE] text-[#A13A3A] font-semibold py-3 rounded-2xl active:scale-[0.98] transition bg-white"
@@ -280,28 +271,50 @@ function RechargeModal({
   onSuccess: () => void;
 }) {
   const [amount, setAmount] = useState(String(MIN_DEPOSIT));
+  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
   const [sent, setSent] = useState(false);
   const [pollCount, setPollCount] = useState(0);
 
+  useEffect(() => {
+    async function prefill() {
+      try {
+        const res = await fetch('/api/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.user?.phone) setPhone(data.user.phone);
+        }
+      } catch {}
+    }
+    prefill();
+  }, []);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setMsg('');
+
+    const cleanPhone = phone.trim();
+    if (!/^\+?\d{9,15}$/.test(cleanPhone)) {
+      setMsg('Enter a valid phone number.');
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch('/api/deposits/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: Number(amount) }),
+        body: JSON.stringify({
+          amount: Number(amount),
+          phone: cleanPhone,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
         setMsg(data.error || 'Failed to send payment request.');
       } else {
         setSent(true);
-        setMsg('📱 Check your phone and enter your PIN.');
-        // Start polling for deposit success
         startPolling();
       }
     } catch {
@@ -316,12 +329,6 @@ function RechargeModal({
     const interval = setInterval(async () => {
       count++;
       setPollCount(count);
-      const res = await fetch('/api/me');
-      if (res.ok) {
-        const data = await res.json();
-        // If balance changed since the modal opened, we assume it credited
-        // Simple heuristic: after 5 polls, refresh anyway
-      }
       if (count >= 20) {
         clearInterval(interval);
         onSuccess();
@@ -365,6 +372,23 @@ function RechargeModal({
               </div>
             </div>
 
+            <div>
+              <label className="block text-[10px] text-[#6B7A62] font-bold mb-1">
+                MOBILE MONEY NUMBER
+              </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="0700123456"
+                className="input-light"
+                required
+              />
+              <div className="text-[10px] text-[#6B7A62] mt-1">
+                The PIN prompt will be sent to this number.
+              </div>
+            </div>
+
             {msg && (
               <div className="text-sm text-[#A13A3A] bg-[#FDF3F3] rounded-xl px-3 py-2 border border-[#E5B5B5]">
                 {msg}
@@ -386,7 +410,7 @@ function RechargeModal({
               {Number(amount).toLocaleString()}.
             </div>
             <div className="text-xs text-[#6B7A62]">
-              Waiting for confirmation… ({pollCount}s)
+              Waiting for confirmation… ({pollCount * 3}s)
             </div>
             <button
               onClick={onClose}
@@ -399,4 +423,4 @@ function RechargeModal({
       </div>
     </div>
   );
-}
+        }
