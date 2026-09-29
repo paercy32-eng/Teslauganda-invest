@@ -91,7 +91,7 @@ function ProfileIcon({ active }: IconProps) {
 
 const tabs = [
   { href: '/', label: 'Home', Icon: HomeIcon },
-  { href: '/my-tesla', label: 'My Tesla', Icon: CarIcon },
+  { href: '/my-tesla', label: 'My Robot', Icon: CarIcon },
   { href: '/team', label: 'Team', Icon: TeamIcon },
   { href: '/profile', label: 'Profile', Icon: ProfileIcon },
 ];
