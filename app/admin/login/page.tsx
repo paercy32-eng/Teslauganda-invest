@@ -43,7 +43,7 @@ export default function AdminLoginPage() {
         <div className="w-10 h-10 rounded-xl bg-[#1F2A1B] flex items-center justify-center text-white font-bold text-xl">
           A
         </div>
-        <span className="text-2xl font-bold text-[#1F2A1B]">Admin</span>
+        <span className="text-2xl font-bold text-[#1F2A1B]">Robots Invest Admin</span>
       </div>
 
       <h1 className="text-2xl font-bold mb-2 text-center text-[#1F2A1B]">
