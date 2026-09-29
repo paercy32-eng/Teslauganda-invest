@@ -106,7 +106,7 @@ export default function HomePage() {
           <div className="w-9 h-9 rounded-xl bg-[#7C9070] flex items-center justify-center text-white font-bold">
             T
           </div>
-          <span className="text-xl font-bold text-[#1F2A1B]">Tesla</span>
+          <span className="text-xl font-bold text-[#1F2A1B]">Robots Invest</span>
         </div>
         <div className="text-right">
           <div className="text-[11px] text-[#6B7A62]">Welcome back</div>
