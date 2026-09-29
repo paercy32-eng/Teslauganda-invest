@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
-  title: 'Tesla — Electric Vehicle Rentals',
-  description: 'Rent a Tesla. Earn daily.',
+  title: 'Robots Invest — Rent Robots, Earn Daily',
+  description: 'Rent robots. Earn daily.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
