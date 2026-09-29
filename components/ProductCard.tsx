@@ -36,22 +36,17 @@ export default function ProductCard({
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-5xl">
-            🤖 
+          <div className="w-full h-full flex items-center justify-center text-6xl">
+            🤖
           </div>
         )}
       </div>
 
       {/* Info */}
       <div className="p-3 flex flex-col gap-2 flex-1">
-        <div>
-          <h3 className="font-bold text-sm leading-tight text-[#1F2A1B]">
-            {product.name}
-          </h3>
-          <p className="text-[11px] text-[#6B7A62] mt-0.5">
-            {product.subtitle ?? 'Everyday electric performance'}
-          </p>
-        </div>
+        <h3 className="font-bold text-sm leading-tight text-[#1F2A1B]">
+          {product.name}
+        </h3>
 
         {/* 2 feature chips */}
         <div className="grid grid-cols-2 gap-1.5 mt-1">
