@@ -56,7 +56,7 @@ export default function LoginPage() {
         <div className="w-10 h-10 rounded-xl bg-[#7C9070] flex items-center justify-center text-white font-bold text-xl">
           T
         </div>
-        <span className="text-2xl font-bold text-[#1F2A1B]">Tesla</span>
+        <span className="text-2xl font-bold text-[#1F2A1B]">Robots Invest</span>
       </div>
 
       <h1 className="text-3xl font-bold mb-2 text-[#1F2A1B]">Welcome back</h1>
