@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
         const missing = price - approvedTotal;
         return NextResponse.json(
           {
-            error: `First purchase requires approved deposits of at least UGX ${price.toLocaleString()}. You need to deposit UGX ${missing.toLocaleString()} more.`,
+            error: `First purchase requires approved deposits of at least UGX ${price.toLocaleString()}. Deposit UGX ${missing.toLocaleString()} more to unlock.`,
             reason: 'first_purchase_deposit_required',
             approvedTotal,
             required: price,
