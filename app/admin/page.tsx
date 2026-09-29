@@ -53,7 +53,7 @@ export default function AdminDashboard() {
           <div className="w-9 h-9 rounded-xl bg-[#1F2A1B] flex items-center justify-center text-white font-bold">
             A
           </div>
-          <span className="text-xl font-bold text-[#1F2A1B]">Admin</span>
+          <span className="text-xl font-bold text-[#1F2A1B]">Robots Invest Admin</span>
         </div>
         <button
           onClick={logout}
