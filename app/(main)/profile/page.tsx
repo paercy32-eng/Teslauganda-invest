@@ -110,7 +110,7 @@ export default function ProfilePage() {
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in">
       <div className="px-2 mb-5">
-        <h1 className="text-3xl font-bold text-[#1F2A1B]">Profile</h1>
+        <h1 className="text-3xl font-bold text-[#1F2A1B]">Robots Invest</h1>
         <p className="text-[#6B7A62] text-sm mt-1">
           {me?.name} · {me?.phone}
         </p>
@@ -118,7 +118,7 @@ export default function ProfilePage() {
 
       {/* Balance card */}
       <div className="rounded-3xl p-5 bg-gradient-to-br from-[#7C9070] to-[#5A6E50] mb-4">
-        <div className="text-xs text-white/80 mb-1">Account Balance</div>
+        <div className="text-xs text-white/80 mb-1">Robots Invest Balance</div>
         <div className="text-3xl font-bold text-white mb-4">
           UGX {me?.balance?.toLocaleString() ?? 0}
         </div>
