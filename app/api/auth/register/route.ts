@@ -4,7 +4,7 @@ import { hashPassword, signSession, SESSION_COOKIE } from '@/lib/auth';
 
 function generateReferralCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = 'TSLA';
+  let code = 'ROBO';
   for (let i = 0; i < 5; i++) {
     code += chars[Math.floor(Math.random() * chars.length)];
   }
