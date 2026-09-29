@@ -3,7 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-type LevelStats = { count: number; earnings: number; validCount: number; invest: number };
+type LevelStats = {
+  count: number;
+  validCount: number;
+  earnings: number;
+  invest: number;
+};
 
 type TeamData = {
   referralCode: string;
@@ -53,7 +58,7 @@ export default function TeamPage() {
 
   const levelStats = data.levels[activeLevel];
   const levelPercent = activeLevel === 1 ? 25 : activeLevel === 2 ? 2 : 1;
-  
+  const referralLink = `https://teslauganda-invest.vercel.app/register?ref=${data.referralCode}`;
 
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in">
@@ -65,7 +70,7 @@ export default function TeamPage() {
         </p>
       </div>
 
-      <div className="const referralLink = `https://teslauganda-invest.vercel.app/register?ref=${data.referralCode}`;space-y-4">
+      <div className="space-y-4">
         {/* Top summary cards */}
         <div className="grid grid-cols-2 gap-3">
           <div className="card p-4 text-center">
@@ -176,4 +181,4 @@ function StatBox({ label, value }: { label: string; value: string }) {
       <div className="text-lg font-bold text-[#7C9070]">{value}</div>
     </div>
   );
-}
+      }
