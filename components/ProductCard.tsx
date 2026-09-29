@@ -37,7 +37,7 @@ export default function ProductCard({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-5xl">
-            🚗
+            🤖 
           </div>
         )}
       </div>
