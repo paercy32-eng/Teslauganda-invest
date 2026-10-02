@@ -1,3 +1,5 @@
+
+    
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -103,7 +105,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <div className="text-[#6B7A62]">Loading…</div>
+        <div className="text-[#6B7A8F]">Loading…</div>
       </main>
     );
   }
@@ -111,28 +113,28 @@ export default function ProfilePage() {
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in">
       <div className="px-2 mb-5">
-        <h1 className="text-3xl font-bold text-[#1F2A1B]">Robots Invest</h1>
-        <p className="text-[#6B7A62] text-sm mt-1">
+        <h1 className="text-3xl font-bold text-[#0A2540]">Robots Invest</h1>
+        <p className="text-[#6B7A8F] text-sm mt-1">
           {me?.name} · {me?.phone}
         </p>
       </div>
 
       {/* Balance card */}
-      <div className="rounded-3xl p-5 bg-gradient-to-br from-[#7C9070] to-[#5A6E50] mb-4">
-        <div className="text-xs text-white/80 mb-1">Robots Invest Balance</div>
+      <div className="rounded-3xl p-5 bg-gradient-to-br from-[#0A2540] to-[#061829] mb-4">
+        <div className="text-xs text-white/70 mb-1">Robots Invest Balance</div>
         <div className="text-3xl font-bold text-white mb-4">
           UGX {me?.balance?.toLocaleString() ?? 0}
         </div>
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => setShowRecharge(true)}
-            className="bg-white text-[#1F2A1B] font-semibold py-2.5 rounded-2xl text-sm active:scale-[0.98] transition"
+            className="bg-[#00D9FF] text-[#0A2540] font-bold py-2.5 rounded-2xl text-sm active:scale-[0.98] transition"
           >
             Recharge
           </button>
           <button
             onClick={() => setShowWithdraw(true)}
-            className="bg-black/20 text-white font-semibold py-2.5 rounded-2xl text-sm active:scale-[0.98] transition"
+            className="bg-white/10 border border-white/20 text-white font-semibold py-2.5 rounded-2xl text-sm active:scale-[0.98] transition"
           >
             Withdraw
           </button>
@@ -142,12 +144,12 @@ export default function ProfilePage() {
       {/* Deposit / Withdraw details */}
       <div className="grid grid-cols-2 gap-2 mb-4">
         <Link href="/deposits" className="card p-3 text-left block">
-          <div className="text-[10px] text-[#6B7A62] mb-1">Deposit details</div>
-          <div className="text-xs font-semibold text-[#1F2A1B]">View history →</div>
+          <div className="text-[10px] text-[#6B7A8F] mb-1">Deposit details</div>
+          <div className="text-xs font-semibold text-[#0A2540]">View history →</div>
         </Link>
         <Link href="/withdrawals" className="card p-3 text-left block">
-          <div className="text-[10px] text-[#6B7A62] mb-1">Withdraw details</div>
-          <div className="text-xs font-semibold text-[#1F2A1B]">View history →</div>
+          <div className="text-[10px] text-[#6B7A8F] mb-1">Withdraw details</div>
+          <div className="text-xs font-semibold text-[#0A2540]">View history →</div>
         </Link>
       </div>
 
@@ -163,9 +165,9 @@ export default function ProfilePage() {
             onClick={() => setTab(t.k as Tab)}
             className="py-2.5 rounded-2xl text-xs font-semibold transition border"
             style={{
-              background: tab === t.k ? '#7C9070' : '#FFFFFF',
-              color: tab === t.k ? '#FFFFFF' : '#6B7A62',
-              borderColor: tab === t.k ? '#7C9070' : '#E3E8DE',
+              background: tab === t.k ? '#0A2540' : '#FFFFFF',
+              color: tab === t.k ? '#00D9FF' : '#6B7A8F',
+              borderColor: tab === t.k ? '#0A2540' : '#E1E7EF',
             }}
           >
             {t.label}
@@ -184,17 +186,17 @@ export default function ProfilePage() {
             ✈️
           </div>
           <div className="flex-1">
-            <div className="font-semibold text-[#1F2A1B]">Join Telegram</div>
-            <div className="text-xs text-[#6B7A62] mt-0.5">Get updates & support</div>
+            <div className="font-semibold text-[#0A2540]">Join Telegram</div>
+            <div className="text-xs text-[#6B7A8F] mt-0.5">Get updates & support</div>
           </div>
-          <div className="text-[#6B7A62]">→</div>
+          <div className="text-[#6B7A8F]">→</div>
         </a>
       )}
 
       {tab === 'giftcard' && (
         <div className="card p-4 mb-4">
-          <div className="font-semibold text-[#1F2A1B] mb-1">Redeem Gift Card</div>
-          <p className="text-xs text-[#6B7A62] mb-3">
+          <div className="font-semibold text-[#0A2540] mb-1">Redeem Gift Card</div>
+          <p className="text-xs text-[#6B7A8F] mb-3">
             Enter code from admin. Codes expire in 5 minutes.
           </p>
           <form onSubmit={redeemGift} className="space-y-3">
@@ -207,7 +209,7 @@ export default function ProfilePage() {
               required
             />
             {giftMsg && (
-              <div className="text-sm text-[#1F2A1B] bg-[#F7F8F5] rounded-xl px-3 py-2 border border-[#E3E8DE]">
+              <div className="text-sm text-[#0A2540] bg-[#F5F7FA] rounded-xl px-3 py-2 border border-[#E1E7EF]">
                 {giftMsg}
               </div>
             )}
@@ -220,8 +222,8 @@ export default function ProfilePage() {
 
       {tab === 'tasks' && (
         <div className="card p-4 mb-4">
-          <div className="font-semibold text-[#1F2A1B] mb-1">Task Center</div>
-          <p className="text-xs text-[#6B7A62] mb-3">
+          <div className="font-semibold text-[#0A2540] mb-1">Task Center</div>
+          <p className="text-xs text-[#6B7A8F] mb-3">
             Earn rewards when your valid invites hit a tier.
           </p>
           <div className="grid grid-cols-2 gap-2 mb-3">
@@ -232,7 +234,7 @@ export default function ProfilePage() {
             <TierBox count={300} amount={100000} />
           </div>
           {taskMsg && (
-            <div className="text-sm text-[#1F2A1B] bg-[#F7F8F5] rounded-xl px-3 py-2 border border-[#E3E8DE] mb-3">
+            <div className="text-sm text-[#0A2540] bg-[#F5F7FA] rounded-xl px-3 py-2 border border-[#E1E7EF] mb-3">
               {taskMsg}
             </div>
           )}
@@ -244,7 +246,7 @@ export default function ProfilePage() {
 
       <button
         onClick={logout}
-        className="w-full border border-[#E3E8DE] text-[#A13A3A] font-semibold py-3 rounded-2xl active:scale-[0.98] transition bg-white"
+        className="w-full border border-[#E1E7EF] text-[#E11D48] font-semibold py-3 rounded-2xl active:scale-[0.98] transition bg-white"
       >
         Log out
       </button>
@@ -275,11 +277,11 @@ export default function ProfilePage() {
 
 function TierBox({ count, amount }: { count: number; amount: number }) {
   return (
-    <div className="rounded-xl p-3 text-center bg-[#F7F8F5] border border-[#E3E8DE]">
-      <div className="text-[10px] text-[#6B7A62] font-semibold">
+    <div className="rounded-xl p-3 text-center bg-[#F5F7FA] border border-[#E1E7EF]">
+      <div className="text-[10px] text-[#6B7A8F] font-semibold">
         {count} INVITES
       </div>
-      <div className="text-sm font-bold text-[#7C9070] mt-1">
+      <div className="text-sm font-bold text-[#00B8DB] mt-1">
         UGX {amount.toLocaleString()}
       </div>
     </div>
@@ -370,16 +372,16 @@ function RechargeModal({
       >
         <div className="flex justify-between items-start mb-4">
           <div>
-            <div className="text-lg font-bold text-[#1F2A1B]">Recharge</div>
-            <div className="text-xs text-[#6B7A62]">Deposit via Mobile Money</div>
+            <div className="text-lg font-bold text-[#0A2540]">Recharge</div>
+            <div className="text-xs text-[#6B7A8F]">Deposit via Mobile Money</div>
           </div>
-          <button onClick={onClose} className="text-[#6B7A62] text-xl">×</button>
+          <button onClick={onClose} className="text-[#6B7A8F] text-xl">×</button>
         </div>
 
         {!sent ? (
           <form onSubmit={submit} className="space-y-3">
             <div>
-              <label className="block text-[10px] text-[#6B7A62] font-bold mb-1">
+              <label className="block text-[10px] text-[#6B7A8F] font-bold mb-1">
                 AMOUNT (UGX)
               </label>
               <input
@@ -390,13 +392,13 @@ function RechargeModal({
                 min={MIN_DEPOSIT}
                 required
               />
-              <div className="text-[10px] text-[#6B7A62] mt-1">
+              <div className="text-[10px] text-[#6B7A8F] mt-1">
                 Minimum: UGX {MIN_DEPOSIT.toLocaleString()}
               </div>
             </div>
 
             <div>
-              <label className="block text-[10px] text-[#6B7A62] font-bold mb-1">
+              <label className="block text-[10px] text-[#6B7A8F] font-bold mb-1">
                 MOBILE MONEY NUMBER
               </label>
               <input
@@ -407,13 +409,13 @@ function RechargeModal({
                 className="input-light"
                 required
               />
-              <div className="text-[10px] text-[#6B7A62] mt-1">
+              <div className="text-[10px] text-[#6B7A8F] mt-1">
                 The PIN prompt will be sent to this number.
               </div>
             </div>
 
             {msg && (
-              <div className="text-sm text-[#A13A3A] bg-[#FDF3F3] rounded-xl px-3 py-2 border border-[#E5B5B5]">
+              <div className="text-sm text-[#E11D48] bg-[#FFF1F3] rounded-xl px-3 py-2 border border-[#E11D48]/30">
                 {msg}
               </div>
             )}
@@ -425,19 +427,19 @@ function RechargeModal({
         ) : (
           <div className="text-center py-4">
             <div className="text-5xl mb-3">📱</div>
-            <div className="font-semibold text-[#1F2A1B] mb-1">
+            <div className="font-semibold text-[#0A2540] mb-1">
               Check your phone
             </div>
-            <div className="text-sm text-[#6B7A62] mb-4">
+            <div className="text-sm text-[#6B7A8F] mb-4">
               Enter your mobile money PIN to complete the payment of UGX{' '}
               {Number(amount).toLocaleString()}.
             </div>
-            <div className="text-xs text-[#6B7A62]">
+            <div className="text-xs text-[#6B7A8F]">
               Waiting for confirmation… ({pollCount * 3}s)
             </div>
             <button
               onClick={onClose}
-              className="mt-6 text-xs text-[#6B7A62] underline"
+              className="mt-6 text-xs text-[#6B7A8F] underline"
             >
               Close
             </button>
@@ -521,18 +523,18 @@ function WithdrawModal({
       >
         <div className="flex justify-between items-start mb-4">
           <div>
-            <div className="text-lg font-bold text-[#1F2A1B]">Withdraw</div>
-            <div className="text-xs text-[#6B7A62]">
+            <div className="text-lg font-bold text-[#0A2540]">Withdraw</div>
+            <div className="text-xs text-[#6B7A8F]">
               Balance: UGX {balance.toLocaleString()}
             </div>
           </div>
-          <button onClick={onClose} className="text-[#6B7A62] text-xl">×</button>
+          <button onClick={onClose} className="text-[#6B7A8F] text-xl">×</button>
         </div>
 
         {!done ? (
           <form onSubmit={submit} className="space-y-3">
             <div>
-              <label className="block text-[10px] text-[#6B7A62] font-bold mb-1">
+              <label className="block text-[10px] text-[#6B7A8F] font-bold mb-1">
                 AMOUNT (UGX)
               </label>
               <input
@@ -543,13 +545,13 @@ function WithdrawModal({
                 min={MIN_WITHDRAW}
                 required
               />
-              <div className="text-[10px] text-[#6B7A62] mt-1">
+              <div className="text-[10px] text-[#6B7A8F] mt-1">
                 Minimum: UGX {MIN_WITHDRAW.toLocaleString()}
               </div>
             </div>
 
             <div>
-              <label className="block text-[10px] text-[#6B7A62] font-bold mb-1">
+              <label className="block text-[10px] text-[#6B7A8F] font-bold mb-1">
                 MOBILE MONEY NUMBER
               </label>
               <input
@@ -563,7 +565,7 @@ function WithdrawModal({
             </div>
 
             <div>
-              <label className="block text-[10px] text-[#6B7A62] font-bold mb-1">
+              <label className="block text-[10px] text-[#6B7A8F] font-bold mb-1">
                 FULL REGISTERED NAME
               </label>
               <input
@@ -577,22 +579,22 @@ function WithdrawModal({
             </div>
 
             {numAmount >= MIN_WITHDRAW && (
-              <div className="bg-[#F7F8F5] border border-[#E3E8DE] rounded-2xl p-3 text-xs">
+              <div className="bg-[#F5F7FA] border border-[#E1E7EF] rounded-2xl p-3 text-xs">
                 <div className="flex justify-between mb-1">
-                  <span className="text-[#6B7A62]">You request</span>
-                  <span className="font-semibold text-[#1F2A1B]">
+                  <span className="text-[#6B7A8F]">You request</span>
+                  <span className="font-semibold text-[#0A2540]">
                     UGX {numAmount.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between mb-1">
-                  <span className="text-[#6B7A62]">Fee (15%)</span>
-                  <span className="font-semibold text-[#A13A3A]">
+                  <span className="text-[#6B7A8F]">Fee (15%)</span>
+                  <span className="font-semibold text-[#E11D48]">
                     -UGX {fee.toLocaleString()}
                   </span>
                 </div>
-                <div className="flex justify-between border-t border-[#E3E8DE] pt-1 mt-1">
-                  <span className="text-[#6B7A62]">You receive</span>
-                  <span className="font-bold text-[#7C9070]">
+                <div className="flex justify-between border-t border-[#E1E7EF] pt-1 mt-1">
+                  <span className="text-[#6B7A8F]">You receive</span>
+                  <span className="font-bold text-[#00B8DB]">
                     UGX {net.toLocaleString()}
                   </span>
                 </div>
@@ -600,7 +602,7 @@ function WithdrawModal({
             )}
 
             {msg && (
-              <div className="text-sm text-[#A13A3A] bg-[#FDF3F3] rounded-xl px-3 py-2 border border-[#E5B5B5]">
+              <div className="text-sm text-[#E11D48] bg-[#FFF1F3] rounded-xl px-3 py-2 border border-[#E11D48]/30">
                 {msg}
               </div>
             )}
@@ -609,7 +611,7 @@ function WithdrawModal({
               {loading ? 'Submitting…' : 'Request withdrawal'}
             </button>
 
-            <p className="text-[10px] text-[#6B7A62] text-center">
+            <p className="text-[10px] text-[#6B7A8F] text-center">
               Your balance will be deducted immediately. Withdrawals are processed
               after admin review.
             </p>
@@ -617,15 +619,15 @@ function WithdrawModal({
         ) : (
           <div className="text-center py-4">
             <div className="text-5xl mb-3">✅</div>
-            <div className="font-semibold text-[#1F2A1B] mb-1">
+            <div className="font-semibold text-[#0A2540] mb-1">
               Request submitted
             </div>
-            <div className="text-sm text-[#6B7A62] mb-4">
+            <div className="text-sm text-[#6B7A8F] mb-4">
               You'll receive UGX {net.toLocaleString()} once approved.
             </div>
             <button
               onClick={onSuccess}
-              className="mt-2 text-xs text-[#6B7A62] underline"
+              className="mt-2 text-xs text-[#6B7A8F] underline"
             >
               Close
             </button>
@@ -634,4 +636,4 @@ function WithdrawModal({
       </div>
     </div>
   );
-  }
+      }
