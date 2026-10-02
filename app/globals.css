@@ -8,8 +8,8 @@
 
 html,
 body {
-  background-color: #F7F8F5;
-  color: #1F2A1B;
+  background-color: #F5F7FA;
+  color: #0A2540;
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto,
     Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -49,39 +49,44 @@ input[type='number'] {
 }
 
 @layer components {
-  /* Full-width sage pill CTA button */
+  /* Primary full-width button (navy) */
   .btn-primary {
-    @apply w-full bg-[#7C9070] text-white font-semibold py-3 rounded-2xl transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply w-full bg-[#0A2540] text-white font-semibold py-3 rounded-2xl transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
-  /* Outlined secondary button */
+  /* Cyan CTA button */
+  .btn-cyan {
+    @apply w-full bg-[#00D9FF] text-[#0A2540] font-bold py-3 rounded-2xl transition active:scale-[0.98] disabled:opacity-50;
+  }
+
+  /* Outlined button */
   .btn-outline {
-    @apply w-full border border-[#E3E8DE] text-[#1F2A1B] font-semibold py-3 rounded-2xl transition active:scale-[0.98] disabled:opacity-50 bg-white;
+    @apply w-full border border-[#E1E7EF] text-[#0A2540] font-semibold py-3 rounded-2xl transition active:scale-[0.98] disabled:opacity-50 bg-white;
   }
 
-  /* Standard card */
+  /* Card */
   .card {
-    @apply bg-white border border-[#E3E8DE] rounded-2xl;
+    @apply bg-white border border-[#E1E7EF] rounded-2xl;
   }
 
-  /* Input field */
+  /* Input */
   .input-light {
-    @apply w-full bg-white border border-[#E3E8DE] rounded-2xl px-4 py-3 text-[#1F2A1B] placeholder-[#9AA89A] outline-none focus:border-[#7C9070] transition;
+    @apply w-full bg-white border border-[#E1E7EF] rounded-2xl px-4 py-3 text-[#0A2540] placeholder-[#9BA8B8] outline-none focus:border-[#00D9FF] transition;
   }
 
-  /* Small chip */
+  /* Chip */
   .chip {
-    @apply inline-flex items-center gap-1 bg-white border border-[#E3E8DE] rounded-full px-3 py-1 text-xs text-[#6B7A62];
+    @apply inline-flex items-center gap-1 bg-white border border-[#E1E7EF] rounded-full px-3 py-1 text-xs text-[#6B7A8F];
   }
 
   /* Section title */
   .section-title {
-    @apply text-2xl font-bold text-[#1F2A1B];
+    @apply text-2xl font-bold text-[#0A2540];
   }
 
   /* Muted text */
   .muted {
-    @apply text-[#6B7A62];
+    @apply text-[#6B7A8F];
   }
 }
 
