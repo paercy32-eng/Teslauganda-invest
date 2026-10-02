@@ -40,22 +40,20 @@ export default function AdminLoginPage() {
   return (
     <main className="min-h-screen px-6 py-10 animate-fade-in flex flex-col justify-center">
       <div className="flex items-center gap-2 mb-8 justify-center">
-        <div className="w-10 h-10 rounded-xl bg-[#1F2A1B] flex items-center justify-center text-white font-bold text-xl">
+        <div className="w-10 h-10 rounded-xl bg-[#0A2540] flex items-center justify-center text-[#00D9FF] font-bold text-xl">
           A
         </div>
-        <span className="text-2xl font-bold text-[#1F2A1B]">Robots Invest Admin</span>
+        <span className="text-2xl font-bold text-[#0A2540]">Robots Invest Admin</span>
       </div>
 
-      <h1 className="text-2xl font-bold mb-2 text-center text-[#1F2A1B]">
+      <h1 className="text-2xl font-bold mb-2 text-center text-[#0A2540]">
         Admin Access
       </h1>
-      <p className="text-[#6B7A62] mb-8 text-center text-sm">
-        Restricted area
-      </p>
+      <p className="text-[#6B7A8F] mb-8 text-center text-sm">Restricted area</p>
 
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm text-[#6B7A62] mb-2">Username</label>
+          <label className="block text-sm text-[#6B7A8F] mb-2">Username</label>
           <input
             type="text"
             className="input-light"
@@ -67,7 +65,7 @@ export default function AdminLoginPage() {
         </div>
 
         <div>
-          <label className="block text-sm text-[#6B7A62] mb-2">Password</label>
+          <label className="block text-sm text-[#6B7A8F] mb-2">Password</label>
           <input
             type="password"
             className="input-light"
@@ -79,14 +77,14 @@ export default function AdminLoginPage() {
         </div>
 
         {error && (
-          <div className="bg-[#FDF3F3] border border-[#E5B5B5] rounded-2xl px-4 py-3 text-sm text-[#A13A3A]">
+          <div className="bg-[#FFF1F3] border border-[#E11D48]/30 rounded-2xl px-4 py-3 text-sm text-[#E11D48]">
             {error}
           </div>
         )}
 
         <button
           type="submit"
-          className="w-full bg-[#1F2A1B] text-white font-semibold py-3 rounded-2xl active:scale-[0.98] transition disabled:opacity-50"
+          className="btn-primary mt-2"
           disabled={loading}
         >
           {loading ? 'Signing in…' : 'Sign In'}
