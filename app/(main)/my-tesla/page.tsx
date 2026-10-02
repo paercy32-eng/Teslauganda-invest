@@ -37,7 +37,7 @@ export default function MyRobotPage() {
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <div className="text-[#6B7A62]">Loading…</div>
+        <div className="text-[#6B7A8F]">Loading…</div>
       </main>
     );
   }
@@ -45,8 +45,8 @@ export default function MyRobotPage() {
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in">
       <div className="px-2 mb-5">
-        <h1 className="text-3xl font-bold text-[#1F2A1B]">My Robot</h1>
-        <p className="text-[#6B7A62] text-sm mt-1">
+        <h1 className="text-3xl font-bold text-[#0A2540]">My Robot</h1>
+        <p className="text-[#6B7A8F] text-sm mt-1">
           {rentals.length === 0
             ? 'Your rented robots will appear here.'
             : `You have ${rentals.length} active rental${rentals.length > 1 ? 's' : ''}.`}
@@ -54,7 +54,7 @@ export default function MyRobotPage() {
       </div>
 
       {rentals.length === 0 ? (
-        <div className="text-center text-[#6B7A62] py-16">
+        <div className="text-center text-[#6B7A8F] py-16">
           <div className="text-5xl mb-3">🤖</div>
           <div className="mb-4">No rentals yet.</div>
           <button
@@ -73,40 +73,45 @@ export default function MyRobotPage() {
               <div key={r.id} className="card p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <div className="font-bold text-[#1F2A1B] text-base">
+                    <div className="font-bold text-[#0A2540] text-base">
                       {r.product_name}
                     </div>
-                    <div className="text-[10px] text-[#6B7A62] mt-0.5">
+                    <div className="text-[10px] text-[#6B7A8F] mt-0.5">
                       Started {new Date(r.start_at).toLocaleDateString()}
                     </div>
                   </div>
                   <div
                     className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full ${
                       r.status === 'active'
-                        ? 'bg-[#EFF5EC] text-[#4E6B41]'
-                        : 'bg-[#F7F8F5] text-[#6B7A62]'
+                        ? 'bg-[#E6F7F0] text-[#00A86B]'
+                        : 'bg-[#F5F7FA] text-[#6B7A8F]'
                     }`}
                   >
                     {r.status}
                   </div>
                 </div>
 
-                {/* Stats grid */}
                 <div className="grid grid-cols-3 gap-2 mb-3">
-                  <Stat label="DAILY" value={`UGX ${r.daily_profit.toLocaleString()}`} highlight />
-                  <Stat label="EARNED" value={`UGX ${r.total_earned.toLocaleString()}`} />
+                  <Stat
+                    label="DAILY"
+                    value={`UGX ${r.daily_profit.toLocaleString()}`}
+                    highlight
+                  />
+                  <Stat
+                    label="EARNED"
+                    value={`UGX ${r.total_earned.toLocaleString()}`}
+                  />
                   <Stat label="DAYS LEFT" value={r.days_remaining.toString()} />
                 </div>
 
-                {/* Progress bar */}
                 <div>
-                  <div className="flex justify-between text-[10px] text-[#6B7A62] mb-1">
+                  <div className="flex justify-between text-[10px] text-[#6B7A8F] mb-1">
                     <span>Progress</span>
                     <span>{Math.round(progress)}%</span>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-[#E3E8DE] overflow-hidden">
+                  <div className="w-full h-2 rounded-full bg-[#E1E7EF] overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-[#7C9070] transition-all"
+                      className="h-full rounded-full bg-[#00D9FF] transition-all"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
@@ -130,13 +135,13 @@ function Stat({
   highlight?: boolean;
 }) {
   return (
-    <div className="rounded-xl p-2.5 text-center bg-[#F7F8F5] border border-[#E3E8DE]">
-      <div className="text-[9px] text-[#6B7A62] font-semibold mb-1">
+    <div className="rounded-xl p-2.5 text-center bg-[#F5F7FA] border border-[#E1E7EF]">
+      <div className="text-[9px] text-[#6B7A8F] font-semibold mb-1">
         {label}
       </div>
       <div
         className={`text-[11px] font-bold ${
-          highlight ? 'text-[#7C9070]' : 'text-[#1F2A1B]'
+          highlight ? 'text-[#00B8DB]' : 'text-[#0A2540]'
         }`}
       >
         {value}
