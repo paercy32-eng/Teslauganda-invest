@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic';
-
+export const revalidate = 0;
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { verifySession, SESSION_COOKIE } from '@/lib/auth';
@@ -27,7 +27,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ user });
+    return NextResponse.json(
+  { user },
+  {
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+    },
+  }
+);
   } catch (err) {
     console.error('Me error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
