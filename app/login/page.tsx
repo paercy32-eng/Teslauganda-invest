@@ -15,7 +15,6 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
 
-    // Read directly from the form (handles browser autofill)
     const form = e.currentTarget;
     const formData = new FormData(form);
     const phoneValue = String(formData.get('phone') || phone || '').trim();
@@ -53,18 +52,18 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen px-6 py-10 animate-fade-in">
       <div className="flex items-center gap-2 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-[#7C9070] flex items-center justify-center text-white font-bold text-xl">
-          T
+        <div className="w-10 h-10 rounded-xl bg-[#0A2540] flex items-center justify-center text-[#00D9FF] font-bold text-xl">
+          R
         </div>
-        <span className="text-2xl font-bold text-[#1F2A1B]">Robots Invest</span>
+        <span className="text-2xl font-bold text-[#0A2540]">Robots Invest</span>
       </div>
 
-      <h1 className="text-3xl font-bold mb-2 text-[#1F2A1B]">Welcome back</h1>
-      <p className="text-[#6B7A62] mb-8">Log in to continue.</p>
+      <h1 className="text-3xl font-bold mb-2 text-[#0A2540]">Welcome back</h1>
+      <p className="text-[#6B7A8F] mb-8">Log in to continue.</p>
 
       <form onSubmit={onSubmit} className="space-y-4" autoComplete="off">
         <div>
-          <label className="block text-sm text-[#6B7A62] mb-2">Phone Number</label>
+          <label className="block text-sm text-[#6B7A8F] mb-2">Phone Number</label>
           <input
             type="tel"
             name="phone"
@@ -78,7 +77,7 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <label className="block text-sm text-[#6B7A62] mb-2">Password</label>
+          <label className="block text-sm text-[#6B7A8F] mb-2">Password</label>
           <input
             type="password"
             name="password"
@@ -92,7 +91,7 @@ export default function LoginPage() {
         </div>
 
         {error && (
-          <div className="bg-[#FDF3F3] border border-[#E5B5B5] rounded-2xl px-4 py-3 text-sm text-[#A13A3A]">
+          <div className="bg-[#FFF1F3] border border-[#E11D48]/30 rounded-2xl px-4 py-3 text-sm text-[#E11D48]">
             {error}
           </div>
         )}
@@ -102,9 +101,9 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <p className="text-center text-[#6B7A62] mt-6">
+      <p className="text-center text-[#6B7A8F] mt-6">
         Don&apos;t have an account?{' '}
-        <Link href="/register" className="text-[#7C9070] font-semibold">
+        <Link href="/register" className="text-[#00B8DB] font-semibold">
           Sign up
         </Link>
       </p>
