@@ -1,45 +1,20 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Read RAW body
+    // 1. Read raw body
     const raw = await req.text();
-    const signature = req.headers.get('x-obpay-signature') || '';
     const eventHeader = req.headers.get('x-obpay-event') || '';
 
     console.log('=== OBPAY WEBHOOK ===');
     console.log('Event header:', eventHeader);
-    console.log('Signature:', signature);
     console.log('Raw body:', raw);
+    console.warn('⚠️ Signature check DISABLED (debug mode)');
 
-    // 2. Verify signature (if secret is set)
-const secret = process.env.OBPAY_WEBHOOK_SECRET;
-if (false && secret) {
-      const expected = crypto
-        .createHmac('sha256', secret)
-        .update(raw)
-        .digest('hex');
-
-      const signatureOk =
-        signature.length === expected.length &&
-        crypto.timingSafeEqual(
-          Buffer.from(signature),
-          Buffer.from(expected)
-        );
-
-      if (!signatureOk) {
-        console.error('Invalid signature. Expected:', expected);
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-      }
-    } else {
-      console.warn('OBPAY_WEBHOOK_SECRET not set — skipping signature check');
-    }
-
-    // 3. Parse payload
+    // 2. Parse payload
     let payload: any;
     try {
       payload = JSON.parse(raw);
@@ -48,10 +23,8 @@ if (false && secret) {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
 
-    // 4. Extract event + reference from any shape
-    const event =
-      String(payload?.event || eventHeader || '').toLowerCase();
-
+    // 3. Extract event + reference from any shape
+    const event = String(payload?.event || eventHeader || '').toLowerCase();
     const data = payload?.data || payload || {};
     const reference =
       data?.reference ||
@@ -72,7 +45,7 @@ if (false && secret) {
       return NextResponse.json({ received: true, note: 'no reference' });
     }
 
-    // 5. Find deposit
+    // 4. Find deposit
     const { data: deposit } = await supabaseAdmin
       .from('tesla_deposits')
       .select('id, user_id, amount, status')
@@ -88,7 +61,7 @@ if (false && secret) {
       return NextResponse.json({ received: true, note: 'already processed' });
     }
 
-    // 6. Determine success vs failure
+    // 5. Determine success vs failure
     const isSuccess =
       event.includes('success') ||
       event.includes('completed') ||
@@ -104,7 +77,7 @@ if (false && secret) {
       statusFromPayload === 'cancelled' ||
       statusFromPayload === 'rejected';
 
-    // 7. Handle success
+    // 6. Handle success
     if (isSuccess && !isFailure) {
       const { data: user } = await supabaseAdmin
         .from('users')
@@ -145,7 +118,7 @@ if (false && secret) {
       return NextResponse.json({ received: true, credited: true });
     }
 
-    // 8. Handle failure
+    // 7. Handle failure
     if (isFailure) {
       await supabaseAdmin
         .from('tesla_deposits')
@@ -169,4 +142,4 @@ if (false && secret) {
 
 export async function GET() {
   return NextResponse.json({ status: 'ok' });
-}
+    }
