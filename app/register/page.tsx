@@ -37,8 +37,12 @@ function RegisterForm() {
     const name = String(fd.get('name') || form.name || '').trim();
     const phone = String(fd.get('phone') || form.phone || '').trim();
     const password = String(fd.get('password') || form.password || '');
-    const confirmPassword = String(fd.get('confirmPassword') || form.confirmPassword || '');
-    const referralCode = String(fd.get('referralCode') || form.referralCode || '').trim();
+    const confirmPassword = String(
+      fd.get('confirmPassword') || form.confirmPassword || ''
+    );
+    const referralCode = String(
+      fd.get('referralCode') || form.referralCode || ''
+    ).trim();
 
     setLoading(true);
 
@@ -67,18 +71,18 @@ function RegisterForm() {
   return (
     <main className="min-h-screen px-6 py-10 animate-fade-in">
       <div className="flex items-center gap-2 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-[#7C9070] flex items-center justify-center text-white font-bold text-xl">
-          T
+        <div className="w-10 h-10 rounded-xl bg-[#0A2540] flex items-center justify-center text-[#00D9FF] font-bold text-xl">
+          R
         </div>
-        <span className="text-2xl font-bold text-[#1F2A1B]">Robots Invest</span>
+        <span className="text-2xl font-bold text-[#0A2540]">Robots Invest</span>
       </div>
 
-      <h1 className="text-3xl font-bold mb-2 text-[#1F2A1B]">Create account</h1>
-      <p className="text-[#6B7A62] mb-8">Start renting. Start earning.</p>
+      <h1 className="text-3xl font-bold mb-2 text-[#0A2540]">Create account</h1>
+      <p className="text-[#6B7A8F] mb-8">Start renting. Start earning.</p>
 
       <form onSubmit={onSubmit} className="space-y-4" autoComplete="off">
         <div>
-          <label className="block text-sm text-[#6B7A62] mb-2">Full Name</label>
+          <label className="block text-sm text-[#6B7A8F] mb-2">Full Name</label>
           <input
             type="text"
             name="name"
@@ -92,7 +96,7 @@ function RegisterForm() {
         </div>
 
         <div>
-          <label className="block text-sm text-[#6B7A62] mb-2">Phone Number</label>
+          <label className="block text-sm text-[#6B7A8F] mb-2">Phone Number</label>
           <input
             type="tel"
             name="phone"
@@ -106,7 +110,7 @@ function RegisterForm() {
         </div>
 
         <div>
-          <label className="block text-sm text-[#6B7A62] mb-2">Password</label>
+          <label className="block text-sm text-[#6B7A8F] mb-2">Password</label>
           <input
             type="password"
             name="password"
@@ -120,7 +124,7 @@ function RegisterForm() {
         </div>
 
         <div>
-          <label className="block text-sm text-[#6B7A62] mb-2">Confirm Password</label>
+          <label className="block text-sm text-[#6B7A8F] mb-2">Confirm Password</label>
           <input
             type="password"
             name="confirmPassword"
@@ -134,14 +138,14 @@ function RegisterForm() {
         </div>
 
         <div>
-          <label className="block text-sm text-[#6B7A62] mb-2">
-            Referral Code <span className="text-[#9AA89A]">(optional)</span>
+          <label className="block text-sm text-[#6B7A8F] mb-2">
+            Referral Code <span className="text-[#9BA8B8]">(optional)</span>
           </label>
           <input
             type="text"
             name="referralCode"
             className="input-light uppercase"
-            placeholder="TSLAXXXXX"
+            placeholder="ROBOXXXXX"
             value={form.referralCode}
             onChange={(e) => update('referralCode', e.target.value.toUpperCase())}
             autoComplete="off"
@@ -149,7 +153,7 @@ function RegisterForm() {
         </div>
 
         {error && (
-          <div className="bg-[#FDF3F3] border border-[#E5B5B5] rounded-2xl px-4 py-3 text-sm text-[#A13A3A]">
+          <div className="bg-[#FFF1F3] border border-[#E11D48]/30 rounded-2xl px-4 py-3 text-sm text-[#E11D48]">
             {error}
           </div>
         )}
@@ -159,9 +163,9 @@ function RegisterForm() {
         </button>
       </form>
 
-      <p className="text-center text-[#6B7A62] mt-6">
+      <p className="text-center text-[#6B7A8F] mt-6">
         Already have an account?{' '}
-        <Link href="/login" className="text-[#7C9070] font-semibold">
+        <Link href="/login" className="text-[#00B8DB] font-semibold">
           Log in
         </Link>
       </p>
@@ -174,7 +178,7 @@ export default function RegisterPage() {
     <Suspense
       fallback={
         <main className="min-h-screen flex items-center justify-center">
-          <div className="text-[#6B7A62]">Loading…</div>
+          <div className="text-[#6B7A8F]">Loading…</div>
         </main>
       }
     >
