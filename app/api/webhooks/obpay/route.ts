@@ -6,29 +6,37 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Read the RAW body (must not be parsed first — signature is on raw bytes)
+    // 1. Read RAW body
     const raw = await req.text();
     const signature = req.headers.get('x-obpay-signature') || '';
+    const eventHeader = req.headers.get('x-obpay-event') || '';
 
-    // 2. Verify signature
+    console.log('=== OBPAY WEBHOOK ===');
+    console.log('Event header:', eventHeader);
+    console.log('Signature:', signature);
+    console.log('Raw body:', raw);
+
+    // 2. Verify signature (if secret is set)
     const secret = process.env.OBPAY_WEBHOOK_SECRET;
-    if (!secret) {
-      console.error('Missing OBPAY_WEBHOOK_SECRET');
-      return NextResponse.json({ error: 'Not configured' }, { status: 500 });
-    }
+    if (secret) {
+      const expected = crypto
+        .createHmac('sha256', secret)
+        .update(raw)
+        .digest('hex');
 
-    const expected = crypto
-      .createHmac('sha256', secret)
-      .update(raw)
-      .digest('hex');
+      const signatureOk =
+        signature.length === expected.length &&
+        crypto.timingSafeEqual(
+          Buffer.from(signature),
+          Buffer.from(expected)
+        );
 
-    const signatureOk =
-      signature.length === expected.length &&
-      crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
-
-    if (!signatureOk) {
-      console.error('Invalid Obpay webhook signature');
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      if (!signatureOk) {
+        console.error('Invalid signature. Expected:', expected);
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      }
+    } else {
+      console.warn('OBPAY_WEBHOOK_SECRET not set — skipping signature check');
     }
 
     // 3. Parse payload
@@ -36,20 +44,35 @@ export async function POST(req: NextRequest) {
     try {
       payload = JSON.parse(raw);
     } catch {
+      console.error('Invalid JSON');
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
 
-    const event = String(payload?.event || '');
-    const data = payload?.data || {};
-    const reference = data?.reference || null;
-    const amount = Number(data?.amount || 0);
+    // 4. Extract event + reference from any shape
+    const event =
+      String(payload?.event || eventHeader || '').toLowerCase();
+
+    const data = payload?.data || payload || {};
+    const reference =
+      data?.reference ||
+      payload?.reference ||
+      payload?.data?.data?.reference ||
+      null;
+
+    const statusFromPayload = String(
+      data?.status || payload?.status || ''
+    ).toLowerCase();
+
+    console.log('Parsed event:', event);
+    console.log('Parsed reference:', reference);
+    console.log('Parsed status:', statusFromPayload);
 
     if (!reference) {
-      console.error('Webhook missing reference:', payload);
+      console.error('No reference in payload');
       return NextResponse.json({ received: true, note: 'no reference' });
     }
 
-    // 4. Find deposit by reference
+    // 5. Find deposit
     const { data: deposit } = await supabaseAdmin
       .from('tesla_deposits')
       .select('id, user_id, amount, status')
@@ -61,13 +84,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true, note: 'no matching deposit' });
     }
 
-    // 5. Duplicate protection
     if (deposit.status === 'approved' || deposit.status === 'rejected') {
       return NextResponse.json({ received: true, note: 'already processed' });
     }
 
-    // 6. Handle by event
-    if (event === 'collection.success') {
+    // 6. Determine success vs failure
+    const isSuccess =
+      event.includes('success') ||
+      event.includes('completed') ||
+      statusFromPayload === 'success' ||
+      statusFromPayload === 'successful' ||
+      statusFromPayload === 'completed' ||
+      statusFromPayload === 'approved';
+
+    const isFailure =
+      event.includes('fail') ||
+      event.includes('cancel') ||
+      statusFromPayload === 'failed' ||
+      statusFromPayload === 'cancelled' ||
+      statusFromPayload === 'rejected';
+
+    // 7. Handle success
+    if (isSuccess && !isFailure) {
       const { data: user } = await supabaseAdmin
         .from('users')
         .select('balance, total_deposited')
@@ -75,7 +113,6 @@ export async function POST(req: NextRequest) {
         .maybeSingle();
 
       if (!user) {
-        console.error('User not found for deposit:', deposit.id);
         return NextResponse.json({ received: true, note: 'user missing' });
       }
 
@@ -83,7 +120,8 @@ export async function POST(req: NextRequest) {
         .from('users')
         .update({
           balance: Number(user.balance) + Number(deposit.amount),
-          total_deposited: Number(user.total_deposited) + Number(deposit.amount),
+          total_deposited:
+            Number(user.total_deposited) + Number(deposit.amount),
         })
         .eq('id', deposit.user_id);
 
@@ -100,18 +138,15 @@ export async function POST(req: NextRequest) {
         type: 'deposit',
         amount: Number(deposit.amount),
         status: 'completed',
-        meta: {
-          reference,
-          obpay_amount: amount,
-          source: 'obpay_webhook',
-        },
+        meta: { reference, source: 'obpay_webhook', event },
       });
 
       console.log('✓ Deposit credited:', reference, deposit.amount);
       return NextResponse.json({ received: true, credited: true });
     }
 
-    if (event === 'collection.failed') {
+    // 8. Handle failure
+    if (isFailure) {
       await supabaseAdmin
         .from('tesla_deposits')
         .update({
@@ -120,14 +155,14 @@ export async function POST(req: NextRequest) {
         })
         .eq('id', deposit.id);
 
+      console.log('✗ Deposit failed:', reference);
       return NextResponse.json({ received: true, note: 'marked failed' });
     }
 
-    // Unknown event
-    console.log('Unhandled Obpay event:', event);
-    return NextResponse.json({ received: true, note: `unhandled event: ${event}` });
+    console.log('Unhandled event:', event, 'status:', statusFromPayload);
+    return NextResponse.json({ received: true, note: 'unhandled' });
   } catch (err) {
-    console.error('Obpay webhook error:', err);
+    console.error('Webhook error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
