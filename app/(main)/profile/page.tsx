@@ -1,5 +1,3 @@
-
-    
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -13,7 +11,7 @@ type Me = {
   balance: number;
 };
 
-type Tab = 'main' | 'giftcard' | 'tasks';
+type Tab = 'main' | 'giftcard';
 
 const MIN_DEPOSIT = 15000;
 const MIN_WITHDRAW = 4000;
@@ -29,9 +27,6 @@ export default function ProfilePage() {
   const [giftCode, setGiftCode] = useState('');
   const [giftMsg, setGiftMsg] = useState('');
   const [giftLoading, setGiftLoading] = useState(false);
-
-  const [taskMsg, setTaskMsg] = useState('');
-  const [taskLoading, setTaskLoading] = useState(false);
 
   async function loadMe() {
     const res = await fetch('/api/me');
@@ -75,30 +70,6 @@ export default function ProfilePage() {
       setGiftMsg('Something went wrong.');
     } finally {
       setGiftLoading(false);
-    }
-  }
-
-  async function checkTasks() {
-    setTaskMsg('');
-    setTaskLoading(true);
-    try {
-      const res = await fetch('/api/tasks/check', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) setTaskMsg(data.error || 'Failed.');
-      else if (data.credited > 0) {
-        setTaskMsg(`🎉 Reward credited: UGX ${data.credited.toLocaleString()}`);
-        await loadMe();
-      } else if (data.alreadyClaimed) {
-        setTaskMsg(
-          `You already claimed UGX ${Number(data.currentReward).toLocaleString()}.`
-        );
-      } else {
-        setTaskMsg(`You have ${data.validCount} valid invites.`);
-      }
-    } catch {
-      setTaskMsg('Something went wrong.');
-    } finally {
-      setTaskLoading(false);
     }
   }
 
@@ -158,7 +129,6 @@ export default function ProfilePage() {
         {([
           { k: 'main', label: 'Telegram' },
           { k: 'giftcard', label: 'Gift Cards' },
-          { k: 'tasks', label: 'Tasks' },
         ] as const).map((t) => (
           <button
             key={t.k}
@@ -173,6 +143,17 @@ export default function ProfilePage() {
             {t.label}
           </button>
         ))}
+        <Link
+          href="/rewards"
+          className="py-2.5 rounded-2xl text-xs font-semibold transition border text-center flex items-center justify-center"
+          style={{
+            background: '#00D9FF',
+            color: '#0A2540',
+            borderColor: '#00D9FF',
+          }}
+        >
+          Rewards 🎁
+        </Link>
       </div>
 
       {tab === 'main' && (
@@ -220,30 +201,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {tab === 'tasks' && (
-        <div className="card p-4 mb-4">
-          <div className="font-semibold text-[#0A2540] mb-1">Task Center</div>
-          <p className="text-xs text-[#6B7A8F] mb-3">
-            Earn rewards when your valid invites hit a tier.
-          </p>
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            <TierBox count={5} amount={5000} />
-            <TierBox count={20} amount={10000} />
-            <TierBox count={50} amount={30000} />
-            <TierBox count={100} amount={50000} />
-            <TierBox count={300} amount={100000} />
-          </div>
-          {taskMsg && (
-            <div className="text-sm text-[#0A2540] bg-[#F5F7FA] rounded-xl px-3 py-2 border border-[#E1E7EF] mb-3">
-              {taskMsg}
-            </div>
-          )}
-          <button onClick={checkTasks} className="btn-primary" disabled={taskLoading}>
-            {taskLoading ? 'Checking…' : 'Check my tasks'}
-          </button>
-        </div>
-      )}
-
       <button
         onClick={logout}
         className="w-full border border-[#E1E7EF] text-[#E11D48] font-semibold py-3 rounded-2xl active:scale-[0.98] transition bg-white"
@@ -272,19 +229,6 @@ export default function ProfilePage() {
         />
       )}
     </main>
-  );
-}
-
-function TierBox({ count, amount }: { count: number; amount: number }) {
-  return (
-    <div className="rounded-xl p-3 text-center bg-[#F5F7FA] border border-[#E1E7EF]">
-      <div className="text-[10px] text-[#6B7A8F] font-semibold">
-        {count} INVITES
-      </div>
-      <div className="text-sm font-bold text-[#00B8DB] mt-1">
-        UGX {amount.toLocaleString()}
-      </div>
-    </div>
   );
 }
 
