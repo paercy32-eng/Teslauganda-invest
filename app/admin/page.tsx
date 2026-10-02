@@ -40,31 +40,29 @@ export default function AdminDashboard() {
   if (loading || !stats) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <div className="text-[#6B7A62]">Loading…</div>
+        <div className="text-[#6B7A8F]">Loading…</div>
       </main>
     );
   }
 
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6 px-2">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-[#1F2A1B] flex items-center justify-center text-white font-bold">
+          <div className="w-9 h-9 rounded-xl bg-[#0A2540] flex items-center justify-center text-[#00D9FF] font-bold">
             A
           </div>
-          <span className="text-xl font-bold text-[#1F2A1B]">Robots Invest Admin</span>
+          <span className="text-xl font-bold text-[#0A2540]">Robots Invest Admin</span>
         </div>
         <button
           onClick={logout}
-          className="text-xs text-[#A13A3A] font-semibold"
+          className="text-xs text-[#E11D48] font-semibold"
         >
           Log out
         </button>
       </div>
 
-      {/* Stats grid */}
-      <h2 className="text-lg font-bold text-[#1F2A1B] mb-3 px-2">Overview</h2>
+      <h2 className="text-lg font-bold text-[#0A2540] mb-3 px-2">Overview</h2>
       <div className="grid grid-cols-2 gap-3 mb-6">
         <StatCard label="Total Users" value={stats.totalUsers.toString()} />
         <StatCard
@@ -86,13 +84,28 @@ export default function AdminDashboard() {
         />
       </div>
 
-      {/* Quick links */}
-      <h2 className="text-lg font-bold text-[#1F2A1B] mb-3 px-2">Manage</h2>
+      <h2 className="text-lg font-bold text-[#0A2540] mb-3 px-2">Manage</h2>
       <div className="space-y-2">
-        <NavCard href="/admin/users" title="Users" subtitle="View, ban, adjust balance, grant/remove Tesla" />
-        <NavCard href="/admin/withdrawals" title="Withdrawals" subtitle="Approve or reject withdrawal requests" />
-        <NavCard href="/admin/giftcards" title="Gift Codes" subtitle="Generate redeemable codes" />
-        <NavCard href="/admin/products" title="Products" subtitle="Manage pricing, images, active status" />
+        <NavCard
+          href="/admin/users"
+          title="Users"
+          subtitle="View, ban, adjust balance, grant/remove robots"
+        />
+        <NavCard
+          href="/admin/withdrawals"
+          title="Withdrawals"
+          subtitle="Approve or reject withdrawal requests"
+        />
+        <NavCard
+          href="/admin/giftcards"
+          title="Gift Codes"
+          subtitle="Generate redeemable codes"
+        />
+        <NavCard
+          href="/admin/products"
+          title="Products"
+          subtitle="Manage pricing, images, active status"
+        />
       </div>
     </main>
   );
@@ -109,12 +122,12 @@ function StatCard({
 }) {
   return (
     <div className="card p-4">
-      <div className="text-[10px] tracking-wider text-[#6B7A62] font-semibold mb-1">
+      <div className="text-[10px] tracking-wider text-[#6B7A8F] font-semibold mb-1">
         {label.toUpperCase()}
       </div>
       <div
         className={`text-base font-bold ${
-          highlight ? 'text-[#A13A3A]' : 'text-[#1F2A1B]'
+          highlight ? 'text-[#E11D48]' : 'text-[#0A2540]'
         }`}
       >
         {value}
@@ -138,10 +151,10 @@ function NavCard({
       className="card p-4 flex items-center justify-between active:scale-[0.99] transition"
     >
       <div>
-        <div className="font-semibold text-[#1F2A1B]">{title}</div>
-        <div className="text-xs text-[#6B7A62] mt-0.5">{subtitle}</div>
+        <div className="font-semibold text-[#0A2540]">{title}</div>
+        <div className="text-xs text-[#6B7A8F] mt-0.5">{subtitle}</div>
       </div>
-      <div className="text-[#6B7A62]">→</div>
+      <div className="text-[#6B7A8F]">→</div>
     </Link>
   );
 }
