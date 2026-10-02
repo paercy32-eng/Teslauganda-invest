@@ -181,4 +181,4 @@ function StatBox({ label, value }: { label: string; value: string }) {
       <div className="text-lg font-bold text-[#7C9070]">{value}</div>
     </div>
   );
-      }
+}
