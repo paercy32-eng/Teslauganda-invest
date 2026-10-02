@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 type Me = {
   id: string;
@@ -140,14 +141,14 @@ export default function ProfilePage() {
 
       {/* Deposit / Withdraw details */}
       <div className="grid grid-cols-2 gap-2 mb-4">
-        <button className="card p-3 text-left">
+        <Link href="/deposits" className="card p-3 text-left block">
           <div className="text-[10px] text-[#6B7A62] mb-1">Deposit details</div>
           <div className="text-xs font-semibold text-[#1F2A1B]">View history →</div>
-        </button>
-        <button className="card p-3 text-left">
+        </Link>
+        <Link href="/withdrawals" className="card p-3 text-left block">
           <div className="text-[10px] text-[#6B7A62] mb-1">Withdraw details</div>
           <div className="text-xs font-semibold text-[#1F2A1B]">View history →</div>
-        </button>
+        </Link>
       </div>
 
       {/* Tabs */}
@@ -633,4 +634,4 @@ function WithdrawModal({
       </div>
     </div>
   );
-            }
+  }
