@@ -41,14 +41,13 @@ export default function AdminProductsPage() {
 
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-4 px-2">
-        <Link href="/admin" className="text-[#6B7A62]">←</Link>
-        <h1 className="text-xl font-bold text-[#1F2A1B]">Products</h1>
+        <Link href="/admin" className="text-[#6B7A8F] text-xl">←</Link>
+        <h1 className="text-xl font-bold text-[#0A2540]">Products</h1>
       </div>
 
       {loading ? (
-        <div className="text-center text-[#6B7A62] py-8">Loading…</div>
+        <div className="text-center text-[#6B7A8F] py-8">Loading…</div>
       ) : (
         <div className="space-y-2">
           {products.map((p) => (
@@ -57,27 +56,27 @@ export default function AdminProductsPage() {
               onClick={() => setEditing(p)}
               className="card p-4 w-full text-left active:scale-[0.99] transition flex gap-3 items-center"
             >
-              <div className="w-14 h-14 rounded-xl bg-[#F7F8F5] border border-[#E3E8DE] flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div className="w-14 h-14 rounded-xl bg-[#F5F7FA] border border-[#E1E7EF] flex items-center justify-center overflow-hidden flex-shrink-0">
                 {p.image_url ? (
                   <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-2xl">🚗</span>
+                  <span className="text-2xl">🤖</span>
                 )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-[#1F2A1B] truncate">{p.name}</span>
+                  <span className="font-semibold text-[#0A2540] truncate">{p.name}</span>
                   {!p.is_active && (
-                    <span className="text-[9px] bg-[#FDF3F3] text-[#A13A3A] font-bold px-2 py-0.5 rounded-full">
+                    <span className="text-[9px] bg-[#FFF1F3] text-[#E11D48] font-bold px-2 py-0.5 rounded-full">
                       INACTIVE
                     </span>
                   )}
                 </div>
-                <div className="text-[10px] text-[#6B7A62] mt-1">
+                <div className="text-[10px] text-[#6B7A8F] mt-1">
                   UGX {Number(p.price).toLocaleString()} · +{Number(p.daily_profit).toLocaleString()}/day · {p.duration_days}d
                 </div>
               </div>
-              <div className="text-[#6B7A62]">→</div>
+              <div className="text-[#6B7A8F]">→</div>
             </button>
           ))}
         </div>
@@ -187,21 +186,20 @@ function EditModal({
       >
         <div className="flex justify-between items-start mb-4">
           <div>
-            <div className="text-lg font-bold text-[#1F2A1B]">{product.name}</div>
-            <div className="text-xs text-[#6B7A62]">Edit product</div>
+            <div className="text-lg font-bold text-[#0A2540]">{product.name}</div>
+            <div className="text-xs text-[#6B7A8F]">Edit product</div>
           </div>
-          <button onClick={onClose} className="text-[#6B7A62] text-xl">×</button>
+          <button onClick={onClose} className="text-[#6B7A8F] text-xl">×</button>
         </div>
 
-        {/* Image */}
         <div className="mb-4">
-          <div className="text-xs font-bold text-[#6B7A62] mb-2">IMAGE</div>
+          <div className="text-xs font-bold text-[#6B7A8F] mb-2">IMAGE</div>
           <div className="flex gap-3 items-center">
-            <div className="w-20 h-20 rounded-xl bg-[#F7F8F5] border border-[#E3E8DE] flex items-center justify-center overflow-hidden">
+            <div className="w-20 h-20 rounded-xl bg-[#F5F7FA] border border-[#E1E7EF] flex items-center justify-center overflow-hidden">
               {imageUrl ? (
                 <img src={imageUrl} alt={product.name} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-3xl">🚗</span>
+                <span className="text-3xl">🤖</span>
               )}
             </div>
             <label className="flex-1">
@@ -212,14 +210,13 @@ function EditModal({
                 className="hidden"
                 disabled={uploading}
               />
-              <div className="bg-[#7C9070] text-white font-semibold py-3 rounded-2xl text-sm text-center active:scale-[0.98] cursor-pointer">
+              <div className="bg-[#0A2540] text-white font-semibold py-3 rounded-2xl text-sm text-center active:scale-[0.98] cursor-pointer">
                 {uploading ? 'Uploading…' : 'Upload image'}
               </div>
             </label>
           </div>
         </div>
 
-        {/* Fields */}
         <div className="space-y-3 mb-4">
           <Field label="NAME" value={name} onChange={setName} />
           <Field label="SUBTITLE" value={subtitle} onChange={setSubtitle} />
@@ -228,13 +225,12 @@ function EditModal({
           <Field label="DURATION (DAYS)" value={durationDays} onChange={setDurationDays} type="number" />
         </div>
 
-        {/* Active toggle */}
         <div className="mb-4 flex items-center justify-between">
-          <span className="text-sm font-semibold text-[#1F2A1B]">Active</span>
+          <span className="text-sm font-semibold text-[#0A2540]">Active</span>
           <button
             onClick={() => setIsActive(!isActive)}
             className="w-12 h-7 rounded-full relative transition"
-            style={{ background: isActive ? '#7C9070' : '#E3E8DE' }}
+            style={{ background: isActive ? '#00D9FF' : '#E1E7EF' }}
           >
             <span
               className="absolute top-1 w-5 h-5 bg-white rounded-full transition-all"
@@ -244,7 +240,7 @@ function EditModal({
         </div>
 
         {msg && (
-          <div className="text-sm text-[#1F2A1B] bg-[#F7F8F5] rounded-xl px-3 py-2 border border-[#E3E8DE] mb-3">
+          <div className="text-sm text-[#0A2540] bg-[#F5F7FA] rounded-xl px-3 py-2 border border-[#E1E7EF] mb-3">
             {msg}
           </div>
         )}
@@ -270,7 +266,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-[10px] text-[#6B7A62] font-bold mb-1">{label}</label>
+      <label className="block text-[10px] text-[#6B7A8F] font-bold mb-1">{label}</label>
       <input
         type={type}
         value={value}
