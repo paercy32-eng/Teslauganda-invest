@@ -51,7 +51,7 @@ export default function TeamPage() {
   if (loading || !data) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <div className="text-[#6B7A62]">Loading…</div>
+        <div className="text-[#6B7A8F]">Loading…</div>
       </main>
     );
   }
@@ -64,8 +64,8 @@ export default function TeamPage() {
     <main className="min-h-screen px-4 py-6 animate-fade-in">
       {/* Header */}
       <div className="px-2 pt-4 pb-6 text-center">
-        <h1 className="text-3xl font-bold text-[#1F2A1B]">Robots Invest Team</h1>
-        <p className="text-[#6B7A62] text-sm mt-1">
+        <h1 className="text-3xl font-bold text-[#0A2540]">Robots Invest Team</h1>
+        <p className="text-[#6B7A8F] text-sm mt-1">
           Invite friends &amp; earn commissions
         </p>
       </div>
@@ -74,18 +74,18 @@ export default function TeamPage() {
         {/* Top summary cards */}
         <div className="grid grid-cols-2 gap-3">
           <div className="card p-4 text-center">
-            <div className="text-[10px] tracking-wider text-[#6B7A62] font-semibold mb-1">
+            <div className="text-[10px] tracking-wider text-[#6B7A8F] font-semibold mb-1">
               TOTAL INCOME
             </div>
-            <div className="text-2xl font-bold text-[#7C9070]">
+            <div className="text-2xl font-bold text-[#00B8DB]">
               UGX {data.totalEarnings.toLocaleString()}
             </div>
           </div>
           <div className="card p-4 text-center">
-            <div className="text-[10px] tracking-wider text-[#6B7A62] font-semibold mb-1">
+            <div className="text-[10px] tracking-wider text-[#6B7A8F] font-semibold mb-1">
               TOTAL INVITATIONS
             </div>
-            <div className="text-2xl font-bold text-[#7C9070]">
+            <div className="text-2xl font-bold text-[#00B8DB]">
               {data.totalInvites}
             </div>
           </div>
@@ -93,36 +93,34 @@ export default function TeamPage() {
 
         {/* Invitation code + link */}
         <div className="card p-5 space-y-4">
-          {/* Code */}
           <div>
-            <div className="text-[11px] tracking-wider text-[#6B7A62] font-semibold mb-2">
+            <div className="text-[11px] tracking-wider text-[#6B7A8F] font-semibold mb-2">
               INVITATION CODE
             </div>
             <div className="flex gap-2">
-              <div className="flex-1 rounded-xl px-4 py-3 font-bold text-[#1F2A1B] bg-[#F7F8F5] border border-[#E3E8DE]">
+              <div className="flex-1 rounded-xl px-4 py-3 font-bold text-[#0A2540] bg-[#F5F7FA] border border-[#E1E7EF]">
                 {data.referralCode}
               </div>
               <button
                 onClick={() => copy(data.referralCode, 'code')}
-                className="px-5 rounded-xl font-bold text-white text-sm bg-[#7C9070] active:scale-[0.97] transition"
+                className="px-5 rounded-xl font-bold text-[#0A2540] text-sm bg-[#00D9FF] active:scale-[0.97] transition"
               >
                 {copied === 'code' ? '✓' : 'COPY'}
               </button>
             </div>
           </div>
 
-          {/* Link */}
           <div>
-            <div className="text-[11px] tracking-wider text-[#6B7A62] font-semibold mb-2">
+            <div className="text-[11px] tracking-wider text-[#6B7A8F] font-semibold mb-2">
               INVITATION LINK
             </div>
             <div className="flex gap-2">
-              <div className="flex-1 rounded-xl px-4 py-3 text-[#6B7A62] text-xs truncate bg-[#F7F8F5] border border-[#E3E8DE]">
+              <div className="flex-1 rounded-xl px-4 py-3 text-[#6B7A8F] text-xs truncate bg-[#F5F7FA] border border-[#E1E7EF]">
                 {referralLink}
               </div>
               <button
                 onClick={() => copy(referralLink, 'link')}
-                className="px-5 rounded-xl font-bold text-white text-sm bg-[#7C9070] active:scale-[0.97] transition"
+                className="px-5 rounded-xl font-bold text-[#0A2540] text-sm bg-[#00D9FF] active:scale-[0.97] transition"
               >
                 {copied === 'link' ? '✓' : 'COPY'}
               </button>
@@ -141,9 +139,9 @@ export default function TeamPage() {
                 onClick={() => setActiveLevel(lvl)}
                 className="rounded-xl py-3 text-sm font-semibold transition border"
                 style={{
-                  background: active ? '#7C9070' : '#FFFFFF',
-                  color: active ? '#FFFFFF' : '#6B7A62',
-                  borderColor: active ? '#7C9070' : '#E3E8DE',
+                  background: active ? '#0A2540' : '#FFFFFF',
+                  color: active ? '#00D9FF' : '#6B7A8F',
+                  borderColor: active ? '#0A2540' : '#E1E7EF',
                 }}
               >
                 Level {lvl} ({pct}%)
@@ -174,11 +172,11 @@ export default function TeamPage() {
 
 function StatBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl p-3 text-center bg-[#F7F8F5] border border-[#E3E8DE]">
-      <div className="text-[9px] tracking-wider text-[#6B7A62] font-semibold mb-1">
+    <div className="rounded-xl p-3 text-center bg-[#F5F7FA] border border-[#E1E7EF]">
+      <div className="text-[9px] tracking-wider text-[#6B7A8F] font-semibold mb-1">
         {label}
       </div>
-      <div className="text-lg font-bold text-[#7C9070]">{value}</div>
+      <div className="text-lg font-bold text-[#00B8DB]">{value}</div>
     </div>
   );
 }
