@@ -1,1 +1,1 @@
-Robots Invest — rent robots, earn daily.
+Robots Invest — rent robots, earn daily
