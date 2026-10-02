@@ -29,7 +29,9 @@ export default function AdminUsersPage() {
 
   async function loadUsers(search = '') {
     setLoading(true);
-    const url = search ? `/api/admin/users?q=${encodeURIComponent(search)}` : '/api/admin/users';
+    const url = search
+      ? `/api/admin/users?q=${encodeURIComponent(search)}`
+      : '/api/admin/users';
     const res = await fetch(url);
     if (res.status === 401) {
       router.replace('/admin/login');
@@ -51,13 +53,11 @@ export default function AdminUsersPage() {
 
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-4 px-2">
-        <Link href="/admin" className="text-[#6B7A62]">←</Link>
-        <h1 className="text-xl font-bold text-[#1F2A1B]">Users</h1>
+        <Link href="/admin" className="text-[#6B7A8F] text-xl">←</Link>
+        <h1 className="text-xl font-bold text-[#0A2540]">Users</h1>
       </div>
 
-      {/* Search */}
       <form onSubmit={onSearch} className="mb-4 px-2">
         <input
           type="text"
@@ -69,9 +69,9 @@ export default function AdminUsersPage() {
       </form>
 
       {loading ? (
-        <div className="text-center text-[#6B7A62] py-8">Loading…</div>
+        <div className="text-center text-[#6B7A8F] py-8">Loading…</div>
       ) : users.length === 0 ? (
-        <div className="text-center text-[#6B7A62] py-8">No users found.</div>
+        <div className="text-center text-[#6B7A8F] py-8">No users found.</div>
       ) : (
         <div className="space-y-2">
           {users.map((u) => (
@@ -83,27 +83,27 @@ export default function AdminUsersPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-[#1F2A1B] truncate">
+                    <span className="font-semibold text-[#0A2540] truncate">
                       {u.name}
                     </span>
                     {u.is_banned && (
-                      <span className="text-[9px] bg-[#FDF3F3] text-[#A13A3A] font-bold px-2 py-0.5 rounded-full">
+                      <span className="text-[9px] bg-[#FFF1F3] text-[#E11D48] font-bold px-2 py-0.5 rounded-full">
                         BANNED
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-[#6B7A62] mt-0.5">{u.phone}</div>
-                  <div className="text-[10px] text-[#6B7A62] mt-2">
+                  <div className="text-xs text-[#6B7A8F] mt-0.5">{u.phone}</div>
+                  <div className="text-[10px] text-[#6B7A8F] mt-2">
                     Balance:{' '}
-                    <span className="text-[#1F2A1B] font-semibold">
+                    <span className="text-[#0A2540] font-semibold">
                       UGX {Number(u.balance).toLocaleString()}
                     </span>
                   </div>
-                  <div className="text-[10px] text-[#6B7A62] mt-1">
+                  <div className="text-[10px] text-[#6B7A8F] mt-1">
                     Valid invites: {u.valid_invites} · Active rentals: {u.active_rentals}
                   </div>
                 </div>
-                <div className="text-[#6B7A62]">→</div>
+                <div className="text-[#6B7A8F]">→</div>
               </div>
             </button>
           ))}
@@ -172,13 +172,12 @@ function UserDetailModal({
       >
         <div className="flex justify-between items-start mb-4">
           <div>
-            <div className="text-lg font-bold text-[#1F2A1B]">{user.name}</div>
-            <div className="text-xs text-[#6B7A62]">{user.phone}</div>
+            <div className="text-lg font-bold text-[#0A2540]">{user.name}</div>
+            <div className="text-xs text-[#6B7A8F]">{user.phone}</div>
           </div>
-          <button onClick={onClose} className="text-[#6B7A62] text-xl">×</button>
+          <button onClick={onClose} className="text-[#6B7A8F] text-xl">×</button>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 gap-2 mb-4">
           <SmallStat label="Balance" value={`UGX ${Number(user.balance).toLocaleString()}`} />
           <SmallStat label="Deposited" value={`UGX ${Number(user.total_deposited).toLocaleString()}`} />
@@ -188,9 +187,8 @@ function UserDetailModal({
           <SmallStat label="Active Rentals" value={user.active_rentals.toString()} />
         </div>
 
-        {/* Adjust balance */}
         <div className="mb-4">
-          <div className="text-xs font-bold text-[#6B7A62] mb-2">ADJUST BALANCE</div>
+          <div className="text-xs font-bold text-[#6B7A8F] mb-2">ADJUST BALANCE</div>
           <input
             type="number"
             className="input-light mb-2"
@@ -220,34 +218,32 @@ function UserDetailModal({
           </button>
         </div>
 
-        {/* Grant / Remove Tesla */}
         <div className="mb-4">
-          <div className="text-xs font-bold text-[#6B7A62] mb-2">TESLA ACCESS</div>
+          <div className="text-xs font-bold text-[#6B7A8F] mb-2">ROBOT ACCESS</div>
           <div className="grid grid-cols-2 gap-2">
             <button
               disabled={busy}
               onClick={() =>
                 call('/api/admin/users/grant-tesla', { userId: user.id })
               }
-              className="bg-[#7C9070] text-white font-semibold py-3 rounded-2xl text-sm"
+              className="bg-[#0A2540] text-white font-semibold py-3 rounded-2xl text-sm"
             >
-              Grant Tesla
+              Grant Robot
             </button>
             <button
               disabled={busy}
               onClick={() =>
                 call('/api/admin/users/remove-tesla', { userId: user.id })
               }
-              className="bg-white border border-[#E3E8DE] text-[#A13A3A] font-semibold py-3 rounded-2xl text-sm"
+              className="bg-white border border-[#E1E7EF] text-[#E11D48] font-semibold py-3 rounded-2xl text-sm"
             >
-              Remove Tesla
+              Remove Robot
             </button>
           </div>
         </div>
 
-        {/* Ban / Unban */}
         <div className="mb-4">
-          <div className="text-xs font-bold text-[#6B7A62] mb-2">ACCOUNT STATUS</div>
+          <div className="text-xs font-bold text-[#6B7A8F] mb-2">ACCOUNT STATUS</div>
           <button
             disabled={busy}
             onClick={() =>
@@ -259,8 +255,8 @@ function UserDetailModal({
             }
             className={`w-full font-semibold py-3 rounded-2xl text-sm ${
               user.is_banned
-                ? 'bg-[#7C9070] text-white'
-                : 'bg-[#A13A3A] text-white'
+                ? 'bg-[#00A86B] text-white'
+                : 'bg-[#E11D48] text-white'
             }`}
           >
             {user.is_banned ? 'Unban account' : 'Ban account'}
@@ -268,7 +264,7 @@ function UserDetailModal({
         </div>
 
         {msg && (
-          <div className="text-sm text-center text-[#1F2A1B] bg-[#F7F8F5] rounded-xl px-3 py-2 border border-[#E3E8DE]">
+          <div className="text-sm text-center text-[#0A2540] bg-[#F5F7FA] rounded-xl px-3 py-2 border border-[#E1E7EF]">
             {msg}
           </div>
         )}
@@ -279,11 +275,11 @@ function UserDetailModal({
 
 function SmallStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl p-3 bg-[#F7F8F5] border border-[#E3E8DE]">
-      <div className="text-[9px] text-[#6B7A62] font-semibold mb-1">
+    <div className="rounded-xl p-3 bg-[#F5F7FA] border border-[#E1E7EF]">
+      <div className="text-[9px] text-[#6B7A8F] font-semibold mb-1">
         {label.toUpperCase()}
       </div>
-      <div className="text-xs font-bold text-[#1F2A1B]">{value}</div>
+      <div className="text-xs font-bold text-[#0A2540]">{value}</div>
     </div>
   );
-          }
+}
