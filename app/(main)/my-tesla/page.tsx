@@ -77,8 +77,8 @@ export default function MyRobotPage() {
                       {r.product_name}
                     </div>
                     <div className="text-[10px] text-[#6B7A8F] mt-0.5">
-                      Started {new Date(r.start_at).toLocaleDateString()}
-                    </div>
+  Started {new Date(r.start_at).toLocaleString()}
+</div>
                   </div>
                   <div
                     className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full ${
