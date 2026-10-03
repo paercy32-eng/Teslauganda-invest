@@ -102,7 +102,6 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Bump total_withdrawn tracker
       const { data: user } = await supabaseAdmin
         .from('users')
         .select('total_withdrawn')
@@ -140,7 +139,7 @@ export async function POST(req: NextRequest) {
         meta: { withdrawal_id: withdrawalId },
       });
 
-      // Obpay payout — only if net meets their 10,000 minimum
+      // Obpay payout
       try {
         const { data: payer } = await supabaseAdmin
           .from('users')
@@ -151,10 +150,10 @@ export async function POST(req: NextRequest) {
         const payoutPhone = wd.phone || payer?.phone;
         const payoutName = wd.full_name || payer?.name || 'User';
 
-        // User's intended net (85% of request)
-const userNet = Math.round(Number(wd.amount) * 0.85);
-// Add flat Obpay fee (1,000 UGX) so user gets their full net
-const payoutAmount = userNet + 1000;
+        // User's intended net (85%)
+        const userNet = Math.round(Number(wd.amount) * 0.85);
+        // Add flat Obpay fee (1,000 UGX)
+        const payoutAmount = userNet + 1000;
 
         if (!payoutPhone) {
           await supabaseAdmin
@@ -163,11 +162,11 @@ const payoutAmount = userNet + 1000;
               meta: {
                 manual_payout_required: true,
                 reason: 'No phone',
+                user_net: userNet,
               },
             })
             .eq('id', withdrawalId);
         } else if (userNet < 10000) {
-          // Below Obpay's minimum → admin sends manually
           await supabaseAdmin
             .from('tesla_withdrawals')
             .update({
@@ -181,7 +180,6 @@ const payoutAmount = userNet + 1000;
             })
             .eq('id', withdrawalId);
         } else {
-          // Meets minimum → auto-send
           const obpayRes = await fetch('https://obpay.online/api/public/v1/payouts', {
             method: 'POST',
             headers: {
@@ -271,4 +269,46 @@ const payoutAmount = userNet + 1000;
     console.error('Admin withdrawals action error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
-      }
+}
+
+// PATCH — mark as completed or failed manually
+export async function PATCH(req: NextRequest) {
+  try {
+    const token = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const session = await verifyAdminSession(token);
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { withdrawalId, action } = await req.json();
+
+    if (!withdrawalId || !['mark_completed', 'mark_failed'].includes(action)) {
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    }
+
+    const { data: wd } = await supabaseAdmin
+      .from('tesla_withdrawals')
+      .select('id, user_id, amount, status, meta')
+      .eq('id', withdrawalId)
+      .maybeSingle();
+
+    if (!wd) return NextResponse.json({ error: 'Withdrawal not found' }, { status: 404 });
+
+    const existingMeta = (wd.meta && typeof wd.meta === 'object') ? wd.meta : {};
+    const newMeta = {
+      ...(existingMeta as any),
+      manual_status: action === 'mark_completed' ? 'completed' : 'failed',
+      manual_marked_at: new Date().toISOString(),
+      manual_marked_by: session.username,
+    };
+
+    await supabaseAdmin
+      .from('tesla_withdrawals')
+      .update({ meta: newMeta })
+      .eq('id', withdrawalId);
+
+    return NextResponse.json({ success: true, manual_status: newMeta.manual_status });
+  } catch (err) {
+    console.error('Mark withdrawal error:', err);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
+}
