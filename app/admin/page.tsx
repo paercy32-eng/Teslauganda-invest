@@ -28,7 +28,10 @@ export default function AdminDashboard() {
       setStats(data);
       setLoading(false);
     }
+
     load();
+    const interval = setInterval(load, 30000);
+    return () => clearInterval(interval);
   }, [router]);
 
   async function logout() {
