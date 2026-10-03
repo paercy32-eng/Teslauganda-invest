@@ -5,6 +5,8 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import { verifySession, SESSION_COOKIE } from '@/lib/auth';
 
 const MIN_WITHDRAW = 4000;
+const WITHDRAW_OPEN_HOUR = 9;  // 9 AM EAT
+const WITHDRAW_CLOSE_HOUR = 19; // 7 PM EAT
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,6 +14,18 @@ export async function POST(req: NextRequest) {
     if (!token) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     const session = await verifySession(token);
     if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+// Check withdrawal time window (EAT = UTC+3)
+const nowUTC = new Date();
+const eatHour = (nowUTC.getUTCHours() + 3) % 24;
+
+if (eatHour < WITHDRAW_OPEN_HOUR || eatHour >= WITHDRAW_CLOSE_HOUR) {
+  return NextResponse.json(
+    {
+      error: `Withdrawals are only available between 9:00 AM and 7:00 PM EAT. Try again during these hours.`,
+    },
+    { status: 400 }
+  );
+}
 
     const { amount, phone, fullName } = await req.json();
     const numAmount = Number(amount);
