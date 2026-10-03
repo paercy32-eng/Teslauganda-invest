@@ -14,12 +14,10 @@ export async function GET(req: NextRequest) {
     const { data: withdrawals, error } = await supabaseAdmin
       .from('tesla_withdrawals')
       .select('id, amount, status, phone, full_name, created_at, reviewed_at')
-      .eq('user_id', session.userId)
-      
+      .eq('user_id', session.userId);
 
     if (error) {
-      console.error('return NextResponse.json(
-  { withdrawals: formatted, version: 'v4', sessionUserId: session.userId },Withdrawals history error:', error);
+      console.error('Withdrawals history error:', error);
       return NextResponse.json({ error: 'Failed to load' }, { status: 500 });
     }
 
@@ -36,7 +34,7 @@ export async function GET(req: NextRequest) {
     }));
 
     return NextResponse.json(
-  { withdrawals: formatted, version: 'v3', sessionUserId: session.userId },
+      { withdrawals: formatted, version: 'v5' },
       {
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
