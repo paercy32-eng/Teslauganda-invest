@@ -15,38 +15,23 @@ export async function GET(req: NextRequest) {
       .from('users')
       .select('id', { count: 'exact', head: true });
 
-    const { data: depRows } = await supabaseAdmin
-      .from('tesla_deposits')
-      .select('amount')
-      .eq('status', 'approved');
-    const totalDeposited =
-      depRows?.reduce((sum, r) => sum + Number(r.amount), 0) ?? 0;
+    // Use SQL aggregates via RPC to avoid row-count issues
+    const { data: agg, error: aggErr } = await supabaseAdmin.rpc('admin_stats');
 
-    const { data: rentalRows } = await supabaseAdmin
-      .from('tesla_rentals')
-      .select('price_paid');
-    const totalInvested =
-      rentalRows?.reduce((sum, r) => sum + Number(r.price_paid), 0) ?? 0;
+    if (aggErr) {
+      console.error('admin_stats RPC error:', aggErr);
+      return NextResponse.json({ error: 'Failed to load stats' }, { status: 500 });
+    }
 
-    const { data: wdRows } = await supabaseAdmin
-      .from('tesla_withdrawals')
-      .select('amount')
-      .eq('status', 'approved');
-    const totalWithdrawn =
-      wdRows?.reduce((sum, r) => sum + Number(r.amount), 0) ?? 0;
-
-    const { count: pendingWithdrawals } = await supabaseAdmin
-      .from('tesla_withdrawals')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'pending');
+    const row = Array.isArray(agg) ? agg[0] : agg;
 
     return NextResponse.json(
       {
         totalUsers: totalUsers ?? 0,
-        totalDeposited,
-        totalInvested,
-        totalWithdrawn,
-        pendingWithdrawals: pendingWithdrawals ?? 0,
+        totalDeposited: Number(row?.total_deposited ?? 0),
+        totalInvested: Number(row?.total_invested ?? 0),
+        totalWithdrawn: Number(row?.total_withdrawn ?? 0),
+        pendingWithdrawals: Number(row?.pending_withdrawals ?? 0),
       },
       {
         headers: {
