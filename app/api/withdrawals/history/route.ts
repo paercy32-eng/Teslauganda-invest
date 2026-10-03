@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     }));
 
     return NextResponse.json(
-      { withdrawals: formatted },
+  { withdrawals: formatted, version: 'v2-no-cache' },
       {
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
