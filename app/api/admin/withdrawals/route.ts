@@ -167,8 +167,8 @@ export async function POST(req: NextRequest) {
             .update({ meta: { obpay_payout: obpayData?.data ?? obpayData } })
             .eq('id', withdrawalId);
         }
-      } catch (obpayErr) {
-        console.error('Obpay payout error:', obpayErr);
+      } catch (obpayErr: any) {
+  console.error('Obpay error:', obpayErr?.message || String(obpayErr));
       }
 
       return NextResponse.json({ success: true, status: 'approved' });
