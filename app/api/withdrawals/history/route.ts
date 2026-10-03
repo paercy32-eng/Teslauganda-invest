@@ -12,9 +12,10 @@ export async function GET(req: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
 
     const { data: withdrawals, error } = await supabaseAdmin
-      .from('tesla_withdrawals')
-      .select('id, amount, status, phone, full_name, created_at, reviewed_at')
-      .eq('user_id', session.userId);
+  .from('tesla_withdrawals')
+  .select('id, amount, status, phone, full_name, created_at, reviewed_at')
+  .eq('user_id', session.userId)
+  .order('created_at', { ascending: false, nullsFirst: false });
 
     if (error) {
       console.error('Withdrawals history error:', error);
