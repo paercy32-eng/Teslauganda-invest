@@ -15,7 +15,6 @@ export async function GET(req: NextRequest) {
       .from('users')
       .select('id', { count: 'exact', head: true });
 
-    // Use SQL aggregates via RPC to avoid row-count issues
     const { data: agg, error: aggErr } = await supabaseAdmin.rpc('admin_stats');
 
     if (aggErr) {
