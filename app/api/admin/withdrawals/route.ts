@@ -30,7 +30,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to load' }, { status: 500 });
     }
 
-    // Get user names for each withdrawal
     const userIds = Array.from(new Set((data ?? []).map((w) => w.user_id)));
     let userMap: Record<string, { name: string; phone: string }> = {};
     if (userIds.length > 0) {
@@ -89,7 +88,6 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'approve') {
-      // Bump total_withdrawn tracker
       const { data: user } = await supabaseAdmin
         .from('users')
         .select('total_withdrawn')
@@ -142,7 +140,13 @@ export async function POST(req: NextRequest) {
         if (!payoutPhone) {
           console.error('No phone for payout', withdrawalId);
         } else {
-          const obpayRes = await fetch('https://obpay.online/api/public/v1/payout', {
+          console.log('Calling Obpay payout:', {
+            amount: payoutAmount,
+            phone: payoutPhone,
+            name: payoutName,
+          });
+
+          const obpayRes = await fetch('https://obpay.online/api/public/v1/payouts', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${process.env.OBPAY_SECRET_KEY}`,
@@ -152,7 +156,6 @@ export async function POST(req: NextRequest) {
               amount: payoutAmount,
               phone_number: payoutPhone,
               customer_name: payoutName,
-              customer_email: `payout-${String(payoutPhone).replace(/\D/g, '')}@robots-invest.app`,
               reference: `WD-${withdrawalId.slice(0, 8)}-${Date.now()}`,
               callback_url: 'https://robots-invest.vercel.app/api/webhooks/obpay',
               description: 'Robot withdrawal payout',
@@ -168,13 +171,13 @@ export async function POST(req: NextRequest) {
             .eq('id', withdrawalId);
         }
       } catch (obpayErr: any) {
-  console.error('Obpay error:', obpayErr?.message || String(obpayErr));
+        console.error('Obpay error:', obpayErr?.message || String(obpayErr));
       }
 
       return NextResponse.json({ success: true, status: 'approved' });
     }
 
-    // reject — refund balance
+    // reject — refund
     const { data: user } = await supabaseAdmin
       .from('users')
       .select('balance')
@@ -215,4 +218,4 @@ export async function POST(req: NextRequest) {
     console.error('Admin withdrawals action error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
-        }
+    }
