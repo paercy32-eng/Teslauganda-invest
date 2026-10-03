@@ -13,6 +13,7 @@ type Withdrawal = {
   full_name: string | null;
   created_at: string;
   reviewed_at: string | null;
+  meta: any;
   users: { name: string; phone: string; balance: number } | null;
 };
 
@@ -27,7 +28,7 @@ export default function AdminWithdrawalsPage() {
 
   async function load(f: Filter) {
     setLoading(true);
-    const res = await fetch(`/api/admin/withdrawals?status=${f}`);
+    const res = await fetch(`/api/admin/withdrawals?status=${f}&t=${Date.now()}`);
     if (res.status === 401) {
       router.replace('/admin/login');
       return;
@@ -50,6 +51,30 @@ export default function AdminWithdrawalsPage() {
     });
     setBusyId(null);
     load(filter);
+  }
+
+  function statusBadge(w: Withdrawal) {
+    if (w.status === 'pending') {
+      return { label: 'PENDING', color: 'text-[#B8860B] bg-[#FFF8E5]' };
+    }
+    if (w.status === 'rejected') {
+      return { label: 'REJECTED', color: 'text-[#E11D48] bg-[#FFF1F3]' };
+    }
+    // approved
+    const meta = w.meta || {};
+    if (meta.manual_payout_required) {
+      return { label: 'MANUAL SEND', color: 'text-[#E11D48] bg-[#FFF1F3]' };
+    }
+    if (meta.obpay_status === 'success') {
+      return { label: 'SENT VIA OBPAY', color: 'text-[#00A86B] bg-[#E6F7F0]' };
+    }
+    if (meta.obpay_status === 'failed') {
+      return { label: 'OBPAY FAILED', color: 'text-[#E11D48] bg-[#FFF1F3]' };
+    }
+    if (meta.obpay_payout) {
+      return { label: 'AWAITING OBPAY', color: 'text-[#B8860B] bg-[#FFF8E5]' };
+    }
+    return { label: 'APPROVED', color: 'text-[#00A86B] bg-[#E6F7F0]' };
   }
 
   return (
@@ -82,63 +107,64 @@ export default function AdminWithdrawalsPage() {
         <div className="text-center text-[#6B7A8F] py-8">No {filter} withdrawals.</div>
       ) : (
         <div className="space-y-2">
-          {withdrawals.map((w) => (
-            <div key={w.id} className="card p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-[#0A2540]">
-                    {w.users?.name ?? 'Unknown'}
+          {withdrawals.map((w) => {
+            const badge = statusBadge(w);
+            const net = Math.round(Number(w.amount) * 0.85);
+            return (
+              <div key={w.id} className="card p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-[#0A2540]">
+                      {w.users?.name ?? 'Unknown'}
+                    </div>
+                    <div className="text-xs text-[#6B7A8F] mt-0.5">
+                      {w.phone ?? w.users?.phone}
+                    </div>
+                    <div className="text-[10px] text-[#6B7A8F] mt-1">
+                      Bound name: {w.full_name ?? '—'}
+                    </div>
+                    <div className="text-[10px] text-[#6B7A8F] mt-1">
+                      Requested: {new Date(w.created_at).toLocaleString()}
+                    </div>
+                    <div className="text-[10px] text-[#6B7A8F] mt-0.5">
+                      Net to user: UGX {net.toLocaleString()}
+                    </div>
                   </div>
-                  <div className="text-xs text-[#6B7A8F] mt-0.5">
-                    {w.phone ?? w.users?.phone}
-                  </div>
-                  <div className="text-[10px] text-[#6B7A8F] mt-1">
-                    Bound name: {w.full_name ?? '—'}
-                  </div>
-                  <div className="text-[10px] text-[#6B7A8F] mt-1">
-                    Requested: {new Date(w.created_at).toLocaleString()}
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-[#0A2540]">
+                      UGX {Number(w.amount).toLocaleString()}
+                    </div>
+                    <div
+                      className={`text-[10px] font-bold mt-1 uppercase px-2 py-0.5 rounded-full inline-block ${badge.color}`}
+                    >
+                      {badge.label}
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-lg font-bold text-[#0A2540]">
-                    UGX {Number(w.amount).toLocaleString()}
-                  </div>
-                  <div
-                    className={`text-[10px] font-bold mt-1 uppercase ${
-                      w.status === 'approved'
-                        ? 'text-[#00A86B]'
-                        : w.status === 'rejected'
-                        ? 'text-[#E11D48]'
-                        : 'text-[#B8860B]'
-                    }`}
-                  >
-                    {w.status}
-                  </div>
-                </div>
-              </div>
 
-              {w.status === 'pending' && (
-                <div className="grid grid-cols-2 gap-2 mt-3">
-                  <button
-                    disabled={busyId === w.id}
-                    onClick={() => act(w.id, 'approve')}
-                    className="bg-[#0A2540] text-white font-semibold py-2.5 rounded-xl text-sm disabled:opacity-50"
-                  >
-                    {busyId === w.id ? '...' : 'Approve'}
-                  </button>
-                  <button
-                    disabled={busyId === w.id}
-                    onClick={() => act(w.id, 'reject')}
-                    className="bg-white border border-[#E1E7EF] text-[#E11D48] font-semibold py-2.5 rounded-xl text-sm disabled:opacity-50"
-                  >
-                    Reject
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
+                {w.status === 'pending' && (
+                  <div className="grid grid-cols-2 gap-2 mt-3">
+                    <button
+                      disabled={busyId === w.id}
+                      onClick={() => act(w.id, 'approve')}
+                      className="bg-[#0A2540] text-white font-semibold py-2.5 rounded-xl text-sm disabled:opacity-50"
+                    >
+                      {busyId === w.id ? '...' : 'Approve'}
+                    </button>
+                    <button
+                      disabled={busyId === w.id}
+                      onClick={() => act(w.id, 'reject')}
+                      className="bg-white border border-[#E1E7EF] text-[#E11D48] font-semibold py-2.5 rounded-xl text-sm disabled:opacity-50"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </main>
   );
-}
+        }
