@@ -14,17 +14,15 @@ export async function GET(req: NextRequest) {
     const { data: rentals, error } = await supabaseAdmin
       .from('tesla_rentals')
       .select(
-        'id, product_id, price_paid, daily_profit, duration_days, days_remaining, total_earned, start_at, status'
+        'id, product_id, price_paid, daily_profit, duration_days, days_remaining, total_earned, start_at, last_credit_at, status'
       )
-      .eq('user_id', session.userId)
-      .order('start_at', { ascending: false });
+      .eq('user_id', session.userId);
 
     if (error) {
       console.error('Rentals fetch error:', error);
       return NextResponse.json({ error: 'Failed to load rentals' }, { status: 500 });
     }
 
-    // Get product names in one query
     const productIds = Array.from(
       new Set((rentals ?? []).map((r) => r.product_id))
     );
@@ -51,6 +49,7 @@ export async function GET(req: NextRequest) {
       days_remaining: r.days_remaining,
       total_earned: Number(r.total_earned),
       start_at: r.start_at,
+      last_credit_at: r.last_credit_at,
       status: r.status,
     }));
 
@@ -66,4 +65,4 @@ export async function GET(req: NextRequest) {
     console.error('Rentals mine error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
-        }
+}
