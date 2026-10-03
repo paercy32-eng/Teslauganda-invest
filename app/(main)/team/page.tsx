@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 type LevelStats = {
@@ -25,22 +25,35 @@ export default function TeamPage() {
   const router = useRouter();
   const [data, setData] = useState<TeamData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [activeLevel, setActiveLevel] = useState<1 | 2 | 3>(1);
   const [copied, setCopied] = useState<'code' | 'link' | null>(null);
 
-  useEffect(() => {
-    async function load() {
-      const res = await fetch('/api/team');
+  const load = useCallback(async (showRefresh = false) => {
+    if (showRefresh) setRefreshing(true);
+    else setLoading(true);
+
+    try {
+      const res = await fetch('/api/team?t=' + Date.now(), {
+        cache: 'no-store',
+      });
       if (res.status === 401) {
         router.replace('/login');
         return;
       }
       const json = await res.json();
       setData(json);
+    } catch (err) {
+      console.error(err);
+    } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-    load();
   }, [router]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   function copy(text: string, kind: 'code' | 'link') {
     navigator.clipboard.writeText(text);
@@ -63,11 +76,18 @@ export default function TeamPage() {
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in">
       {/* Header */}
-      <div className="px-2 pt-4 pb-6 text-center">
+      <div className="px-2 pt-4 pb-6 text-center relative">
         <h1 className="text-3xl font-bold text-[#0A2540]">Robots Invest Team</h1>
         <p className="text-[#6B7A8F] text-sm mt-1">
           Invite friends &amp; earn commissions
         </p>
+        <button
+          onClick={() => load(true)}
+          disabled={refreshing}
+          className="absolute right-2 top-4 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#0A2540] text-[#00D9FF] disabled:opacity-50"
+        >
+          {refreshing ? '…' : '↻ Refresh'}
+        </button>
       </div>
 
       <div className="space-y-4">
