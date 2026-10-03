@@ -88,9 +88,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'approve') {
-      // ============================================================
-      // GUARD: Prevent double payout if one was already sent
-      // ============================================================
+      // Prevent double payout
       const existingMeta = (wd.meta && typeof wd.meta === 'object') ? wd.meta : {};
       const alreadyPaid =
         (existingMeta as any)?.obpay_payout?.provider_reference ||
@@ -142,9 +140,7 @@ export async function POST(req: NextRequest) {
         meta: { withdrawal_id: withdrawalId },
       });
 
-      // ============================================================
       // Obpay payout — only if net meets their 10,000 minimum
-      // ============================================================
       try {
         const { data: payer } = await supabaseAdmin
           .from('users')
@@ -154,7 +150,11 @@ export async function POST(req: NextRequest) {
 
         const payoutPhone = wd.phone || payer?.phone;
         const payoutName = wd.full_name || payer?.name || 'User';
-        const payoutAmount = Math.round(Number(wd.amount) * 0.85);
+
+        // User's intended net (85% of request)
+        const userNet = Math.round(Number(wd.amount) * 0.85);
+        // Gross up so Obpay's 4.5% fee comes out of the send amount
+        const payoutAmount = Math.round(userNet / (1 - 0.045));
 
         if (!payoutPhone) {
           await supabaseAdmin
@@ -166,7 +166,7 @@ export async function POST(req: NextRequest) {
               },
             })
             .eq('id', withdrawalId);
-        } else if (payoutAmount < 10000) {
+        } else if (userNet < 10000) {
           // Below Obpay's minimum → admin sends manually
           await supabaseAdmin
             .from('tesla_withdrawals')
@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
               meta: {
                 manual_payout_required: true,
                 reason: 'Below Obpay minimum (UGX 10,000)',
-                net_amount: payoutAmount,
+                user_net: userNet,
                 phone: payoutPhone,
                 name: payoutName,
               },
@@ -207,6 +207,8 @@ export async function POST(req: NextRequest) {
               meta: {
                 obpay_payout: obpayData?.data ?? obpayData,
                 auto_sent: obpayData?.success === true,
+                user_net: userNet,
+                obpay_gross: payoutAmount,
               },
             })
             .eq('id', withdrawalId);
@@ -228,7 +230,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, status: 'approved' });
     }
 
-    // reject — refund balance
+    // reject — refund
     const { data: user } = await supabaseAdmin
       .from('users')
       .select('balance')
@@ -269,4 +271,4 @@ export async function POST(req: NextRequest) {
     console.error('Admin withdrawals action error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
-}
+      }
