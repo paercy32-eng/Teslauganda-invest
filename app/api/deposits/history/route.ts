@@ -14,9 +14,7 @@ export async function GET(req: NextRequest) {
     const { data: deposits, error } = await supabaseAdmin
       .from('tesla_deposits')
       .select('id, amount, status, reference, created_at, reviewed_at')
-      .eq('user_id', session.userId)
-      .order('created_at', { ascending: false })
-      .limit(100);
+      .eq('user_id', session.userId);
 
     if (error) {
       console.error('Deposits history error:', error);
