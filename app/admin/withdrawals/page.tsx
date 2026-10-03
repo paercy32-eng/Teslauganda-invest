@@ -53,7 +53,20 @@ export default function AdminWithdrawalsPage() {
     load(filter);
   }
 
+  async function mark(id: string, action: 'mark_completed' | 'mark_failed') {
+    setBusyId(id);
+    await fetch('/api/admin/withdrawals', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ withdrawalId: id, action }),
+    });
+    setBusyId(null);
+    load(filter);
+  }
+
   function statusBadge(w: Withdrawal) {
+    const meta = w.meta || {};
+
     if (w.status === 'pending') {
       return { label: 'PENDING', color: 'text-[#B8860B] bg-[#FFF8E5]' };
     }
@@ -61,15 +74,17 @@ export default function AdminWithdrawalsPage() {
       return { label: 'REJECTED', color: 'text-[#E11D48] bg-[#FFF1F3]' };
     }
     // approved
-    const meta = w.meta || {};
+    if (meta.manual_status === 'completed') {
+      return { label: 'COMPLETED', color: 'text-[#00A86B] bg-[#E6F7F0]' };
+    }
+    if (meta.manual_status === 'failed') {
+      return { label: 'MARKED FAILED', color: 'text-[#E11D48] bg-[#FFF1F3]' };
+    }
     if (meta.manual_payout_required) {
       return { label: 'MANUAL SEND', color: 'text-[#E11D48] bg-[#FFF1F3]' };
     }
     if (meta.obpay_status === 'success') {
       return { label: 'SENT VIA OBPAY', color: 'text-[#00A86B] bg-[#E6F7F0]' };
-    }
-    if (meta.obpay_status === 'failed') {
-      return { label: 'OBPAY FAILED', color: 'text-[#E11D48] bg-[#FFF1F3]' };
     }
     if (meta.obpay_payout) {
       return { label: 'AWAITING OBPAY', color: 'text-[#B8860B] bg-[#FFF8E5]' };
@@ -160,6 +175,25 @@ export default function AdminWithdrawalsPage() {
                     </button>
                   </div>
                 )}
+
+                {w.status === 'approved' && !w.meta?.manual_status && (
+                  <div className="grid grid-cols-2 gap-2 mt-3">
+                    <button
+                      disabled={busyId === w.id}
+                      onClick={() => mark(w.id, 'mark_completed')}
+                      className="bg-[#00A86B] text-white font-semibold py-2.5 rounded-xl text-sm disabled:opacity-50"
+                    >
+                      {busyId === w.id ? '...' : '✓ Mark Completed'}
+                    </button>
+                    <button
+                      disabled={busyId === w.id}
+                      onClick={() => mark(w.id, 'mark_failed')}
+                      className="bg-white border border-[#E11D48] text-[#E11D48] font-semibold py-2.5 rounded-xl text-sm disabled:opacity-50"
+                    >
+                      Mark Failed
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -167,4 +201,4 @@ export default function AdminWithdrawalsPage() {
       )}
     </main>
   );
-        }
+}
