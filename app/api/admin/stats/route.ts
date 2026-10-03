@@ -40,15 +40,22 @@ export async function GET(req: NextRequest) {
       .select('id', { count: 'exact', head: true })
       .eq('status', 'pending');
 
-    return NextResponse.json({
-      totalUsers: totalUsers ?? 0,
-      totalDeposited,
-      totalInvested,
-      totalWithdrawn,
-      pendingWithdrawals: pendingWithdrawals ?? 0,
-    });
+    
   } catch (err) {
     console.error('Admin stats error:', err);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return NextResponse.json({ erreturn NextResponse.json(
+  {
+    totalUsers: totalUsers ?? 0,
+    totalDeposited,
+    totalInvested,
+    totalWithdrawn,
+    pendingWithdrawals: pendingWithdrawals ?? 0,
+  },
+  {
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+    },
+  }
+);ror: 'Server error' }, { status: 500 });
   }
 }
