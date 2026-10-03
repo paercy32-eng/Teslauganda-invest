@@ -23,7 +23,7 @@ export default function WithdrawalsPage() {
 
   useEffect(() => {
     async function load() {
-      const res = await fetch('/api/withdrawals/history');
+      const res = await fetch('/api/withdrawals/history?t=' + Date.now());
       if (res.status === 401) {
         router.replace('/login');
         return;
