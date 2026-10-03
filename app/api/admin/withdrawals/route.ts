@@ -152,9 +152,9 @@ export async function POST(req: NextRequest) {
         const payoutName = wd.full_name || payer?.name || 'User';
 
         // User's intended net (85% of request)
-        const userNet = Math.round(Number(wd.amount) * 0.85);
-        // Gross up so Obpay's 4.5% fee comes out of the send amount
-        const payoutAmount = Math.round(userNet / (1 - 0.045));
+const userNet = Math.round(Number(wd.amount) * 0.85);
+// Add flat Obpay fee (1,000 UGX) so user gets their full net
+const payoutAmount = userNet + 1000;
 
         if (!payoutPhone) {
           await supabaseAdmin
