@@ -95,6 +95,11 @@ export default function AdminDashboard() {
           subtitle="View, ban, adjust balance, grant/remove robots"
         />
         <NavCard
+  href="/admin/deposits"
+  title="Deposits"
+  subtitle="Approve or reject pending deposits"
+/>
+        <NavCard
           href="/admin/withdrawals"
           title="Withdrawals"
           subtitle="Approve or reject withdrawal requests"
