@@ -11,38 +11,19 @@ export async function GET(req: NextRequest) {
     const session = await verifySession(token);
     if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
 
-    const { data: rentals, error } = await supabaseAdmin
-      .from('tesla_rentals')
-      .select(
-        'id, product_id, price_paid, daily_profit, duration_days, days_remaining, total_earned, start_at, last_credit_at, status'
-      )
-      .eq('user_id', session.userId);
+    const { data: rentals, error } = await supabaseAdmin.rpc('user_rentals', {
+      p_user_id: session.userId,
+    });
 
     if (error) {
       console.error('Rentals fetch error:', error);
       return NextResponse.json({ error: 'Failed to load rentals' }, { status: 500 });
     }
 
-    const productIds = Array.from(
-      new Set((rentals ?? []).map((r) => r.product_id))
-    );
-
-    let productsMap: Record<string, string> = {};
-    if (productIds.length > 0) {
-      const { data: products } = await supabaseAdmin
-        .from('tesla_products')
-        .select('id, name')
-        .in('id', productIds);
-
-      (products ?? []).forEach((p) => {
-        productsMap[p.id] = p.name;
-      });
-    }
-
-    const formatted = (rentals ?? []).map((r) => ({
+    const formatted = (rentals ?? []).map((r: any) => ({
       id: r.id,
       product_id: r.product_id,
-      product_name: productsMap[r.product_id] ?? 'Robot',
+      product_name: r.product_name ?? 'Robot',
       price_paid: Number(r.price_paid),
       daily_profit: Number(r.daily_profit),
       duration_days: r.duration_days,
