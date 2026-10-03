@@ -5,16 +5,13 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Read raw body
     const raw = await req.text();
     const eventHeader = req.headers.get('x-obpay-event') || '';
 
     console.log('=== OBPAY WEBHOOK ===');
     console.log('Event header:', eventHeader);
     console.log('Raw body:', raw);
-    console.warn('⚠️ Signature check DISABLED (debug mode)');
 
-    // 2. Parse payload
     let payload: any;
     try {
       payload = JSON.parse(raw);
@@ -23,18 +20,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
 
-    // 3. Extract event + reference from any shape
     const event = String(payload?.event || eventHeader || '').toLowerCase();
     const data = payload?.data || payload || {};
     const reference =
       data?.reference ||
       payload?.reference ||
-      payload?.data?.data?.reference ||
       null;
 
-    const statusFromPayload = String(
-      data?.status || payload?.status || ''
-    ).toLowerCase();
+    const statusFromPayload = String(data?.status || '').toLowerCase();
 
     console.log('Parsed event:', event);
     console.log('Parsed reference:', reference);
@@ -45,81 +38,70 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true, note: 'no reference' });
     }
 
-    // 4. Find deposit
-    const { data: deposit } = await supabaseAdmin
-      .from('tesla_deposits')
-      .select('id, user_id, amount, status')
-      .eq('reference', reference)
-      .maybeSingle();
-
-    if (!deposit) {
-      console.error('No deposit found for reference:', reference);
-      return NextResponse.json({ received: true, note: 'no matching deposit' });
-    }
-
-    if (deposit.status === 'approved' || deposit.status === 'rejected') {
-      return NextResponse.json({ received: true, note: 'already processed' });
-    }
-
-    // 5. Determine success vs failure
-    const isSuccess =
-      event.includes('success') ||
-      event.includes('completed') ||
-      statusFromPayload === 'success' ||
-      statusFromPayload === 'successful' ||
-      statusFromPayload === 'completed' ||
-      statusFromPayload === 'approved';
-
-    const isFailure =
-      event.includes('fail') ||
-      event.includes('cancel') ||
-      statusFromPayload === 'failed' ||
-      statusFromPayload === 'cancelled' ||
-      statusFromPayload === 'rejected';
-
-    // 6. Handle success
-    if (isSuccess && !isFailure) {
-      const { data: user } = await supabaseAdmin
-        .from('users')
-        .select('balance, total_deposited')
-        .eq('id', deposit.user_id)
+    // ============================================================
+    // COLLECTION EVENTS (deposits)
+    // ============================================================
+    if (event.startsWith('collection.')) {
+      const { data: deposit } = await supabaseAdmin
+        .from('tesla_deposits')
+        .select('id, user_id, amount, status')
+        .eq('reference', reference)
         .maybeSingle();
 
-      if (!user) {
-        return NextResponse.json({ received: true, note: 'user missing' });
+      if (!deposit) {
+        console.error('No deposit found:', reference);
+        return NextResponse.json({ received: true, note: 'no deposit' });
       }
 
-      await supabaseAdmin
-        .from('users')
-        .update({
-          balance: Number(user.balance) + Number(deposit.amount),
-          total_deposited:
-            Number(user.total_deposited) + Number(deposit.amount),
-        })
-        .eq('id', deposit.user_id);
+      if (deposit.status === 'approved' || deposit.status === 'rejected') {
+        return NextResponse.json({ received: true, note: 'already processed' });
+      }
 
-      await supabaseAdmin
-        .from('tesla_deposits')
-        .update({
-          status: 'approved',
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq('id', deposit.id);
+      const isSuccess =
+        event.includes('success') ||
+        statusFromPayload === 'success' ||
+        statusFromPayload === 'successful' ||
+        statusFromPayload === 'completed';
 
-      await supabaseAdmin.from('tesla_transactions').insert({
-        user_id: deposit.user_id,
-        type: 'deposit',
-        amount: Number(deposit.amount),
-        status: 'completed',
-        meta: { reference, source: 'obpay_webhook', event },
-      });
+      if (isSuccess) {
+        const { data: user } = await supabaseAdmin
+          .from('users')
+          .select('balance, total_deposited')
+          .eq('id', deposit.user_id)
+          .maybeSingle();
 
-      console.log('✓ Deposit credited:', reference, deposit.amount);
-      return NextResponse.json({ received: true, credited: true });
-    }
+        if (user) {
+          await supabaseAdmin
+            .from('users')
+            .update({
+              balance: Number(user.balance) + Number(deposit.amount),
+              total_deposited:
+                Number(user.total_deposited) + Number(deposit.amount),
+            })
+            .eq('id', deposit.user_id);
+        }
 
-    // 7. Handle failure
-    if (isFailure) {
+        await supabaseAdmin
+          .from('tesla_deposits')
+          .update({
+            status: 'approved',
+            reviewed_at: new Date().toISOString(),
+          })
+          .eq('id', deposit.id);
+
+        await supabaseAdmin.from('tesla_transactions').insert({
+          user_id: deposit.user_id,
+          type: 'deposit',
+          amount: Number(deposit.amount),
+          status: 'completed',
+          meta: { reference, source: 'obpay_webhook', event },
+        });
+
+        console.log('✓ Deposit credited:', reference, deposit.amount);
+        return NextResponse.json({ received: true, credited: true });
+      }
+
+      // collection.failed
       await supabaseAdmin
         .from('tesla_deposits')
         .update({
@@ -129,17 +111,75 @@ export async function POST(req: NextRequest) {
         .eq('id', deposit.id);
 
       console.log('✗ Deposit failed:', reference);
-      return NextResponse.json({ received: true, note: 'marked failed' });
+      return NextResponse.json({ received: true, note: 'deposit failed' });
     }
 
-    console.log('Unhandled event:', event, 'status:', statusFromPayload);
-    return NextResponse.json({ received: true, note: 'unhandled' });
+    // ============================================================
+    // PAYOUT EVENTS (withdrawals)
+    // ============================================================
+    if (event.startsWith('payout.')) {
+      // Reference format: WD-XXXXXXXX-TIMESTAMP
+      // Extract the first 8 chars of the withdrawal ID after 'WD-'
+      const match = reference.match(/^WD-([a-f0-9]{8})/i);
+      if (!match) {
+        console.error('Invalid payout reference format:', reference);
+        return NextResponse.json({ received: true, note: 'invalid ref' });
+      }
+
+      const shortId = match[1];
+
+      // Find the withdrawal by matching the first 8 chars of its id
+      const { data: withdrawals } = await supabaseAdmin
+        .from('tesla_withdrawals')
+        .select('id, user_id, amount, status, meta')
+        .ilike('id', `${shortId}%`)
+        .limit(1);
+
+      if (!withdrawals || withdrawals.length === 0) {
+        console.error('No withdrawal found for ref:', reference);
+        return NextResponse.json({ received: true, note: 'no withdrawal' });
+      }
+
+      const wd = withdrawals[0];
+      const existingMeta = (wd.meta && typeof wd.meta === 'object') ? wd.meta : {};
+
+      const isPayoutSuccess = event === 'payout.success' || statusFromPayload === 'success';
+
+      const newMeta = {
+        ...existingMeta,
+        obpay_status: isPayoutSuccess ? 'success' : 'failed',
+        obpay_event: event,
+        obpay_data: data,
+        obpay_completed_at: new Date().toISOString(),
+        manual_payout_required: !isPayoutSuccess,
+      };
+
+      await supabaseAdmin
+        .from('tesla_withdrawals')
+        .update({ meta: newMeta })
+        .eq('id', wd.id);
+
+      console.log(
+        isPayoutSuccess
+          ? '✓ Payout success:'
+          : '✗ Payout failed:',
+        reference
+      );
+
+      return NextResponse.json({
+        received: true,
+        payout: isPayoutSuccess ? 'success' : 'failed',
+      });
+    }
+
+    console.log('Unhandled event:', event);
+    return NextResponse.json({ received: true, note: `unhandled: ${event}` });
   } catch (err) {
-    console.error('Webhook error:', err);
+    console.error('Obpay webhook error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
 
 export async function GET() {
   return NextResponse.json({ status: 'ok' });
-    }
+  }
