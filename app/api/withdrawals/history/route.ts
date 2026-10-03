@@ -15,11 +15,11 @@ export async function GET(req: NextRequest) {
       .from('tesla_withdrawals')
       .select('id, amount, status, phone, full_name, created_at, reviewed_at')
       .eq('user_id', session.userId)
-      .order('created_at', { ascending: false })
-      .limit(100);
+      
 
     if (error) {
-      console.error('Withdrawals history error:', error);
+      console.error('return NextResponse.json(
+  { withdrawals: formatted, version: 'v4', sessionUserId: session.userId },Withdrawals history error:', error);
       return NextResponse.json({ error: 'Failed to load' }, { status: 500 });
     }
 
