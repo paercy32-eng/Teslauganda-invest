@@ -19,7 +19,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     async function load() {
-      const res = await fetch('/api/admin/stats');
+      const res = await fetch('/api/admin/stats?t=' + Date.now());
       if (!res.ok) {
         router.replace('/admin/login');
         return;
