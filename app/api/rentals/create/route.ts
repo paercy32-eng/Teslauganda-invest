@@ -1,4 +1,6 @@
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
@@ -47,8 +49,8 @@ export async function POST(req: NextRequest) {
 
     const isFirstPurchase = (rentalCount ?? 0) === 0;
 
-    // 5. Enforce first-purchase rule
     if (isFirstPurchase) {
+      // First rental MUST be fully funded by APPROVED DEPOSITS ONLY.
       const { data: deposits } = await supabaseAdmin
         .from('tesla_deposits')
         .select('amount')
@@ -64,7 +66,7 @@ export async function POST(req: NextRequest) {
         const missing = price - approvedTotal;
         return NextResponse.json(
           {
-            error: `First purchase requires approved deposits of at least UGX ${price.toLocaleString()}. Deposit UGX ${missing.toLocaleString()} more to unlock.`,
+            error: `First rental must be fully funded by approved deposits. You have UGX ${approvedTotal.toLocaleString()} in approved deposits but need UGX ${price.toLocaleString()}. Please deposit UGX ${missing.toLocaleString()} more. (Welcome bonus and referral earnings cannot be used for your first rental.)`,
             reason: 'first_purchase_deposit_required',
             approvedTotal,
             required: price,
@@ -73,9 +75,20 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
+
+      // Balance must also be enough
+      if (Number(user.balance) < price) {
+        return NextResponse.json(
+          {
+            error: `Your current balance (UGX ${Number(user.balance).toLocaleString()}) is less than the rental price (UGX ${price.toLocaleString()}).`,
+            reason: 'insufficient_balance',
+          },
+          { status: 400 }
+        );
+      }
     }
 
-    // 6. Check balance
+    // 5. Check balance (for subsequent purchases)
     if (Number(user.balance) < price) {
       return NextResponse.json(
         {
@@ -86,13 +99,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 7. Deduct balance
+    // 6. Deduct balance
     await supabaseAdmin
       .from('users')
       .update({ balance: Number(user.balance) - price })
       .eq('id', session.userId);
 
-    // 8. Create the rental
+    // 7. Create the rental
     const { data: rental, error: rentalErr } = await supabaseAdmin
       .from('tesla_rentals')
       .insert({
@@ -108,7 +121,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (rentalErr || !rental) {
-      // Refund if rental creation failed
+      // Refund
       await supabaseAdmin
         .from('users')
         .update({ balance: Number(user.balance) })
@@ -118,7 +131,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create rental' }, { status: 500 });
     }
 
-    // 9. Update user's total_invested
+    // 8. Update total_invested
     const { data: fresh } = await supabaseAdmin
       .from('users')
       .select('total_invested')
@@ -130,7 +143,7 @@ export async function POST(req: NextRequest) {
       .update({ total_invested: Number(fresh?.total_invested ?? 0) + price })
       .eq('id', session.userId);
 
-    // 10. Log transaction (referral commissions handled by DB trigger)
+    // 9. Log transaction
     await supabaseAdmin.from('tesla_transactions').insert({
       user_id: session.userId,
       type: 'rental',
@@ -152,4 +165,4 @@ export async function POST(req: NextRequest) {
     console.error('Rental create error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
-        }
+          }
