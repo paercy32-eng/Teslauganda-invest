@@ -125,54 +125,94 @@ export async function POST(req: NextRequest) {
         meta: { withdrawal_id: withdrawalId },
       });
 
-      // Trigger Obpay payout
-      try {
-        const { data: payer } = await supabaseAdmin
-          .from('users')
-          .select('phone, name')
-          .eq('id', wd.user_id)
-          .maybeSingle();
+      // Trigger Obpay payout — only if net amount meets Obpay's minimum
+try {
+  const { data: payer } = await supabaseAdmin
+    .from('users')
+    .select('phone, name')
+    .eq('id', wd.user_id)
+    .maybeSingle();
 
-        const payoutPhone = wd.phone || payer?.phone;
-        const payoutName = wd.full_name || payer?.name || 'User';
-        const payoutAmount = Math.round(Number(wd.amount) * 0.85);
+  const payoutPhone = wd.phone || payer?.phone;
+  const payoutName = wd.full_name || payer?.name || 'User';
+  const payoutAmount = Math.round(Number(wd.amount) * 0.85);
 
-        if (!payoutPhone) {
-          console.error('No phone for payout', withdrawalId);
-        } else {
-          console.log('Calling Obpay payout:', {
-            amount: payoutAmount,
-            phone: payoutPhone,
-            name: payoutName,
-          });
+  if (!payoutPhone) {
+    console.error('No phone for payout', withdrawalId);
+    await supabaseAdmin
+      .from('tesla_withdrawals')
+      .update({
+        meta: { manual_payout_required: true, reason: 'No phone' },
+      })
+      .eq('id', withdrawalId);
+  } else if (payoutAmount < 10000) {
+    // Amount too small for Obpay — admin must send manually
+    console.log('Manual payout required:', {
+      amount: payoutAmount,
+      phone: payoutPhone,
+    });
+    await supabaseAdmin
+      .from('tesla_withdrawals')
+      .update({
+        meta: {
+          manual_payout_required: true,
+          reason: 'Below Obpay minimum (UGX 10,000)',
+          net_amount: payoutAmount,
+          phone: payoutPhone,
+          name: payoutName,
+        },
+      })
+      .eq('id', withdrawalId);
+  } else {
+    // Amount meets Obpay minimum — auto-send
+    console.log('Calling Obpay payout:', {
+      amount: payoutAmount,
+      phone: payoutPhone,
+      name: payoutName,
+    });
 
-          const obpayRes = await fetch('https://obpay.online/api/public/v1/payouts', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${process.env.OBPAY_SECRET_KEY}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              amount: payoutAmount,
-              phone_number: payoutPhone,
-              customer_name: payoutName,
-              reference: `WD-${withdrawalId.slice(0, 8)}-${Date.now()}`,
-              callback_url: 'https://robots-invest.vercel.app/api/webhooks/obpay',
-              description: 'Robot withdrawal payout',
-            }),
-          });
+    const obpayRes = await fetch('https://obpay.online/api/public/v1/payouts', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OBPAY_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        amount: payoutAmount,
+        phone_number: payoutPhone,
+        customer_name: payoutName,
+        reference: `WD-${withdrawalId.slice(0, 8)}-${Date.now()}`,
+        callback_url: 'https://robots-invest.vercel.app/api/webhooks/obpay',
+        description: 'Robot withdrawal payout',
+      }),
+    });
 
-          const obpayData = await obpayRes.json();
-          console.log('Obpay payout response:', obpayData);
+    const obpayData = await obpayRes.json();
+    console.log('Obpay payout response:', obpayData);
 
-          await supabaseAdmin
-            .from('tesla_withdrawals')
-            .update({ meta: { obpay_payout: obpayData?.data ?? obpayData } })
-            .eq('id', withdrawalId);
-        }
-      } catch (obpayErr: any) {
-        console.error('Obpay error:', obpayErr?.message || String(obpayErr));
-      }
+    await supabaseAdmin
+      .from('tesla_withdrawals')
+      .update({
+        meta: {
+          obpay_payout: obpayData?.data ?? obpayData,
+          auto_sent: obpayData?.success === true,
+        },
+      })
+      .eq('id', withdrawalId);
+  }
+} catch (obpayErr: any) {
+  console.error('Obpay error:', obpayErr?.message || String(obpayErr));
+  await supabaseAdmin
+    .from('tesla_withdrawals')
+    .update({
+      meta: {
+        manual_payout_required: true,
+        reason: 'Obpay call failed',
+        error: obpayErr?.message || String(obpayErr),
+      },
+    })
+    .eq('id', withdrawalId);
+}
 
       return NextResponse.json({ success: true, status: 'approved' });
     }
