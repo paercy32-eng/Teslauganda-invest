@@ -58,7 +58,7 @@ export default function TeamPage() {
 
   const levelStats = data.levels[activeLevel];
   const levelPercent = activeLevel === 1 ? 25 : activeLevel === 2 ? 2 : 1;
-  const referralLink = `https://teslauganda-invest.vercel.app/register?ref=${data.referralCode}`;
+  const referralLink = `https://robots-invest.vercel.app/register?ref=${data.referralCode}`;
 
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in">
