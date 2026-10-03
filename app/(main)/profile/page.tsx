@@ -29,7 +29,7 @@ export default function ProfilePage() {
   const [giftLoading, setGiftLoading] = useState(false);
 
   async function loadMe() {
-    const res = await fetch('/api/me');
+    const res = await fetch('/api/me?t=' + Date.now());
     if (res.status === 401) {
       router.replace('/login');
       return;
@@ -353,8 +353,9 @@ function RechargeModal({
                 className="input-light"
                 required
               />
-              <div className="text-[10px] text-[#6B7A8F] mt-1">
-                The PIN prompt will be sent to this number.
+              <div className="text-[11px] text-[#E11D48] font-semibold mt-2 leading-tight">
+                ⚠️ Please make sure the number you're using to pay is currently
+                in YOUR phone. The PIN prompt will be sent to that number.
               </div>
             </div>
 
@@ -580,4 +581,4 @@ function WithdrawModal({
       </div>
     </div>
   );
-      }
+                }
