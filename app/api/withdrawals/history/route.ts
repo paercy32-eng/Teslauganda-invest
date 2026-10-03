@@ -11,18 +11,16 @@ export async function GET(req: NextRequest) {
     const session = await verifySession(token);
     if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
 
-    const { data: withdrawals, error } = await supabaseAdmin
-  .from('tesla_withdrawals')
-  .select('id, amount, status, phone, full_name, created_at, reviewed_at')
-  .eq('user_id', session.userId)
-  .order('created_at', { ascending: false, nullsFirst: false });
+    const { data: withdrawals, error } = await supabaseAdmin.rpc('user_withdrawals', {
+      p_user_id: session.userId,
+    });
 
     if (error) {
       console.error('Withdrawals history error:', error);
       return NextResponse.json({ error: 'Failed to load' }, { status: 500 });
     }
 
-    const formatted = (withdrawals ?? []).map((w) => ({
+    const formatted = (withdrawals ?? []).map((w: any) => ({
       id: w.id,
       amount: Number(w.amount),
       status: w.status,
@@ -32,10 +30,11 @@ export async function GET(req: NextRequest) {
       reviewed_at: w.reviewed_at,
       net_amount: Math.round(Number(w.amount) * 0.85),
       fee: Math.round(Number(w.amount) * 0.15),
+      meta: w.meta ?? {},
     }));
 
     return NextResponse.json(
-      { withdrawals: formatted, version: 'v5' },
+      { withdrawals: formatted },
       {
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
