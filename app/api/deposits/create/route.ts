@@ -88,7 +88,8 @@ const numAmount = Number(amount);
     });
 
     const obpayData = await obpayRes.json();
-
+console.log('OBPAY COLLECT RESPONSE:', JSON.stringify(obpayData));
+console.log('OBPAY COLLECT STATUS:', obpayRes.status);
     if (!obpayRes.ok || !obpayData?.success) {
       console.error('Obpay collect failed:', obpayData);
       // Mark deposit as failed
