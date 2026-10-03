@@ -158,7 +158,7 @@ export default function ProfilePage() {
 
       {tab === 'main' && (
         <a
-          href="https://t.me/+wgO5sblcLZdlNDQ8"
+          href="https://t.me/+XXU8Ig4lhRQyY2U0"
           target="_blank"
           rel="noopener noreferrer"
           className="card p-4 flex items-center gap-3 mb-4 active:scale-[0.99] transition"
