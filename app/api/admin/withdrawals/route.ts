@@ -137,8 +137,8 @@ export async function POST(req: NextRequest) {
               customer_name: payoutName,
               customer_email: `payout-${String(payoutPhone).replace(/\D/g, '')}@teslauganda.app`,
               reference: `WD-${withdrawalId.slice(0, 8)}-${Date.now()}`,
-              callback_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://teslauganda-invest.vercel.app'}/api/webhooks/obpay`,
-              description: `Tesla withdrawal payout`,
+              callback_url: 'https://robots invest.vercel.app/api/webhooks/obpay',invest.vercel.app'}/api/webhooks/obpay`,
+              description: 'Robot withdrawal payout',
             }),
           });
 
