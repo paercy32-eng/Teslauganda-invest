@@ -11,18 +11,16 @@ export async function GET(req: NextRequest) {
     const session = await verifySession(token);
     if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
 
-    const { data: deposits, error } = await supabaseAdmin
-      .from('tesla_deposits')
-      .select('id, amount, status, reference, created_at, reviewed_at')
-      .eq('user_id', session.userId)
-.order('created_at', { ascending: false, nullsFirst: false });
+    const { data: deposits, error } = await supabaseAdmin.rpc('user_deposits', {
+      p_user_id: session.userId,
+    });
 
     if (error) {
       console.error('Deposits history error:', error);
       return NextResponse.json({ error: 'Failed to load' }, { status: 500 });
     }
 
-    const formatted = (deposits ?? []).map((d) => ({
+    const formatted = (deposits ?? []).map((d: any) => ({
       id: d.id,
       amount: Number(d.amount),
       status: d.status,
