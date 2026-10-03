@@ -22,11 +22,7 @@ export async function POST(req: NextRequest) {
 
     const event = String(payload?.event || eventHeader || '').toLowerCase();
     const data = payload?.data || payload || {};
-    const reference =
-      data?.reference ||
-      payload?.reference ||
-      null;
-
+    const reference = data?.reference || payload?.reference || null;
     const statusFromPayload = String(data?.status || '').toLowerCase();
 
     console.log('Parsed event:', event);
@@ -39,7 +35,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ============================================================
-    // COLLECTION EVENTS (deposits)
+    // COLLECTION EVENTS (deposits) — log only, admin approves
     // ============================================================
     if (event.startsWith('collection.')) {
       const { data: deposit } = await supabaseAdmin
@@ -53,7 +49,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ received: true, note: 'no deposit' });
       }
 
-      if (deposit.status === 'approved' || deposit.status === 'rejected') {
+      if (deposit.status !== 'pending') {
         return NextResponse.json({ received: true, note: 'already processed' });
       }
 
@@ -64,44 +60,19 @@ export async function POST(req: NextRequest) {
         statusFromPayload === 'completed';
 
       if (isSuccess) {
-        const { data: user } = await supabaseAdmin
-          .from('users')
-          .select('balance, total_deposited')
-          .eq('id', deposit.user_id)
-          .maybeSingle();
-
-        if (user) {
-          await supabaseAdmin
-            .from('users')
-            .update({
-              balance: Number(user.balance) + Number(deposit.amount),
-              total_deposited:
-                Number(user.total_deposited) + Number(deposit.amount),
-            })
-            .eq('id', deposit.user_id);
-        }
-
-        await supabaseAdmin
-          .from('tesla_deposits')
-          .update({
-            status: 'approved',
-            reviewed_at: new Date().toISOString(),
-          })
-          .eq('id', deposit.id);
-
-        await supabaseAdmin.from('tesla_transactions').insert({
-          user_id: deposit.user_id,
-          type: 'deposit',
-          amount: Number(deposit.amount),
-          status: 'completed',
-          meta: { reference, source: 'obpay_webhook', event },
+        // NOTE: Webhook no longer auto-approves.
+        // Admin must approve manually after checking Obpay.
+        console.log(
+          '✓ Deposit confirmed by Obpay, awaiting admin approval:',
+          reference
+        );
+        return NextResponse.json({
+          received: true,
+          note: 'awaiting admin approval',
         });
-
-        console.log('✓ Deposit credited:', reference, deposit.amount);
-        return NextResponse.json({ received: true, credited: true });
       }
 
-      // collection.failed
+      // collection.failed → mark rejected
       await supabaseAdmin
         .from('tesla_deposits')
         .update({
@@ -118,8 +89,6 @@ export async function POST(req: NextRequest) {
     // PAYOUT EVENTS (withdrawals)
     // ============================================================
     if (event.startsWith('payout.')) {
-      // Reference format: WD-XXXXXXXX-TIMESTAMP
-      // Extract the first 8 chars of the withdrawal ID after 'WD-'
       const match = reference.match(/^WD-([a-f0-9]{8})/i);
       if (!match) {
         console.error('Invalid payout reference format:', reference);
@@ -128,7 +97,6 @@ export async function POST(req: NextRequest) {
 
       const shortId = match[1];
 
-      // Find the withdrawal by matching the first 8 chars of its id
       const { data: withdrawals } = await supabaseAdmin
         .from('tesla_withdrawals')
         .select('id, user_id, amount, status, meta')
@@ -141,9 +109,11 @@ export async function POST(req: NextRequest) {
       }
 
       const wd = withdrawals[0];
-      const existingMeta = (wd.meta && typeof wd.meta === 'object') ? wd.meta : {};
+      const existingMeta =
+        wd.meta && typeof wd.meta === 'object' ? wd.meta : {};
 
-      const isPayoutSuccess = event === 'payout.success' || statusFromPayload === 'success';
+      const isPayoutSuccess =
+        event === 'payout.success' || statusFromPayload === 'success';
 
       const newMeta = {
         ...existingMeta,
@@ -160,9 +130,7 @@ export async function POST(req: NextRequest) {
         .eq('id', wd.id);
 
       console.log(
-        isPayoutSuccess
-          ? '✓ Payout success:'
-          : '✗ Payout failed:',
+        isPayoutSuccess ? '✓ Payout success:' : '✗ Payout failed:',
         reference
       );
 
@@ -182,4 +150,4 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   return NextResponse.json({ status: 'ok' });
-  }
+}
