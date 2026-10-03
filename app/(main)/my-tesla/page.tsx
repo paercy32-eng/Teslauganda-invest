@@ -12,6 +12,7 @@ type Rental = {
   days_remaining: number;
   total_earned: number;
   start_at: string;
+  last_credit_at: string;
   status: string;
 };
 
@@ -69,6 +70,11 @@ export default function MyRobotPage() {
           {rentals.map((r) => {
             const progress =
               ((r.duration_days - r.days_remaining) / r.duration_days) * 100;
+
+            const nextPayout = new Date(
+              new Date(r.last_credit_at).getTime() + 24 * 60 * 60 * 1000
+            );
+
             return (
               <div key={r.id} className="card p-4">
                 <div className="flex items-start justify-between mb-3">
@@ -77,8 +83,13 @@ export default function MyRobotPage() {
                       {r.product_name}
                     </div>
                     <div className="text-[10px] text-[#6B7A8F] mt-0.5">
-  Started {new Date(r.start_at).toLocaleString()}
-</div>
+                      Started {new Date(r.start_at).toLocaleString()}
+                    </div>
+                    {r.status === 'active' && (
+                      <div className="text-[10px] text-[#00B8DB] mt-0.5 font-semibold">
+                        Next payout: {nextPayout.toLocaleString()}
+                      </div>
+                    )}
                   </div>
                   <div
                     className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full ${
