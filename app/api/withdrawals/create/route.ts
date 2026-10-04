@@ -26,6 +26,22 @@ if (eatHour < WITHDRAW_OPEN_HOUR || eatHour >= WITHDRAW_CLOSE_HOUR) {
     { status: 400 }
   );
 }
+// User must have at least one active rental to withdraw
+const { count: activeRentals } = await supabaseAdmin
+  .from('tesla_rentals')
+  .select('id', { count: 'exact', head: true })
+  .eq('user_id', session.userId)
+  .eq('status', 'active');
+
+if (!activeRentals || activeRentals === 0) {
+  return NextResponse.json(
+    {
+      error: 'You need at least one active rental before you can withdraw. Please rent a robot first.',
+      reason: 'no_active_rental',
+    },
+    { status: 400 }
+  );
+}
 
     const { amount, phone, fullName } = await req.json();
     const numAmount = Number(amount);
