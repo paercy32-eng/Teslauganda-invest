@@ -1,6 +1,5 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'Robots Invest — Rent Robots, Earn Daily',
@@ -14,17 +13,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="mx-auto max-w-md min-h-screen relative">
           {children}
         </div>
-
-        <Script id="eruda-init" strategy="afterInteractive">
-          {`
-            (function(){
-              var s = document.createElement('script');
-              s.src = 'https://cdn.jsdelivr.net/npm/eruda';
-              s.onload = function(){ window.eruda.init(); };
-              document.body.appendChild(s);
-            })();
-          `}
-        </Script>
       </body>
     </html>
   );
