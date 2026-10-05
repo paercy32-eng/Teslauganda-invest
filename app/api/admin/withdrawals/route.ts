@@ -49,6 +49,13 @@ export async function GET(req: NextRequest) {
       users: userMap[w.user_id] ?? null,
     }));
 
+    // Sort newest first
+    enriched.sort((a, b) => {
+      const aT = new Date(a.created_at).getTime();
+      const bT = new Date(b.created_at).getTime();
+      return bT - aT;
+    });
+
     return NextResponse.json(
       { withdrawals: enriched },
       {
@@ -90,20 +97,18 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'approve') {
-      // Prevent double payout
+      // Prevent double approval
       const existingMeta = (wd.meta && typeof wd.meta === 'object') ? wd.meta : {};
-      const alreadyPaid =
-        (existingMeta as any)?.obpay_payout?.provider_reference ||
-        (existingMeta as any)?.obpay_payout?.reference;
+      const alreadyApproved = (existingMeta as any)?.manual_payout_required === true;
 
-      if (alreadyPaid) {
+      if (alreadyApproved) {
         return NextResponse.json({
           success: true,
-          status: 'already_sent',
-          note: 'Payout already submitted to Obpay',
+          status: 'already_approved',
         });
       }
 
+      // Bump total_withdrawn tracker
       const { data: user } = await supabaseAdmin
         .from('users')
         .select('total_withdrawn')
@@ -117,20 +122,39 @@ export async function POST(req: NextRequest) {
         })
         .eq('id', wd.user_id);
 
+      // Get user contact details for the payout
+      const { data: payer } = await supabaseAdmin
+        .from('users')
+        .select('phone, name')
+        .eq('id', wd.user_id)
+        .maybeSingle();
+
+      const payoutPhone = wd.phone || payer?.phone;
+      const payoutName = wd.full_name || payer?.name || 'User';
+      const userNet = Math.round(Number(wd.amount) * 0.85);
+
+      // Update withdrawal with approved status + manual payout flag
       await supabaseAdmin
         .from('tesla_withdrawals')
         .update({
           status: 'approved',
           reviewed_at: new Date().toISOString(),
+          meta: {
+            manual_payout_required: true,
+            user_net: userNet,
+            phone: payoutPhone,
+            name: payoutName,
+          },
         })
         .eq('id', withdrawalId);
 
+      // Log transaction
       await supabaseAdmin.from('tesla_transactions').insert({
         user_id: wd.user_id,
         type: 'withdrawal',
         amount: Number(wd.amount),
         status: 'completed',
-        meta: { approved_by: session.username },
+        meta: { approved_by: session.username, method: 'manual' },
       });
 
       await supabaseAdmin.from('tesla_admin_logs').insert({
@@ -138,94 +162,8 @@ export async function POST(req: NextRequest) {
         target_user_id: wd.user_id,
         amount: Number(wd.amount),
         reason: null,
-        meta: { withdrawal_id: withdrawalId },
+        meta: { withdrawal_id: withdrawalId, method: 'manual' },
       });
-
-      // Obpay payout
-      try {
-        const { data: payer } = await supabaseAdmin
-          .from('users')
-          .select('phone, name')
-          .eq('id', wd.user_id)
-          .maybeSingle();
-
-        const payoutPhone = wd.phone || payer?.phone;
-        const payoutName = wd.full_name || payer?.name || 'User';
-
-        // User's intended net (85%)
-        const userNet = Math.round(Number(wd.amount) * 0.85);
-        // Add flat Obpay fee (1,000 UGX)
-        const payoutAmount = userNet + 1000;
-
-        if (!payoutPhone) {
-          await supabaseAdmin
-            .from('tesla_withdrawals')
-            .update({
-              meta: {
-                manual_payout_required: true,
-                reason: 'No phone',
-                user_net: userNet,
-              },
-            })
-            .eq('id', withdrawalId);
-        } else if (userNet < 10000) {
-          await supabaseAdmin
-            .from('tesla_withdrawals')
-            .update({
-              meta: {
-                manual_payout_required: true,
-                reason: 'Below Obpay minimum (UGX 10,000)',
-                user_net: userNet,
-                phone: payoutPhone,
-                name: payoutName,
-              },
-            })
-            .eq('id', withdrawalId);
-        } else {
-          const obpayRes = await fetch('https://obpay.online/api/public/v1/payouts', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${process.env.OBPAY_SECRET_KEY}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              amount: payoutAmount,
-              phone_number: payoutPhone,
-              customer_name: payoutName,
-              reference: `WD-${withdrawalId.slice(0, 8)}-${Date.now()}`,
-              callback_url: 'https://robots-invest.vercel.app/api/webhooks/obpay',
-              description: 'Robot withdrawal payout',
-            }),
-          });
-
-          const obpayData = await obpayRes.json();
-          console.log('Obpay payout response:', obpayData);
-
-          await supabaseAdmin
-            .from('tesla_withdrawals')
-            .update({
-              meta: {
-                obpay_payout: obpayData?.data ?? obpayData,
-                auto_sent: obpayData?.success === true,
-                user_net: userNet,
-                obpay_gross: payoutAmount,
-              },
-            })
-            .eq('id', withdrawalId);
-        }
-      } catch (obpayErr: any) {
-        console.error('Obpay error:', obpayErr?.message || String(obpayErr));
-        await supabaseAdmin
-          .from('tesla_withdrawals')
-          .update({
-            meta: {
-              manual_payout_required: true,
-              reason: 'Obpay call failed',
-              error: obpayErr?.message || String(obpayErr),
-            },
-          })
-          .eq('id', withdrawalId);
-      }
 
       return NextResponse.json({ success: true, status: 'approved' });
     }
@@ -313,4 +251,4 @@ export async function PATCH(req: NextRequest) {
     console.error('Mark withdrawal error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
-}
+      }
