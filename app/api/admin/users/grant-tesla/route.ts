@@ -1,4 +1,6 @@
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
@@ -17,25 +19,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'userId required' }, { status: 400 });
     }
 
-    // If no productId given, use the cheapest active product
-    let chosenProductId = productId;
-    if (!chosenProductId) {
-      const { data: products } = await supabaseAdmin
-        .from('tesla_products')
-        .select('id')
-        .eq('is_active', true)
-        .order('price', { ascending: true })
-        .limit(1);
-      if (!products || products.length === 0) {
-        return NextResponse.json({ error: 'No active products' }, { status: 404 });
-      }
-      chosenProductId = products[0].id;
+    if (!productId) {
+      return NextResponse.json({ error: 'Select a robot to grant' }, { status: 400 });
     }
 
     const { data: product } = await supabaseAdmin
       .from('tesla_products')
       .select('id, name, price, daily_profit, duration_days')
-      .eq('id', chosenProductId)
+      .eq('id', productId)
       .maybeSingle();
 
     if (!product) {
