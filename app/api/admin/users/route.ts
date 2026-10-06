@@ -14,43 +14,43 @@ export async function GET(req: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { searchParams } = new URL(req.url);
-    const q = searchParams.get('q')?.trim().toLowerCase() ?? '';
+    const q = searchParams.get('q')?.trim() ?? '';
 
-    // Fetch all users
     let query = supabaseAdmin
       .from('users')
       .select(
         'id, name, phone, balance, total_deposited, total_invested, total_withdrawn, is_banned, banned_reason, referral_code, created_at'
-      )
-      .order('created_at', { ascending: false });
+      );
 
     if (q) {
       query = query.or(`name.ilike.%${q}%,phone.ilike.%${q}%`);
     }
 
-    const { data: users, error } = await query;
+    const { data: users, error } = await query.order('created_at', {
+      ascending: false,
+    });
 
     if (error) {
       console.error('Admin users fetch error:', error);
       return NextResponse.json({ error: 'Failed to load users' }, { status: 500 });
     }
 
-    // Get valid invites count per user (referred users with at least 1 active rental)
     const userIds = (users ?? []).map((u) => u.id);
 
     let validInvitesMap: Record<string, number> = {};
     let activeRentalsMap: Record<string, number> = {};
 
     if (userIds.length > 0) {
-      // Referrals where each user is referrer
+      // All referrals where each user is the referrer
       const { data: refs } = await supabaseAdmin
         .from('tesla_referrals')
         .select('referrer_id, referred_id')
         .in('referrer_id', userIds);
 
-      const referredIds = (refs ?? []).map((r) => r.referred_id);
+      const referredIds = Array.from(
+        new Set((refs ?? []).map((r) => r.referred_id))
+      );
 
-      // Which of those referred users have at least one active rental?
       let activeReferredIds = new Set<string>();
       if (referredIds.length > 0) {
         const { data: rentals } = await supabaseAdmin
@@ -86,7 +86,14 @@ export async function GET(req: NextRequest) {
       active_rentals: activeRentalsMap[u.id] ?? 0,
     }));
 
-    return NextResponse.json({ users: enriched });
+    return NextResponse.json(
+      { users: enriched },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        },
+      }
+    );
   } catch (err) {
     console.error('Admin users error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
