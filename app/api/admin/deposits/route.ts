@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('tesla_deposits')
-      .select('id, user_id, amount, status, reference, created_at, reviewed_at');
+      .select('id, user_id, amount, status, reference, payment_method, transaction_id, created_at, reviewed_at');
 
     if (status !== 'all') {
       query = query.eq('status', status);
@@ -162,4 +162,4 @@ export async function POST(req: NextRequest) {
     console.error('Admin deposits action error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
-}
+        }
