@@ -7,9 +7,11 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import { verifySession, SESSION_COOKIE } from '@/lib/auth';
 
 const MIN_WITHDRAW = 4000;
-const WITHDRAW_OPEN_HOUR = 9;  // 9 AM EAT
-const WITHDRAW_CLOSE_HOUR = 19; // 7 PM EAT
-const DAILY_LIMIT = 3;
+const WITHDRAW_OPEN_HOUR = 9;
+const WITHDRAW_OPEN_MINUTE = 30;
+const WITHDRAW_CLOSE_HOUR = 17; // 5:00 PM EAT
+const WITHDRAW_CLOSE_MINUTE = 0;
+const DAILY_LIMIT = 1;
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,7 +21,7 @@ export async function POST(req: NextRequest) {
     const session = await verifySession(token);
     if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
 
-    // 2. Load user (need bypass flag + balance + ban status)
+    // 2. Load user
     const { data: user } = await supabaseAdmin
       .from('users')
       .select('id, balance, is_banned, bypass_withdraw_limits')
@@ -35,11 +37,15 @@ export async function POST(req: NextRequest) {
     if (!bypass) {
       const nowUTC = new Date();
       const eatHour = (nowUTC.getUTCHours() + 3) % 24;
+      const eatMinute = nowUTC.getUTCMinutes();
+      const eatTotalMinutes = eatHour * 60 + eatMinute;
+      const openTotalMinutes = WITHDRAW_OPEN_HOUR * 60 + WITHDRAW_OPEN_MINUTE;
+      const closeTotalMinutes = WITHDRAW_CLOSE_HOUR * 60 + WITHDRAW_CLOSE_MINUTE;
 
-      if (eatHour < WITHDRAW_OPEN_HOUR || eatHour >= WITHDRAW_CLOSE_HOUR) {
+      if (eatTotalMinutes < openTotalMinutes || eatTotalMinutes >= closeTotalMinutes) {
         return NextResponse.json(
           {
-            error: `Withdrawals are only available between 9:00 AM and 7:00 PM EAT. Try again during these hours.`,
+            error: `Withdrawals are only available between 9:30 AM and 5:00 PM EAT. Try again during these hours.`,
           },
           { status: 400 }
         );
@@ -84,7 +90,7 @@ export async function POST(req: NextRequest) {
       if ((todayCount ?? 0) >= DAILY_LIMIT) {
         return NextResponse.json(
           {
-            error: `You have reached the maximum of ${DAILY_LIMIT} withdrawal requests per day. Try again tomorrow.`,
+            error: `You can only submit ${DAILY_LIMIT} withdrawal request per day. Try again tomorrow.`,
             reason: 'daily_withdraw_limit',
           },
           { status: 400 }
@@ -156,7 +162,6 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (insErr || !withdrawal) {
-      // Refund balance
       await supabaseAdmin
         .from('users')
         .update({ balance: Number(user.balance) })
@@ -186,4 +191,4 @@ export async function POST(req: NextRequest) {
     console.error('Withdrawal create error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
-                             }
+          }
