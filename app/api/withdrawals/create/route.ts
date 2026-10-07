@@ -42,7 +42,32 @@ if (!activeRentals || activeRentals === 0) {
     { status: 400 }
   );
 }
+// Limit: max 3 withdrawals per day (EAT timezone)
+const nowEat = new Date(Date.now() + 3 * 60 * 60 * 1000);
+const startOfDayEat = new Date(
+  Date.UTC(
+    nowEat.getUTCFullYear(),
+    nowEat.getUTCMonth(),
+    nowEat.getUTCDate(),
+    0, 0, 0, 0
+  ) - 3 * 60 * 60 * 1000
+);
 
+const { count: todayCount } = await supabaseAdmin
+  .from('tesla_withdrawals')
+  .select('id', { count: 'exact', head: true })
+  .eq('user_id', session.userId)
+  .gte('created_at', startOfDayEat.toISOString());
+
+if ((todayCount ?? 0) >= 3) {
+  return NextResponse.json(
+    {
+      error: 'You have reached the maximum of 3 withdrawal requests per day. Try again tomorrow.',
+      reason: 'daily_withdraw_limit',
+    },
+    { status: 400 }
+  );
+}
     const { amount, phone, fullName } = await req.json();
     const numAmount = Number(amount);
 
