@@ -29,7 +29,7 @@ export default function ProfilePage() {
   const [giftLoading, setGiftLoading] = useState(false);
 
   async function loadMe() {
-    const res = await fetch('/api/me?t=' + Date.now());
+    const res = await fetch('/api/me?t=' + Date.now(), { cache: 'no-store' });
     if (res.status === 401) {
       router.replace('/login');
       return;
@@ -241,6 +241,8 @@ function RechargeModal({
 }) {
   const [amount, setAmount] = useState(String(MIN_DEPOSIT));
   const [phone, setPhone] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'bank_a' | 'bank_b' | ''>('');
+  const [transactionId, setTransactionId] = useState('');
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
   const [sent, setSent] = useState(false);
@@ -269,6 +271,16 @@ function RechargeModal({
       return;
     }
 
+    if (!paymentMethod) {
+      setMsg('Please select a payment method.');
+      return;
+    }
+
+    if (!transactionId.trim() || transactionId.trim().length < 4) {
+      setMsg('Enter the transaction ID from your payment SMS.');
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch('/api/deposits/create', {
@@ -277,11 +289,13 @@ function RechargeModal({
         body: JSON.stringify({
           amount: Number(amount),
           phone: cleanPhone,
+          paymentMethod,
+          transactionId: transactionId.trim(),
         }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setMsg(data.error || 'Failed to send payment request.');
+        setMsg(data.error || 'Failed to submit deposit.');
       } else {
         setSent(true);
         startPolling();
@@ -311,19 +325,20 @@ function RechargeModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-white rounded-t-3xl p-5"
+        className="w-full max-w-md bg-white rounded-t-3xl p-5 max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-start mb-4">
           <div>
             <div className="text-lg font-bold text-[#0A2540]">Recharge</div>
-            <div className="text-xs text-[#6B7A8F]">Deposit via Mobile Money</div>
+            <div className="text-xs text-[#6B7A8F]">Pay via merchant code</div>
           </div>
           <button onClick={onClose} className="text-[#6B7A8F] text-xl">×</button>
         </div>
 
         {!sent ? (
-          <form onSubmit={submit} className="space-y-3">
+          <form onSubmit={submit} className="space-y-4">
+            {/* AMOUNT */}
             <div>
               <label className="block text-[10px] text-[#6B7A8F] font-bold mb-1">
                 AMOUNT (UGX)
@@ -341,6 +356,86 @@ function RechargeModal({
               </div>
             </div>
 
+            {/* PAYMENT METHOD */}
+            <div>
+              <label className="block text-[10px] text-[#6B7A8F] font-bold mb-2">
+                CHOOSE PAYMENT METHOD
+              </label>
+
+              {/* Bank A */}
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('bank_a')}
+                className={`w-full text-left rounded-2xl p-3 border mb-2 transition ${
+                  paymentMethod === 'bank_a'
+                    ? 'border-[#00B8DB] bg-[#F0FBFF]'
+                    : 'border-[#E1E7EF] bg-white'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-bold text-[#0A2540] text-sm">
+                    Bank A — Essentials Limited
+                  </span>
+                  {paymentMethod === 'bank_a' && (
+                    <span className="text-[10px] font-bold text-[#00B8DB]">
+                      ✓ SELECTED
+                    </span>
+                  )}
+                </div>
+                <div className="text-[11px] text-[#6B7A8F] leading-relaxed">
+                  <div>
+                    <span className="font-semibold">Merchant Code:</span>{' '}
+                    <span className="text-[#0A2540] font-bold">7182484</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">Names:</span> Essentials
+                    Limited
+                  </div>
+                  <div className="mt-1">
+                    <span className="font-semibold">Dial:</span>{' '}
+                    <span className="text-[#0A2540] font-bold">*185*9#</span>
+                  </div>
+                </div>
+              </button>
+
+              {/* Bank B */}
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('bank_b')}
+                className={`w-full text-left rounded-2xl p-3 border transition ${
+                  paymentMethod === 'bank_b'
+                    ? 'border-[#00B8DB] bg-[#F0FBFF]'
+                    : 'border-[#E1E7EF] bg-white'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-bold text-[#0A2540] text-sm">
+                    Bank B — Nabirye Flavia
+                  </span>
+                  {paymentMethod === 'bank_b' && (
+                    <span className="text-[10px] font-bold text-[#00B8DB]">
+                      ✓ SELECTED
+                    </span>
+                  )}
+                </div>
+                <div className="text-[11px] text-[#6B7A8F] leading-relaxed">
+                  <div>
+                    <span className="font-semibold">Merchant Code:</span>{' '}
+                    <span className="text-[#0A2540] font-bold">44867602</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">Names:</span> Nabirye
+                    Flavia
+                  </div>
+                  <div className="mt-1">
+                    <span className="font-semibold">Dial:</span>{' '}
+                    <span className="text-[#0A2540] font-bold">*165*3#</span>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            {/* PHONE */}
             <div>
               <label className="block text-[10px] text-[#6B7A8F] font-bold mb-1">
                 MOBILE MONEY NUMBER
@@ -354,8 +449,26 @@ function RechargeModal({
                 required
               />
               <div className="text-[11px] text-[#E11D48] font-semibold mt-2 leading-tight">
-                ⚠️ Please make sure the number you're using to pay is currently
-                in YOUR phone. The PIN prompt will be sent to that number.
+                ⚠️ The number you paid with. Admin will verify the transaction.
+              </div>
+            </div>
+
+            {/* TRANSACTION ID */}
+            <div>
+              <label className="block text-[10px] text-[#6B7A8F] font-bold mb-1">
+                TRANSACTION ID
+              </label>
+              <input
+                type="text"
+                value={transactionId}
+                onChange={(e) => setTransactionId(e.target.value.toUpperCase())}
+                placeholder="e.g. 1234567890"
+                className="input-light uppercase"
+                required
+              />
+              <div className="text-[10px] text-[#6B7A8F] mt-1">
+                You'll receive a confirmation SMS after paying. Copy the
+                transaction ID from that SMS.
               </div>
             </div>
 
@@ -366,25 +479,22 @@ function RechargeModal({
             )}
 
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Sending…' : 'Send payment request'}
+              {loading ? 'Submitting…' : 'Submit deposit'}
             </button>
           </form>
         ) : (
           <div className="text-center py-4">
-            <div className="text-5xl mb-3">📱</div>
+            <div className="text-5xl mb-3">✅</div>
             <div className="font-semibold text-[#0A2540] mb-1">
-              Check your phone
+              Deposit submitted
             </div>
             <div className="text-sm text-[#6B7A8F] mb-4">
-              Enter your mobile money PIN to complete the payment of UGX{' '}
-              {Number(amount).toLocaleString()}.
-            </div>
-            <div className="text-xs text-[#6B7A8F]">
-              Waiting for confirmation… ({pollCount * 3}s)
+              Your deposit of UGX {Number(amount).toLocaleString()} is being
+              verified. Once approved, your balance will be credited.
             </div>
             <button
               onClick={onClose}
-              className="mt-6 text-xs text-[#6B7A8F] underline"
+              className="mt-2 text-xs text-[#6B7A8F] underline"
             >
               Close
             </button>
@@ -557,8 +667,7 @@ function WithdrawModal({
             </button>
 
             <p className="text-[10px] text-[#6B7A8F] text-center">
-              Your balance will be deducted immediately. Withdrawals are processed
-              after admin review.
+              Withdrawals are processed within 24 hours.
             </p>
           </form>
         ) : (
@@ -581,4 +690,4 @@ function WithdrawModal({
       </div>
     </div>
   );
-                }
+              }
