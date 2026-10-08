@@ -42,8 +42,8 @@ export async function POST(req: NextRequest) {
     const cleanTxnId = String(transactionId).trim().toUpperCase();
     const cleanMethod = String(paymentMethod).trim();
 
-    if (!['bank_a', 'bank_b'].includes(cleanMethod)) {
-      return NextResponse.json({ error: 'Invalid payment method' }, { status: 400 });
+    if (!['mtn', 'airtel'].includes(cleanMethod)) {
+  return NextResponse.json({ error: 'Invalid payment method' }, { status: 400 });
     }
 
     if (!/^\+?\d{9,15}$/.test(cleanPhone)) {
