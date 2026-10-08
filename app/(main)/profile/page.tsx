@@ -16,6 +16,27 @@ type Tab = 'main' | 'giftcard';
 const MIN_DEPOSIT = 15000;
 const MIN_WITHDRAW = 4000;
 
+// ⚠️ VERIFY THESE — swap if MTN/Airtel are on the wrong line
+const NETWORKS: Record<
+  'mtn' | 'airtel',
+  { label: string; merchantCode: string; merchantName: string; dial: string; color: string }
+> = {
+  mtn: {
+    label: 'MTN',
+    merchantCode: '7182484',
+    merchantName: 'Essentials Limited',
+    dial: '*185*9#',
+    color: '#FFCC00',
+  },
+  airtel: {
+    label: 'Airtel',
+    merchantCode: '44867602',
+    merchantName: 'Nabirye Flavia',
+    dial: '*165*3#',
+    color: '#E31937',
+  },
+};
+
 export default function ProfilePage() {
   const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
@@ -90,7 +111,6 @@ export default function ProfilePage() {
         </p>
       </div>
 
-      {/* Balance card */}
       <div className="rounded-3xl p-5 bg-gradient-to-br from-[#0A2540] to-[#061829] mb-4">
         <div className="text-xs text-white/70 mb-1">Robots Invest Balance</div>
         <div className="text-3xl font-bold text-white mb-4">
@@ -112,7 +132,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Deposit / Withdraw details */}
       <div className="grid grid-cols-2 gap-2 mb-4">
         <Link href="/deposits" className="card p-3 text-left block">
           <div className="text-[10px] text-[#6B7A8F] mb-1">Deposit details</div>
@@ -124,7 +143,6 @@ export default function ProfilePage() {
         </Link>
       </div>
 
-      {/* Tabs */}
       <div className="grid grid-cols-3 gap-2 mb-4">
         {([
           { k: 'main', label: 'Telegram' },
@@ -232,6 +250,11 @@ export default function ProfilePage() {
   );
 }
 
+// ============================================================
+// MULTI-STEP RECHARGE MODAL
+// ============================================================
+type RechargeStep = 'amount' | 'network' | 'details' | 'done';
+
 function RechargeModal({
   onClose,
   onSuccess,
@@ -239,14 +262,14 @@ function RechargeModal({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const [step, setStep] = useState<RechargeStep>('amount');
   const [amount, setAmount] = useState(String(MIN_DEPOSIT));
   const [phone, setPhone] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'bank_a' | 'bank_b' | ''>('');
+  const [network, setNetwork] = useState<'mtn' | 'airtel' | ''>('');
   const [transactionId, setTransactionId] = useState('');
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
-  const [sent, setSent] = useState(false);
-  const [pollCount, setPollCount] = useState(0);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function prefill() {
@@ -261,9 +284,19 @@ function RechargeModal({
     prefill();
   }, []);
 
-  async function submit(e: React.FormEvent) {
+  function goToNetwork(e: React.FormEvent) {
     e.preventDefault();
     setMsg('');
+
+    const numAmount = Number(amount);
+    if (!numAmount || isNaN(numAmount)) {
+      setMsg('Enter a valid amount.');
+      return;
+    }
+    if (numAmount < MIN_DEPOSIT) {
+      setMsg(`Minimum deposit is UGX ${MIN_DEPOSIT.toLocaleString()}.`);
+      return;
+    }
 
     const cleanPhone = phone.trim();
     if (!/^\+?\d{9,15}$/.test(cleanPhone)) {
@@ -271,10 +304,23 @@ function RechargeModal({
       return;
     }
 
-    if (!paymentMethod) {
-      setMsg('Please select a payment method.');
-      return;
-    }
+    setStep('network');
+  }
+
+  function chooseNetwork(n: 'mtn' | 'airtel') {
+    setNetwork(n);
+    setStep('details');
+  }
+
+  function copyDial(dial: string) {
+    navigator.clipboard.writeText(dial);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setMsg('');
 
     if (!transactionId.trim() || transactionId.trim().length < 4) {
       setMsg('Enter the transaction ID from your payment SMS.');
@@ -288,8 +334,8 @@ function RechargeModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: Number(amount),
-          phone: cleanPhone,
-          paymentMethod,
+          phone: phone.trim(),
+          paymentMethod: network,
           transactionId: transactionId.trim(),
         }),
       });
@@ -297,8 +343,8 @@ function RechargeModal({
       if (!res.ok) {
         setMsg(data.error || 'Failed to submit deposit.');
       } else {
-        setSent(true);
-        startPolling();
+        setStep('done');
+        onSuccess();
       }
     } catch {
       setMsg('Something went wrong.');
@@ -307,17 +353,7 @@ function RechargeModal({
     }
   }
 
-  function startPolling() {
-    let count = 0;
-    const interval = setInterval(async () => {
-      count++;
-      setPollCount(count);
-      if (count >= 20) {
-        clearInterval(interval);
-        onSuccess();
-      }
-    }, 3000);
-  }
+  const netInfo = network ? NETWORKS[network] : null;
 
   return (
     <div
@@ -328,17 +364,22 @@ function RechargeModal({
         className="w-full max-w-md bg-white rounded-t-3xl p-5 max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Header */}
         <div className="flex justify-between items-start mb-4">
           <div>
             <div className="text-lg font-bold text-[#0A2540]">Recharge</div>
-            <div className="text-xs text-[#6B7A8F]">Pay via merchant code</div>
+            <div className="text-xs text-[#6B7A8F]">
+              Step{' '}
+              {step === 'amount' ? '1' : step === 'network' ? '2' : step === 'details' ? '3' : '✓'}{' '}
+              of 3
+            </div>
           </div>
           <button onClick={onClose} className="text-[#6B7A8F] text-xl">×</button>
         </div>
 
-        {!sent ? (
-          <form onSubmit={submit} className="space-y-4">
-            {/* AMOUNT */}
+        {/* STEP 1: AMOUNT + PHONE */}
+        {step === 'amount' && (
+          <form onSubmit={goToNetwork} className="space-y-4">
             <div>
               <label className="block text-[10px] text-[#6B7A8F] font-bold mb-1">
                 AMOUNT (UGX)
@@ -356,86 +397,6 @@ function RechargeModal({
               </div>
             </div>
 
-            {/* PAYMENT METHOD */}
-            <div>
-              <label className="block text-[10px] text-[#6B7A8F] font-bold mb-2">
-                CHOOSE PAYMENT METHOD
-              </label>
-
-              {/* Bank A */}
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('bank_a')}
-                className={`w-full text-left rounded-2xl p-3 border mb-2 transition ${
-                  paymentMethod === 'bank_a'
-                    ? 'border-[#00B8DB] bg-[#F0FBFF]'
-                    : 'border-[#E1E7EF] bg-white'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-[#0A2540] text-sm">
-                    Bank A — Essentials Limited
-                  </span>
-                  {paymentMethod === 'bank_a' && (
-                    <span className="text-[10px] font-bold text-[#00B8DB]">
-                      ✓ SELECTED
-                    </span>
-                  )}
-                </div>
-                <div className="text-[11px] text-[#6B7A8F] leading-relaxed">
-                  <div>
-                    <span className="font-semibold">Merchant Code:</span>{' '}
-                    <span className="text-[#0A2540] font-bold">7182484</span>
-                  </div>
-                  <div>
-                    <span className="font-semibold">Names:</span> Essentials
-                    Limited
-                  </div>
-                  <div className="mt-1">
-                    <span className="font-semibold">Dial:</span>{' '}
-                    <span className="text-[#0A2540] font-bold">*185*9#</span>
-                  </div>
-                </div>
-              </button>
-
-              {/* Bank B */}
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('bank_b')}
-                className={`w-full text-left rounded-2xl p-3 border transition ${
-                  paymentMethod === 'bank_b'
-                    ? 'border-[#00B8DB] bg-[#F0FBFF]'
-                    : 'border-[#E1E7EF] bg-white'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-[#0A2540] text-sm">
-                    Bank B — Nabirye Flavia
-                  </span>
-                  {paymentMethod === 'bank_b' && (
-                    <span className="text-[10px] font-bold text-[#00B8DB]">
-                      ✓ SELECTED
-                    </span>
-                  )}
-                </div>
-                <div className="text-[11px] text-[#6B7A8F] leading-relaxed">
-                  <div>
-                    <span className="font-semibold">Merchant Code:</span>{' '}
-                    <span className="text-[#0A2540] font-bold">44867602</span>
-                  </div>
-                  <div>
-                    <span className="font-semibold">Names:</span> Nabirye
-                    Flavia
-                  </div>
-                  <div className="mt-1">
-                    <span className="font-semibold">Dial:</span>{' '}
-                    <span className="text-[#0A2540] font-bold">*165*3#</span>
-                  </div>
-                </div>
-              </button>
-            </div>
-
-            {/* PHONE */}
             <div>
               <label className="block text-[10px] text-[#6B7A8F] font-bold mb-1">
                 MOBILE MONEY NUMBER
@@ -448,12 +409,133 @@ function RechargeModal({
                 className="input-light"
                 required
               />
-              <div className="text-[11px] text-[#E11D48] font-semibold mt-2 leading-tight">
-                ⚠️ The number you paid with. Admin will verify the transaction.
+              <div className="text-[10px] text-[#6B7A8F] mt-1">
+                The number you'll use to pay.
               </div>
             </div>
 
-            {/* TRANSACTION ID */}
+            {msg && (
+              <div className="text-sm text-[#E11D48] bg-[#FFF1F3] rounded-xl px-3 py-2 border border-[#E11D48]/30">
+                {msg}
+              </div>
+            )}
+
+            <button type="submit" className="btn-primary">
+              Continue
+            </button>
+          </form>
+        )}
+
+        {/* STEP 2: CHOOSE NETWORK */}
+        {step === 'network' && (
+          <div className="space-y-3">
+            <div className="text-sm text-[#6B7A8F] mb-2">
+              Choose the network you're paying with:
+            </div>
+
+            <button
+              onClick={() => chooseNetwork('mtn')}
+              className="w-full text-left rounded-2xl p-4 border border-[#E1E7EF] bg-white active:scale-[0.99] transition flex items-center gap-3"
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white"
+                style={{ background: NETWORKS.mtn.color }}
+              >
+                MTN
+              </div>
+              <div className="flex-1">
+                <div className="font-bold text-[#0A2540]">MTN Mobile Money</div>
+                <div className="text-xs text-[#6B7A8F]">
+                  Pay using MTN MoMo
+                </div>
+              </div>
+              <div className="text-[#6B7A8F]">→</div>
+            </button>
+
+            <button
+              onClick={() => chooseNetwork('airtel')}
+              className="w-full text-left rounded-2xl p-4 border border-[#E1E7EF] bg-white active:scale-[0.99] transition flex items-center gap-3"
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white"
+                style={{ background: NETWORKS.airtel.color }}
+              >
+                A
+              </div>
+              <div className="flex-1">
+                <div className="font-bold text-[#0A2540]">Airtel Money</div>
+                <div className="text-xs text-[#6B7A8F]">
+                  Pay using Airtel Money
+                </div>
+              </div>
+              <div className="text-[#6B7A8F]">→</div>
+            </button>
+
+            <button
+              onClick={() => setStep('amount')}
+              className="w-full text-center text-xs text-[#6B7A8F] underline mt-2"
+            >
+              ← Back
+            </button>
+          </div>
+        )}
+
+        {/* STEP 3: DETAILS + TRANSACTION ID */}
+        {step === 'details' && netInfo && (
+          <form onSubmit={submit} className="space-y-4">
+            {/* Merchant info card */}
+            <div className="rounded-2xl p-4 bg-[#F5F7FA] border border-[#E1E7EF]">
+              <div className="flex items-center gap-2 mb-3">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white text-xs"
+                  style={{ background: netInfo.color }}
+                >
+                  {network === 'mtn' ? 'MTN' : 'A'}
+                </div>
+                <div className="font-bold text-[#0A2540]">
+                  {netInfo.label} Payment Details
+                </div>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-[#6B7A8F]">Merchant Code</span>
+                  <span className="font-bold text-[#0A2540] font-mono">
+                    {netInfo.merchantCode}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#6B7A8F]">Merchant Name</span>
+                  <span className="font-semibold text-[#0A2540]">
+                    {netInfo.merchantName}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[#6B7A8F]">Dial</span>
+                  <button
+                    type="button"
+                    onClick={() => copyDial(netInfo.dial)}
+                    className="font-bold text-[#00B8DB] underline"
+                  >
+                    {copied ? '✓ Copied' : netInfo.dial}
+                  </button>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#6B7A8F]">Amount</span>
+                  <span className="font-bold text-[#0A2540]">
+                    UGX {Number(amount).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-[#E1E7EF] text-[10px] text-[#6B7A8F] leading-relaxed">
+                Dial the code, choose <strong>Pay to Merchant</strong>, enter
+                the merchant code <strong>{netInfo.merchantCode}</strong>, and
+                pay <strong>UGX {Number(amount).toLocaleString()}</strong>.
+              </div>
+            </div>
+
+            {/* Transaction ID */}
             <div>
               <label className="block text-[10px] text-[#6B7A8F] font-bold mb-1">
                 TRANSACTION ID
@@ -462,13 +544,13 @@ function RechargeModal({
                 type="text"
                 value={transactionId}
                 onChange={(e) => setTransactionId(e.target.value.toUpperCase())}
-                placeholder="e.g. 1234567890"
+                placeholder="e.g. 15637858815"
                 className="input-light uppercase"
                 required
               />
-              <div className="text-[10px] text-[#6B7A8F] mt-1">
-                You'll receive a confirmation SMS after paying. Copy the
-                transaction ID from that SMS.
+              <div className="mt-2 text-[11px] text-[#E11D48] font-semibold bg-[#FFF1F3] border border-[#E11D48]/30 rounded-xl px-3 py-2 leading-tight">
+                ⚠️ Enter the transaction ID EXACTLY as it appears in your
+                payment SMS. Wrong transaction IDs may lead to loss of funds.
               </div>
             </div>
 
@@ -481,8 +563,23 @@ function RechargeModal({
             <button type="submit" className="btn-primary" disabled={loading}>
               {loading ? 'Submitting…' : 'Submit deposit'}
             </button>
+
+            <p className="text-[10px] text-[#6B7A8F] text-center">
+              Wait 5–10 minutes for approval.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setStep('network')}
+              className="w-full text-center text-xs text-[#6B7A8F] underline"
+            >
+              ← Change network
+            </button>
           </form>
-        ) : (
+        )}
+
+        {/* STEP 4: DONE */}
+        {step === 'done' && (
           <div className="text-center py-4">
             <div className="text-5xl mb-3">✅</div>
             <div className="font-semibold text-[#0A2540] mb-1">
@@ -490,7 +587,10 @@ function RechargeModal({
             </div>
             <div className="text-sm text-[#6B7A8F] mb-4">
               Your deposit of UGX {Number(amount).toLocaleString()} is being
-              verified. Once approved, your balance will be credited.
+              verified.
+            </div>
+            <div className="text-xs text-[#00A86B] font-semibold mb-4">
+              Wait 5–10 minutes for approval.
             </div>
             <button
               onClick={onClose}
@@ -505,6 +605,9 @@ function RechargeModal({
   );
 }
 
+// ============================================================
+// WITHDRAW MODAL (unchanged)
+// ============================================================
 function WithdrawModal({
   balance,
   defaultPhone,
@@ -690,4 +793,4 @@ function WithdrawModal({
       </div>
     </div>
   );
-              }
+          }
