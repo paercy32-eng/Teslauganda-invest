@@ -15,9 +15,9 @@ type Me = {
 const MIN_DEPOSIT = 15000;
 const MIN_WITHDRAW = 5000;
 
-// 👇 PUT YOUR LINKS HERE LATER
-const TELEGRAM_LINK = 'https://t.me/+XXU8Ig4lhRQyY2U0';
-const WHATSAPP_LINK = 'https://whatsapp.com/channel/YOUR_LINK_HERE';
+// 👇 YOUR LINKS ARE HERE
+const TELEGRAM_LINK = 'https://t.me/+GM_Fo41-HFsxNTc0';
+const WHATSAPP_LINK = 'https://whatsapp.com/channel/0029Vb9OlFtKrWR36rpMst0O';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -65,7 +65,7 @@ export default function ProfilePage() {
       const data = await res.json();
       if (!res.ok) setGiftMsg(data.error || 'Failed to redeem.');
       else {
-        setGiftMsg(`🎉 You received UGX ${data.amount.toLocaleString()}`);
+        setGiftMsg(`You received UGX ${data.amount.toLocaleString()}`);
         setGiftCode('');
         await loadMe();
       }
@@ -121,30 +121,26 @@ export default function ProfilePage() {
       <h2 className="text-sm font-bold text-[#F5F2ED] mb-3 px-1">Quick Actions</h2>
       <div className="grid grid-cols-2 gap-3 mb-6">
         <Link href="/deposits" className="card p-4 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.98] transition">
-          <div className="text-2xl mb-2">📥</div>
           <div className="text-xs font-bold text-[#F5F2ED]">Deposit History</div>
-          <div className="text-[10px] text-[#8A8580] mt-0.5">View all deposits</div>
+          <div className="text-[10px] text-[#8A8580] mt-1">View all deposits</div>
         </Link>
 
         <Link href="/withdrawals" className="card p-4 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.98] transition">
-          <div className="text-2xl mb-2">📤</div>
           <div className="text-xs font-bold text-[#F5F2ED]">Withdraw History</div>
-          <div className="text-[10px] text-[#8A8580] mt-0.5">View all withdrawals</div>
+          <div className="text-[10px] text-[#8A8580] mt-1">View all withdrawals</div>
         </Link>
 
         <button
           onClick={() => setShowGiftCard(true)}
           className="card p-4 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.98] transition text-left"
         >
-          <div className="text-2xl mb-2">🎁</div>
           <div className="text-xs font-bold text-[#F5F2ED]">Gift Cards</div>
-          <div className="text-[10px] text-[#8A8580] mt-0.5">Redeem a code</div>
+          <div className="text-[10px] text-[#8A8580] mt-1">Redeem a code</div>
         </button>
 
         <Link href="/rewards" className="card p-4 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.98] transition">
-          <div className="text-2xl mb-2">🏆</div>
           <div className="text-xs font-bold text-[#F5F2ED]">Rewards</div>
-          <div className="text-[10px] text-[#8A8580] mt-0.5">Team milestones</div>
+          <div className="text-[10px] text-[#8A8580] mt-1">Team milestones</div>
         </Link>
       </div>
 
@@ -158,9 +154,7 @@ export default function ProfilePage() {
           rel="noopener noreferrer"
           className="card p-4 flex items-center gap-3 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.99] transition"
         >
-          <div className="w-12 h-12 rounded-2xl bg-[#229ED9] flex items-center justify-center text-white text-2xl">
-            ✈️
-          </div>
+          <div className="w-10 h-10 rounded-xl bg-[#229ED9]"></div>
           <div className="flex-1">
             <div className="font-semibold text-[#F5F2ED] text-sm">Join Telegram</div>
             <div className="text-[10px] text-[#8A8580] mt-0.5">Get updates & support</div>
@@ -175,12 +169,10 @@ export default function ProfilePage() {
           rel="noopener noreferrer"
           className="card p-4 flex items-center gap-3 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.99] transition"
         >
-          <div className="w-12 h-12 rounded-2xl bg-[#25D366] flex items-center justify-center text-white text-2xl">
-            💬
-          </div>
+          <div className="w-10 h-10 rounded-xl bg-[#25D366]"></div>
           <div className="flex-1">
             <div className="font-semibold text-[#F5F2ED] text-sm">Join WhatsApp Channel</div>
-            <div className="text-[10px] text-[#8A8580] mt-0.5">Get updates & support</div>
+            <div className="text-[10px] text-[#8A8580] mt-0.5">Follow the Vortex Markets channel</div>
           </div>
           <div className="text-[#8A8580]">→</div>
         </a>
@@ -391,8 +383,7 @@ function RechargeModal({
           </form>
         ) : (
           <div className="text-center py-4">
-            <div className="text-5xl mb-3">📱</div>
-            <div className="font-semibold text-[#F5F2ED] mb-1">
+            <div className="font-semibold text-[#F5F2ED] mb-1 text-lg">
               Check your phone
             </div>
             <div className="text-sm text-[#8A8580] mb-4">
@@ -588,8 +579,7 @@ function WithdrawModal({
           </form>
         ) : (
           <div className="text-center py-4">
-            <div className="text-5xl mb-3">✅</div>
-            <div className="font-semibold text-[#F5F2ED] mb-1">
+            <div className="font-semibold text-[#F5F2ED] mb-1 text-lg">
               Request submitted
             </div>
             <div className="text-xs text-[#E0A44C] font-semibold mb-2">
@@ -609,4 +599,4 @@ function WithdrawModal({
       </div>
     </div>
   );
-        }
+                                          }
