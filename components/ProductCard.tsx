@@ -23,9 +23,9 @@ export default function ProductCard({
   return (
     <div className="card overflow-hidden flex flex-col">
       {/* Hero image container */}
-      <div className="relative bg-gradient-to-b from-[#F5F7FA] to-[#E1E7EF] aspect-square">
+      <div className="relative bg-gradient-to-b from-[#1A1A1F] to-[#0F0F12] aspect-square">
         {/* Days tag */}
-        <span className="absolute top-3 left-3 z-10 bg-[#0A2540] text-[#00D9FF] text-[10px] font-bold px-2.5 py-1 rounded-full">
+        <span className="absolute top-3 left-3 z-10 bg-[#C8833A] text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
           {product.duration_days} days
         </span>
 
@@ -37,41 +37,41 @@ export default function ProductCard({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-6xl">
-            🤖
+            ✈️
           </div>
         )}
       </div>
 
       {/* Info */}
       <div className="p-3 flex flex-col gap-2 flex-1">
-        <h3 className="font-bold text-sm leading-tight text-[#0A2540]">
+        <h3 className="font-bold text-sm leading-tight text-[#F5F2ED]">
           {product.name}
         </h3>
 
         {/* 2 feature chips */}
         <div className="grid grid-cols-2 gap-1.5 mt-1">
-          <div className="bg-[#F5F7FA] rounded-xl py-2 text-center border border-[#E1E7EF]">
-            <div className="text-[9px] text-[#6B7A8F] uppercase tracking-wider">
+          <div className="bg-[#15151A] rounded-xl py-2 text-center border border-[#2A2823]">
+            <div className="text-[9px] text-[#8A8580] uppercase tracking-wider">
               Daily
             </div>
-            <div className="text-[11px] font-bold text-[#00B8DB]">
+            <div className="text-[11px] font-bold text-[#E0A44C]">
               {product.daily_profit.toLocaleString()}
             </div>
           </div>
-          <div className="bg-[#F5F7FA] rounded-xl py-2 text-center border border-[#E1E7EF]">
-            <div className="text-[9px] text-[#6B7A8F] uppercase tracking-wider">
+          <div className="bg-[#15151A] rounded-xl py-2 text-center border border-[#2A2823]">
+            <div className="text-[9px] text-[#8A8580] uppercase tracking-wider">
               Total
             </div>
-            <div className="text-[11px] font-bold text-[#0A2540]">
+            <div className="text-[11px] font-bold text-[#F5F2ED]">
               {total.toLocaleString()}
             </div>
           </div>
         </div>
 
         {/* Price */}
-        <div className="text-xs text-[#6B7A8F] mt-1">
+        <div className="text-xs text-[#8A8580] mt-1">
           UGX{' '}
-          <span className="text-[#0A2540] font-bold text-sm">
+          <span className="text-[#F5F2ED] font-bold text-sm">
             {product.price.toLocaleString()}
           </span>
         </div>
@@ -79,9 +79,9 @@ export default function ProductCard({
         {/* CTA */}
         <button
           onClick={() => onRent(product)}
-          className="mt-auto bg-[#0A2540] text-white font-semibold text-sm py-2.5 rounded-2xl active:scale-[0.98] transition"
+          className="mt-auto bg-[#C8833A] text-white font-semibold text-sm py-2.5 rounded-2xl active:scale-[0.98] transition"
         >
-          Rent Now
+          Invest Now
         </button>
       </div>
     </div>
