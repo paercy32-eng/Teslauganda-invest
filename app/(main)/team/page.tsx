@@ -71,13 +71,13 @@ export default function TeamPage() {
 
   const levelStats = data.levels[activeLevel];
   const levelPercent = activeLevel === 1 ? 25 : activeLevel === 2 ? 2 : 1;
-  const referralLink = `https://robots-invest.vercel.app/register?ref=${data.referralCode}`;
+  const referralLink = `https://safranfrance.vercel.app/register?ref=${data.referralCode}`;
 
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in">
       {/* Header */}
       <div className="px-2 pt-4 pb-6 text-center relative">
-        <h1 className="text-3xl font-bold text-[#0A2540]">Robots Invest Team</h1>
+        <h1 className="text-3xl font-bold text-[#0A2540]">Safranfrance Team</h1>
         <p className="text-[#6B7A8F] text-sm mt-1">
           Invite friends &amp; earn commissions
         </p>
