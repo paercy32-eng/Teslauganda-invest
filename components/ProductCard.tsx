@@ -16,73 +16,74 @@ export default function ProductCard({
   onRent,
 }: {
   product: Product;
-  onRent: (product: Product) => void;
+  onRent: (p: Product) => void;
 }) {
-  const total = product.daily_profit * product.duration_days;
+  const totalReturn = Number(product.daily_profit) * product.duration_days;
 
   return (
-    <div className="card overflow-hidden flex flex-col">
-      {/* Hero image container */}
-      <div className="relative bg-gradient-to-b from-[#1A1A1F] to-[#0F0F12] aspect-square">
-        {/* Days tag */}
-        <span className="absolute top-3 left-3 z-10 bg-[#C8833A] text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
-          {product.duration_days} days
-        </span>
-
+    <div className="card p-3 flex gap-4 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.99] transition">
+      {/* Image Section */}
+      <div className="relative w-28 h-28 flex-shrink-0">
         {product.image_url ? (
           <img
             src={product.image_url}
             alt={product.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover rounded-xl border border-[#2A2823]"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-6xl">
-            ✈️
+          <div className="w-full h-full rounded-xl bg-[#15151A] border border-[#2A2823] flex items-center justify-center text-2xl">
+            🤖
           </div>
         )}
+        {/* Days Badge */}
+        <div className="absolute top-1.5 left-1.5 bg-[#C8833A] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+          {product.duration_days} days
+        </div>
       </div>
 
-      {/* Info */}
-      <div className="p-3 flex flex-col gap-2 flex-1">
-        <h3 className="font-bold text-sm leading-tight text-[#F5F2ED]">
-          {product.name}
-        </h3>
-
-        {/* 2 feature chips */}
-        <div className="grid grid-cols-2 gap-1.5 mt-1">
-          <div className="bg-[#15151A] rounded-xl py-2 text-center border border-[#2A2823]">
-            <div className="text-[9px] text-[#8A8580] uppercase tracking-wider">
-              Daily
-            </div>
-            <div className="text-[11px] font-bold text-[#E0A44C]">
-              {product.daily_profit.toLocaleString()}
-            </div>
-          </div>
-          <div className="bg-[#15151A] rounded-xl py-2 text-center border border-[#2A2823]">
-            <div className="text-[9px] text-[#8A8580] uppercase tracking-wider">
-              Total
-            </div>
-            <div className="text-[11px] font-bold text-[#F5F2ED]">
-              {total.toLocaleString()}
-            </div>
-          </div>
+      {/* Details Section */}
+      <div className="flex-1 flex flex-col justify-between py-0.5">
+        <div>
+          <h3 className="font-bold text-[#F5F2ED] text-sm leading-tight mb-1">
+            {product.name}
+          </h3>
+          {product.subtitle && (
+            <p className="text-[10px] text-[#8A8580] leading-tight mb-2">
+              {product.subtitle}
+            </p>
+          )}
         </div>
 
-        {/* Price */}
-        <div className="text-xs text-[#8A8580] mt-1">
-          UGX{' '}
-          <span className="text-[#F5F2ED] font-bold text-sm">
-            {product.price.toLocaleString()}
-          </span>
-        </div>
+        <div>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-1.5 mb-2">
+            <div className="bg-[#15151A] border border-[#2A2823] rounded-lg px-2 py-1.5 text-center">
+              <div className="text-[8px] text-[#8A8580] font-bold tracking-wider">DAILY</div>
+              <div className="text-[10px] font-bold text-[#E0A44C]">
+                {Number(product.daily_profit).toLocaleString()}
+              </div>
+            </div>
+            <div className="bg-[#15151A] border border-[#2A2823] rounded-lg px-2 py-1.5 text-center">
+              <div className="text-[8px] text-[#8A8580] font-bold tracking-wider">TOTAL</div>
+              <div className="text-[10px] font-bold text-[#F5F2ED]">
+                {totalReturn.toLocaleString()}
+              </div>
+            </div>
+          </div>
 
-        {/* CTA */}
-        <button
-          onClick={() => onRent(product)}
-          className="mt-auto bg-[#C8833A] text-white font-semibold text-sm py-2.5 rounded-2xl active:scale-[0.98] transition"
-        >
-          Invest Now
-        </button>
+          {/* Price and Button */}
+          <div className="flex items-center justify-between">
+            <div className="text-xs font-bold text-[#F5F2ED]">
+              UGX {Number(product.price).toLocaleString()}
+            </div>
+            <button
+              onClick={() => onRent(product)}
+              className="bg-[#C8833A] text-white text-[10px] font-bold px-4 py-2 rounded-xl active:scale-95 transition"
+            >
+              Invest Now
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
