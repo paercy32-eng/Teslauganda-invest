@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ProductCard from '@/components/ProductCard';
+import SafranLogo from '@/components/SafranLogo';
 
 type Me = {
   id: string;
@@ -31,7 +32,7 @@ export default function HomePage() {
   const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
 
   async function loadMe() {
-    const res = await fetch('/api/me');
+    const res = await fetch('/api/me?t=' + Date.now(), { cache: 'no-store' });
     if (res.status === 401) {
       router.replace('/login');
       return;
@@ -43,7 +44,7 @@ export default function HomePage() {
 
   useEffect(() => {
     async function load() {
-      const meRes = await fetch('/api/me');
+      const meRes = await fetch('/api/me?t=' + Date.now(), { cache: 'no-store' });
       if (meRes.status === 401) {
         router.replace('/login');
         return;
@@ -51,7 +52,7 @@ export default function HomePage() {
       const meData = await meRes.json();
       setMe(meData.user);
 
-      const prodRes = await fetch('/api/products');
+      const prodRes = await fetch('/api/products?t=' + Date.now(), { cache: 'no-store' });
       const prodData = await prodRes.json();
       setProducts(prodData.products ?? []);
 
@@ -74,13 +75,13 @@ export default function HomePage() {
     const data = await res.json();
 
     if (!res.ok) {
-      setFeedback({ ok: false, msg: data.error || 'Failed to rent.' });
+      setFeedback({ ok: false, msg: data.error || 'Failed to invest.' });
       return;
     }
 
     setFeedback({
       ok: true,
-      msg: `🎉 You rented ${product.name}! Daily profit: UGX ${Number(product.daily_profit).toLocaleString()}`,
+      msg: `🎉 You invested in ${product.name}! Daily return: UGX ${Number(product.daily_profit).toLocaleString()}`,
     });
     await loadMe();
     setTimeout(() => {
@@ -92,7 +93,7 @@ export default function HomePage() {
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <div className="text-[#6B7A8F]">Loading…</div>
+        <div className="text-[#8A8580]">Loading…</div>
       </main>
     );
   }
@@ -101,20 +102,19 @@ export default function HomePage() {
     <main className="min-h-screen px-4 py-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between mb-6 px-2">
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-[#0A2540] flex items-center justify-center text-[#00D9FF] font-bold">
-            R
-          </div>
-          <span className="text-xl font-bold text-[#0A2540]">Robots Invest</span>
-        </div>
+        <SafranLogo
+          size={36}
+          textColor="#F5F2ED"
+          accentColor="#1A1A1F"
+        />
         <div className="text-right">
-          <div className="text-[11px] text-[#6B7A8F]">Welcome back</div>
-          <div className="text-sm font-semibold text-[#0A2540]">{me?.name}</div>
+          <div className="text-[11px] text-[#8A8580]">Welcome back</div>
+          <div className="text-sm font-semibold text-[#F5F2ED]">{me?.name}</div>
         </div>
       </div>
 
       {/* Products */}
-      <h2 className="text-2xl font-bold mb-4 px-2 text-[#0A2540]">Products</h2>
+      <h2 className="text-2xl font-bold mb-4 px-2 text-[#F5F2ED]">Products</h2>
 
       <div className="grid grid-cols-2 gap-3">
         {products.map((p) => (
@@ -166,33 +166,33 @@ function RentModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-white rounded-t-3xl p-5 max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-md bg-[#1A1A1F] rounded-t-3xl p-5 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-start mb-4">
           <div>
-            <div className="text-lg font-bold text-[#0A2540]">Confirm rental</div>
-            <div className="text-xs text-[#6B7A8F]">{product.name}</div>
+            <div className="text-lg font-bold text-[#F5F2ED]">Confirm investment</div>
+            <div className="text-xs text-[#8A8580]">{product.name}</div>
           </div>
-          <button onClick={onClose} className="text-[#6B7A8F] text-xl">×</button>
+          <button onClick={onClose} className="text-[#8A8580] text-xl">×</button>
         </div>
 
-        <div className="bg-[#F5F7FA] border border-[#E1E7EF] rounded-2xl p-3 text-xs mb-4 space-y-1.5">
+        <div className="bg-[#15151A] border border-[#2A2823] rounded-2xl p-3 text-xs mb-4 space-y-1.5">
           <Row label="Price" value={`UGX ${price.toLocaleString()}`} />
-          <Row label="Daily profit" value={`UGX ${daily.toLocaleString()}`} highlight />
+          <Row label="Daily return" value={`UGX ${daily.toLocaleString()}`} highlight />
           <Row label="Duration" value={`${product.duration_days} days`} />
           <Row label="Total return" value={`UGX ${total.toLocaleString()}`} bold />
           <Row label="Your balance" value={`UGX ${balance.toLocaleString()}`} />
         </div>
 
         {shortfall > 0 && !feedback && (
-          <div className="bg-[#FFF1F3] border border-[#E11D48]/30 rounded-2xl px-3 py-2 text-xs text-[#E11D48] mb-3">
+          <div className="bg-[#2A1416] border border-[#E5484D]/40 rounded-2xl px-3 py-2 text-xs text-[#FF8A8A] mb-3">
             You need UGX {shortfall.toLocaleString()} more. Recharge your balance
-            (and note that your first purchase requires approved deposits to
+            (and note that your first investment requires approved deposits to
             cover the full price).
           </div>
         )}
@@ -201,8 +201,8 @@ function RentModal({
           <div
             className={`rounded-2xl px-3 py-2 text-sm mb-3 border ${
               feedback.ok
-                ? 'bg-[#E6F7F0] border-[#00A86B]/30 text-[#006B44]'
-                : 'bg-[#FFF1F3] border-[#E11D48]/30 text-[#E11D48]'
+                ? 'bg-[#0F2A1A] border-[#4ADE80]/40 text-[#8AE6A8]'
+                : 'bg-[#2A1416] border-[#E5484D]/40 text-[#FF8A8A]'
             }`}
           >
             {feedback.msg}
@@ -211,12 +211,12 @@ function RentModal({
 
         {!feedback?.ok && (
           <button onClick={go} className="btn-primary" disabled={loading}>
-            {loading ? 'Processing…' : `Rent for UGX ${price.toLocaleString()}`}
+            {loading ? 'Processing…' : `Invest UGX ${price.toLocaleString()}`}
           </button>
         )}
 
-        <p className="text-[10px] text-[#6B7A8F] text-center mt-3">
-          Daily profit is credited every 24 hours after purchase.
+        <p className="text-[10px] text-[#8A8580] text-center mt-3">
+          Daily returns are credited every 24 hours after purchase.
         </p>
       </div>
     </div>
@@ -236,10 +236,10 @@ function Row({
 }) {
   return (
     <div className="flex justify-between">
-      <span className="text-[#6B7A8F]">{label}</span>
+      <span className="text-[#8A8580]">{label}</span>
       <span
         className={`${bold ? 'font-bold' : 'font-semibold'} ${
-          highlight ? 'text-[#00B8DB]' : 'text-[#0A2540]'
+          highlight ? 'text-[#E0A44C]' : 'text-[#F5F2ED]'
         }`}
       >
         {value}
