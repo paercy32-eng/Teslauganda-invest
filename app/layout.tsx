@@ -2,8 +2,8 @@ import './globals.css';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Robots Invest — Rent Robots, Earn Daily',
-  description: 'Rent robots. Earn daily.',
+  title: 'Safran — Invest in Aerospace',
+  description: 'Invest in aerospace components. Earn daily.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
