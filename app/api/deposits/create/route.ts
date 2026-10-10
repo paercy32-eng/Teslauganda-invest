@@ -8,6 +8,14 @@ import { verifySession, SESSION_COOKIE } from '@/lib/auth';
 
 const MIN_DEPOSIT = 15000;
 
+// Normalize phone to international format: +256XXXXXXXXX
+function normalizePhone(input: string): string {
+  let phone = (input || '').replace(/[^\d]/g, '');
+  if (phone.startsWith('0')) phone = '256' + phone.slice(1);
+  if (phone.startsWith('7') && phone.length === 9) phone = '256' + phone;
+  return '+' + phone;
+}
+
 export async function POST(req: NextRequest) {
   try {
     // 1. Auth
@@ -17,7 +25,7 @@ export async function POST(req: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
 
     // 2. Parse body
-    const { amount, phone, paymentMethod, transactionId } = await req.json();
+    const { amount, phone } = await req.json();
     const numAmount = Number(amount);
 
     if (!numAmount || isNaN(numAmount)) {
@@ -31,31 +39,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!phone || !paymentMethod || !transactionId) {
-      return NextResponse.json(
-        { error: 'Phone, payment method, and transaction ID are required' },
-        { status: 400 }
-      );
+    if (!phone) {
+      return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
     }
 
     const cleanPhone = String(phone).trim();
-    const cleanTxnId = String(transactionId).trim().toUpperCase();
-    const cleanMethod = String(paymentMethod).trim();
-
-    if (!['mtn', 'airtel'].includes(cleanMethod)) {
-  return NextResponse.json({ error: 'Invalid payment method' }, { status: 400 });
-    }
-
     if (!/^\+?\d{9,15}$/.test(cleanPhone)) {
       return NextResponse.json({ error: 'Enter a valid phone number' }, { status: 400 });
     }
 
-    if (cleanTxnId.length < 4) {
-      return NextResponse.json(
-        { error: 'Enter a valid transaction ID' },
-        { status: 400 }
-      );
-    }
+    const normalizedPhone = normalizePhone(cleanPhone);
 
     // 3. Load user
     const { data: user } = await supabaseAdmin
@@ -66,24 +59,11 @@ export async function POST(req: NextRequest) {
 
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-    // 4. Check duplicate transaction ID
-    const { data: existing } = await supabaseAdmin
-      .from('tesla_deposits')
-      .select('id')
-      .eq('transaction_id', cleanTxnId)
-      .maybeSingle();
+    // 4. Generate unique reference (used to match webhook back)
+    const reference = `SAF-${Date.now()}-${user.id.slice(0, 6)}`;
 
-    if (existing) {
-      return NextResponse.json(
-        { error: 'This transaction ID has already been submitted.' },
-        { status: 409 }
-      );
-    }
-
-    // 5. Generate reference
-    const reference = `DEP-${Date.now()}-${user.id.slice(0, 6)}`;
-
-    // 6. Save pending deposit
+    // 5. Save pending deposit row FIRST (before calling MarzPay)
+    //    This lets us match the webhook back to this record.
     const { data: deposit, error: insErr } = await supabaseAdmin
       .from('tesla_deposits')
       .insert({
@@ -91,8 +71,6 @@ export async function POST(req: NextRequest) {
         amount: numAmount,
         status: 'pending',
         reference,
-        payment_method: cleanMethod,
-        transaction_id: cleanTxnId,
       })
       .select('id, reference, amount, status, created_at')
       .single();
@@ -102,16 +80,77 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create deposit' }, { status: 500 });
     }
 
+    // 6. Get MarzPay credentials
+    const marzpayKey = process.env.MARZPAY_API_KEY;
+    const marzpayBaseUrl =
+      process.env.MARZPAY_BASE_URL || 'https://wallet.wearemarz.com/api/v1';
+    const appUrl =
+      process.env.NEXT_PUBLIC_APP_URL || 'https://safranfrance.vercel.app';
+
+    if (!marzpayKey) {
+      console.error('Missing MARZPAY_API_KEY');
+      await supabaseAdmin
+        .from('tesla_deposits')
+        .update({ status: 'failed' })
+        .eq('id', deposit.id);
+
+      return NextResponse.json(
+        { error: 'Payment gateway not configured' },
+        { status: 500 }
+      );
+    }
+
+    // 7. Call MarzPay collect endpoint
+    const marzpayRes = await fetch(`${marzpayBaseUrl}/collections`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${marzpayKey}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        amount: numAmount,
+        phone_number: normalizedPhone,
+        callback_url: `${appUrl}/api/webhooks/marzpay`,
+        description: `Safran deposit for ${user.name || user.phone}`,
+        metadata: [
+          { depositId: deposit.id },
+          { reference },
+        ],
+      }),
+    });
+
+    const marzpayData = await marzpayRes.json().catch(() => ({}));
+    console.log('MarzPay collect response:', marzpayData);
+
+    if (!marzpayRes.ok || marzpayData?.success === false) {
+      console.error('MarzPay collect failed:', marzpayData);
+      await supabaseAdmin
+        .from('tesla_deposits')
+        .update({ status: 'failed' })
+        .eq('id', deposit.id);
+
+      return NextResponse.json(
+        {
+          error:
+            marzpayData?.message ||
+            marzpayData?.error ||
+            'Payment request failed',
+        },
+        { status: 400 }
+      );
+    }
+
+    // 8. Return success — PIN prompt sent to phone
     return NextResponse.json({
       success: true,
       depositId: deposit.id,
       reference,
       amount: numAmount,
-      message:
-        'Deposit submitted. Our team will verify and credit your account shortly.',
+      message: 'A PIN prompt was sent to your phone. Enter your PIN to complete.',
     });
   } catch (err) {
     console.error('Deposit create error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
-}
+        }
