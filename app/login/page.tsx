@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import SafranLogo from '@/components/SafranLogo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -51,19 +52,20 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen px-6 py-10 animate-fade-in">
-      <div className="flex items-center gap-2 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-[#0A2540] flex items-center justify-center text-[#00D9FF] font-bold text-xl">
-          R
-        </div>
-        <span className="text-2xl font-bold text-[#0A2540]">Robots Invest</span>
+      <div className="mb-8">
+        <SafranLogo
+          size={44}
+          textColor="#F5F2ED"
+          accentColor="#1A1A1F"
+        />
       </div>
 
-      <h1 className="text-3xl font-bold mb-2 text-[#0A2540]">Welcome back</h1>
-      <p className="text-[#6B7A8F] mb-8">Log in to continue.</p>
+      <h1 className="text-3xl font-bold mb-2 text-[#F5F2ED]">Welcome back</h1>
+      <p className="text-[#8A8580] mb-8">Log in to continue.</p>
 
       <form onSubmit={onSubmit} className="space-y-4" autoComplete="off">
         <div>
-          <label className="block text-sm text-[#6B7A8F] mb-2">Phone Number</label>
+          <label className="block text-sm text-[#8A8580] mb-2">Phone Number</label>
           <input
             type="tel"
             name="phone"
@@ -77,7 +79,7 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <label className="block text-sm text-[#6B7A8F] mb-2">Password</label>
+          <label className="block text-sm text-[#8A8580] mb-2">Password</label>
           <input
             type="password"
             name="password"
@@ -91,7 +93,7 @@ export default function LoginPage() {
         </div>
 
         {error && (
-          <div className="bg-[#FFF1F3] border border-[#E11D48]/30 rounded-2xl px-4 py-3 text-sm text-[#E11D48]">
+          <div className="bg-[#2A1416] border border-[#E5484D]/40 rounded-2xl px-4 py-3 text-sm text-[#FF8A8A]">
             {error}
           </div>
         )}
@@ -101,9 +103,9 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <p className="text-center text-[#6B7A8F] mt-6">
+      <p className="text-center text-[#8A8580] mt-6">
         Don&apos;t have an account?{' '}
-        <Link href="/register" className="text-[#00B8DB] font-semibold">
+        <Link href="/register" className="text-[#E0A44C] font-semibold">
           Sign up
         </Link>
       </p>
