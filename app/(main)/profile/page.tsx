@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import SafranLogo from '@/components/SafranLogo';
 
 type Me = {
   id: string;
@@ -16,7 +17,6 @@ type Tab = 'main' | 'giftcard';
 const MIN_DEPOSIT = 15000;
 const MIN_WITHDRAW = 4000;
 
-// ⚠️ VERIFY THESE — swap if MTN/Airtel are on the wrong line
 const NETWORKS: Record<
   'mtn' | 'airtel',
   { label: string; merchantCode: string; merchantName: string; dial: string; color: string }
@@ -97,52 +97,57 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <div className="text-[#6B7A8F]">Loading…</div>
+        <div className="text-[#8A8580]">Loading…</div>
       </main>
     );
   }
 
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in">
-      <div className="px-2 mb-5">
-        <h1 className="text-3xl font-bold text-[#0A2540]">Robots Invest</h1>
-        <p className="text-[#6B7A8F] text-sm mt-1">
-          {me?.name} · {me?.phone}
-        </p>
+      {/* Header */}
+      <div className="flex items-center justify-between px-2 mb-5">
+        <SafranLogo size={32} textColor="#F5F2ED" accentColor="#1A1A1F" />
+        <div className="text-right">
+          <div className="text-[11px] text-[#8A8580]">Signed in</div>
+          <div className="text-sm font-semibold text-[#F5F2ED]">{me?.name}</div>
+        </div>
       </div>
 
-      <div className="rounded-3xl p-5 bg-gradient-to-br from-[#0A2540] to-[#061829] mb-4">
-        <div className="text-xs text-white/70 mb-1">Robots Invest Balance</div>
+      {/* Balance card */}
+      <div className="rounded-3xl p-5 bg-gradient-to-br from-[#C8833A] to-[#8A5A28] mb-4">
+        <div className="text-xs text-white/80 mb-1">Account Balance</div>
         <div className="text-3xl font-bold text-white mb-4">
           UGX {me?.balance?.toLocaleString() ?? 0}
         </div>
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => setShowRecharge(true)}
-            className="bg-[#00D9FF] text-[#0A2540] font-bold py-2.5 rounded-2xl text-sm active:scale-[0.98] transition"
+            className="bg-[#F5F2ED] text-[#1A1A1F] font-bold py-2.5 rounded-2xl text-sm active:scale-[0.98] transition"
           >
             Recharge
           </button>
           <button
             onClick={() => setShowWithdraw(true)}
-            className="bg-white/10 border border-white/20 text-white font-semibold py-2.5 rounded-2xl text-sm active:scale-[0.98] transition"
+            className="bg-black/25 border border-white/20 text-white font-semibold py-2.5 rounded-2xl text-sm active:scale-[0.98] transition"
           >
             Withdraw
           </button>
         </div>
       </div>
 
+      {/* Deposit / Withdraw details */}
       <div className="grid grid-cols-2 gap-2 mb-4">
         <Link href="/deposits" className="card p-3 text-left block">
-          <div className="text-[10px] text-[#6B7A8F] mb-1">Deposit details</div>
-          <div className="text-xs font-semibold text-[#0A2540]">View history →</div>
+          <div className="text-[10px] text-[#8A8580] mb-1">Deposit details</div>
+          <div className="text-xs font-semibold text-[#F5F2ED]">View history →</div>
         </Link>
         <Link href="/withdrawals" className="card p-3 text-left block">
-          <div className="text-[10px] text-[#6B7A8F] mb-1">Withdraw details</div>
-          <div className="text-xs font-semibold text-[#0A2540]">View history →</div>
+          <div className="text-[10px] text-[#8A8580] mb-1">Withdraw details</div>
+          <div className="text-xs font-semibold text-[#F5F2ED]">View history →</div>
         </Link>
       </div>
 
+      {/* Tabs */}
       <div className="grid grid-cols-3 gap-2 mb-4">
         {([
           { k: 'main', label: 'Telegram' },
@@ -153,9 +158,9 @@ export default function ProfilePage() {
             onClick={() => setTab(t.k as Tab)}
             className="py-2.5 rounded-2xl text-xs font-semibold transition border"
             style={{
-              background: tab === t.k ? '#0A2540' : '#FFFFFF',
-              color: tab === t.k ? '#00D9FF' : '#6B7A8F',
-              borderColor: tab === t.k ? '#0A2540' : '#E1E7EF',
+              background: tab === t.k ? '#C8833A' : '#1A1A1F',
+              color: tab === t.k ? '#FFFFFF' : '#8A8580',
+              borderColor: tab === t.k ? '#C8833A' : '#2A2823',
             }}
           >
             {t.label}
@@ -165,9 +170,9 @@ export default function ProfilePage() {
           href="/rewards"
           className="py-2.5 rounded-2xl text-xs font-semibold transition border text-center flex items-center justify-center"
           style={{
-            background: '#00D9FF',
-            color: '#0A2540',
-            borderColor: '#00D9FF',
+            background: '#E0A44C',
+            color: '#1A1A1F',
+            borderColor: '#E0A44C',
           }}
         >
           Rewards 🎁
@@ -185,17 +190,17 @@ export default function ProfilePage() {
             ✈️
           </div>
           <div className="flex-1">
-            <div className="font-semibold text-[#0A2540]">Join Telegram</div>
-            <div className="text-xs text-[#6B7A8F] mt-0.5">Get updates & support</div>
+            <div className="font-semibold text-[#F5F2ED]">Join Telegram</div>
+            <div className="text-xs text-[#8A8580] mt-0.5">Get updates & support</div>
           </div>
-          <div className="text-[#6B7A8F]">→</div>
+          <div className="text-[#8A8580]">→</div>
         </a>
       )}
 
       {tab === 'giftcard' && (
         <div className="card p-4 mb-4">
-          <div className="font-semibold text-[#0A2540] mb-1">Redeem Gift Card</div>
-          <p className="text-xs text-[#6B7A8F] mb-3">
+          <div className="font-semibold text-[#F5F2ED] mb-1">Redeem Gift Card</div>
+          <p className="text-xs text-[#8A8580] mb-3">
             Enter code from admin. Codes expire in 5 minutes.
           </p>
           <form onSubmit={redeemGift} className="space-y-3">
@@ -208,7 +213,7 @@ export default function ProfilePage() {
               required
             />
             {giftMsg && (
-              <div className="text-sm text-[#0A2540] bg-[#F5F7FA] rounded-xl px-3 py-2 border border-[#E1E7EF]">
+              <div className="text-sm text-[#F5F2ED] bg-[#15151A] rounded-xl px-3 py-2 border border-[#2A2823]">
                 {giftMsg}
               </div>
             )}
@@ -221,7 +226,7 @@ export default function ProfilePage() {
 
       <button
         onClick={logout}
-        className="w-full border border-[#E1E7EF] text-[#E11D48] font-semibold py-3 rounded-2xl active:scale-[0.98] transition bg-white"
+        className="w-full border border-[#2A2823] text-[#E5484D] font-semibold py-3 rounded-2xl active:scale-[0.98] transition bg-[#1A1A1F]"
       >
         Log out
       </button>
@@ -357,31 +362,30 @@ function RechargeModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-white rounded-t-3xl p-5 max-h-[92vh] overflow-y-auto"
+        className="w-full max-w-md bg-[#1A1A1F] rounded-t-3xl p-5 max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex justify-between items-start mb-4">
           <div>
-            <div className="text-lg font-bold text-[#0A2540]">Recharge</div>
-            <div className="text-xs text-[#6B7A8F]">
+            <div className="text-lg font-bold text-[#F5F2ED]">Recharge</div>
+            <div className="text-xs text-[#8A8580]">
               Step{' '}
               {step === 'amount' ? '1' : step === 'network' ? '2' : step === 'details' ? '3' : '✓'}{' '}
               of 3
             </div>
           </div>
-          <button onClick={onClose} className="text-[#6B7A8F] text-xl">×</button>
+          <button onClick={onClose} className="text-[#8A8580] text-xl">×</button>
         </div>
 
-        {/* STEP 1: AMOUNT + PHONE */}
+        {/* STEP 1 */}
         {step === 'amount' && (
           <form onSubmit={goToNetwork} className="space-y-4">
             <div>
-              <label className="block text-[10px] text-[#6B7A8F] font-bold mb-1">
+              <label className="block text-[10px] text-[#8A8580] font-bold mb-1">
                 AMOUNT (UGX)
               </label>
               <input
@@ -392,13 +396,13 @@ function RechargeModal({
                 min={MIN_DEPOSIT}
                 required
               />
-              <div className="text-[10px] text-[#6B7A8F] mt-1">
+              <div className="text-[10px] text-[#8A8580] mt-1">
                 Minimum: UGX {MIN_DEPOSIT.toLocaleString()}
               </div>
             </div>
 
             <div>
-              <label className="block text-[10px] text-[#6B7A8F] font-bold mb-1">
+              <label className="block text-[10px] text-[#8A8580] font-bold mb-1">
                 MOBILE MONEY NUMBER
               </label>
               <input
@@ -409,13 +413,13 @@ function RechargeModal({
                 className="input-light"
                 required
               />
-              <div className="text-[10px] text-[#6B7A8F] mt-1">
+              <div className="text-[10px] text-[#8A8580] mt-1">
                 The number you'll use to pay.
               </div>
             </div>
 
             {msg && (
-              <div className="text-sm text-[#E11D48] bg-[#FFF1F3] rounded-xl px-3 py-2 border border-[#E11D48]/30">
+              <div className="text-sm text-[#FF8A8A] bg-[#2A1416] rounded-xl px-3 py-2 border border-[#E5484D]/40">
                 {msg}
               </div>
             )}
@@ -426,65 +430,60 @@ function RechargeModal({
           </form>
         )}
 
-        {/* STEP 2: CHOOSE NETWORK */}
+        {/* STEP 2 */}
         {step === 'network' && (
           <div className="space-y-3">
-            <div className="text-sm text-[#6B7A8F] mb-2">
+            <div className="text-sm text-[#8A8580] mb-2">
               Choose the network you're paying with:
             </div>
 
             <button
               onClick={() => chooseNetwork('mtn')}
-              className="w-full text-left rounded-2xl p-4 border border-[#E1E7EF] bg-white active:scale-[0.99] transition flex items-center gap-3"
+              className="w-full text-left rounded-2xl p-4 border border-[#2A2823] bg-[#15151A] active:scale-[0.99] transition flex items-center gap-3"
             >
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white"
+                className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white text-xs"
                 style={{ background: NETWORKS.mtn.color }}
               >
                 MTN
               </div>
               <div className="flex-1">
-                <div className="font-bold text-[#0A2540]">MTN Mobile Money</div>
-                <div className="text-xs text-[#6B7A8F]">
-                  Pay using MTN MoMo
-                </div>
+                <div className="font-bold text-[#F5F2ED]">MTN Mobile Money</div>
+                <div className="text-xs text-[#8A8580]">Pay using MTN MoMo</div>
               </div>
-              <div className="text-[#6B7A8F]">→</div>
+              <div className="text-[#8A8580]">→</div>
             </button>
 
             <button
               onClick={() => chooseNetwork('airtel')}
-              className="w-full text-left rounded-2xl p-4 border border-[#E1E7EF] bg-white active:scale-[0.99] transition flex items-center gap-3"
+              className="w-full text-left rounded-2xl p-4 border border-[#2A2823] bg-[#15151A] active:scale-[0.99] transition flex items-center gap-3"
             >
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white"
+                className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white text-xs"
                 style={{ background: NETWORKS.airtel.color }}
               >
                 A
               </div>
               <div className="flex-1">
-                <div className="font-bold text-[#0A2540]">Airtel Money</div>
-                <div className="text-xs text-[#6B7A8F]">
-                  Pay using Airtel Money
-                </div>
+                <div className="font-bold text-[#F5F2ED]">Airtel Money</div>
+                <div className="text-xs text-[#8A8580]">Pay using Airtel Money</div>
               </div>
-              <div className="text-[#6B7A8F]">→</div>
+              <div className="text-[#8A8580]">→</div>
             </button>
 
             <button
               onClick={() => setStep('amount')}
-              className="w-full text-center text-xs text-[#6B7A8F] underline mt-2"
+              className="w-full text-center text-xs text-[#8A8580] underline mt-2"
             >
               ← Back
             </button>
           </div>
         )}
 
-        {/* STEP 3: DETAILS + TRANSACTION ID */}
+        {/* STEP 3 */}
         {step === 'details' && netInfo && (
           <form onSubmit={submit} className="space-y-4">
-            {/* Merchant info card */}
-            <div className="rounded-2xl p-4 bg-[#F5F7FA] border border-[#E1E7EF]">
+            <div className="rounded-2xl p-4 bg-[#15151A] border border-[#2A2823]">
               <div className="flex items-center gap-2 mb-3">
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white text-xs"
@@ -492,52 +491,51 @@ function RechargeModal({
                 >
                   {network === 'mtn' ? 'MTN' : 'A'}
                 </div>
-                <div className="font-bold text-[#0A2540]">
+                <div className="font-bold text-[#F5F2ED]">
                   {netInfo.label} Payment Details
                 </div>
               </div>
 
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-[#6B7A8F]">Merchant Code</span>
-                  <span className="font-bold text-[#0A2540] font-mono">
+                  <span className="text-[#8A8580]">Merchant Code</span>
+                  <span className="font-bold text-[#F5F2ED] font-mono">
                     {netInfo.merchantCode}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#6B7A8F]">Merchant Name</span>
-                  <span className="font-semibold text-[#0A2540]">
+                  <span className="text-[#8A8580]">Merchant Name</span>
+                  <span className="font-semibold text-[#F5F2ED]">
                     {netInfo.merchantName}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-[#6B7A8F]">Dial</span>
+                  <span className="text-[#8A8580]">Dial</span>
                   <button
                     type="button"
                     onClick={() => copyDial(netInfo.dial)}
-                    className="font-bold text-[#00B8DB] underline"
+                    className="font-bold text-[#E0A44C] underline"
                   >
                     {copied ? '✓ Copied' : netInfo.dial}
                   </button>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#6B7A8F]">Amount</span>
-                  <span className="font-bold text-[#0A2540]">
+                  <span className="text-[#8A8580]">Amount</span>
+                  <span className="font-bold text-[#F5F2ED]">
                     UGX {Number(amount).toLocaleString()}
                   </span>
                 </div>
               </div>
 
-              <div className="mt-3 pt-3 border-t border-[#E1E7EF] text-[10px] text-[#6B7A8F] leading-relaxed">
+              <div className="mt-3 pt-3 border-t border-[#2A2823] text-[10px] text-[#8A8580] leading-relaxed">
                 Dial the code, choose <strong>Pay to Merchant</strong>, enter
                 the merchant code <strong>{netInfo.merchantCode}</strong>, and
                 pay <strong>UGX {Number(amount).toLocaleString()}</strong>.
               </div>
             </div>
 
-            {/* Transaction ID */}
             <div>
-              <label className="block text-[10px] text-[#6B7A8F] font-bold mb-1">
+              <label className="block text-[10px] text-[#8A8580] font-bold mb-1">
                 TRANSACTION ID
               </label>
               <input
@@ -548,14 +546,14 @@ function RechargeModal({
                 className="input-light uppercase"
                 required
               />
-              <div className="mt-2 text-[11px] text-[#E11D48] font-semibold bg-[#FFF1F3] border border-[#E11D48]/30 rounded-xl px-3 py-2 leading-tight">
+              <div className="mt-2 text-[11px] text-[#FF8A8A] font-semibold bg-[#2A1416] border border-[#E5484D]/40 rounded-xl px-3 py-2 leading-tight">
                 ⚠️ Enter the transaction ID EXACTLY as it appears in your
                 payment SMS. Wrong transaction IDs may lead to loss of funds.
               </div>
             </div>
 
             {msg && (
-              <div className="text-sm text-[#E11D48] bg-[#FFF1F3] rounded-xl px-3 py-2 border border-[#E11D48]/30">
+              <div className="text-sm text-[#FF8A8A] bg-[#2A1416] rounded-xl px-3 py-2 border border-[#E5484D]/40">
                 {msg}
               </div>
             )}
@@ -564,37 +562,37 @@ function RechargeModal({
               {loading ? 'Submitting…' : 'Submit deposit'}
             </button>
 
-            <p className="text-[10px] text-[#6B7A8F] text-center">
+            <p className="text-[10px] text-[#8A8580] text-center">
               Wait 5–10 minutes for approval.
             </p>
 
             <button
               type="button"
               onClick={() => setStep('network')}
-              className="w-full text-center text-xs text-[#6B7A8F] underline"
+              className="w-full text-center text-xs text-[#8A8580] underline"
             >
               ← Change network
             </button>
           </form>
         )}
 
-        {/* STEP 4: DONE */}
+        {/* STEP 4 */}
         {step === 'done' && (
           <div className="text-center py-4">
             <div className="text-5xl mb-3">✅</div>
-            <div className="font-semibold text-[#0A2540] mb-1">
+            <div className="font-semibold text-[#F5F2ED] mb-1">
               Deposit submitted
             </div>
-            <div className="text-sm text-[#6B7A8F] mb-4">
+            <div className="text-sm text-[#8A8580] mb-4">
               Your deposit of UGX {Number(amount).toLocaleString()} is being
               verified.
             </div>
-            <div className="text-xs text-[#00A86B] font-semibold mb-4">
+            <div className="text-xs text-[#4ADE80] font-semibold mb-4">
               Wait 5–10 minutes for approval.
             </div>
             <button
               onClick={onClose}
-              className="mt-2 text-xs text-[#6B7A8F] underline"
+              className="mt-2 text-xs text-[#8A8580] underline"
             >
               Close
             </button>
@@ -606,7 +604,7 @@ function RechargeModal({
 }
 
 // ============================================================
-// WITHDRAW MODAL (unchanged)
+// WITHDRAW MODAL
 // ============================================================
 function WithdrawModal({
   balance,
@@ -672,27 +670,27 @@ function WithdrawModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-white rounded-t-3xl p-5 max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-md bg-[#1A1A1F] rounded-t-3xl p-5 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-start mb-4">
           <div>
-            <div className="text-lg font-bold text-[#0A2540]">Withdraw</div>
-            <div className="text-xs text-[#6B7A8F]">
+            <div className="text-lg font-bold text-[#F5F2ED]">Withdraw</div>
+            <div className="text-xs text-[#8A8580]">
               Balance: UGX {balance.toLocaleString()}
             </div>
           </div>
-          <button onClick={onClose} className="text-[#6B7A8F] text-xl">×</button>
+          <button onClick={onClose} className="text-[#8A8580] text-xl">×</button>
         </div>
 
         {!done ? (
           <form onSubmit={submit} className="space-y-3">
             <div>
-              <label className="block text-[10px] text-[#6B7A8F] font-bold mb-1">
+              <label className="block text-[10px] text-[#8A8580] font-bold mb-1">
                 AMOUNT (UGX)
               </label>
               <input
@@ -703,13 +701,13 @@ function WithdrawModal({
                 min={MIN_WITHDRAW}
                 required
               />
-              <div className="text-[10px] text-[#6B7A8F] mt-1">
+              <div className="text-[10px] text-[#8A8580] mt-1">
                 Minimum: UGX {MIN_WITHDRAW.toLocaleString()}
               </div>
             </div>
 
             <div>
-              <label className="block text-[10px] text-[#6B7A8F] font-bold mb-1">
+              <label className="block text-[10px] text-[#8A8580] font-bold mb-1">
                 MOBILE MONEY NUMBER
               </label>
               <input
@@ -723,7 +721,7 @@ function WithdrawModal({
             </div>
 
             <div>
-              <label className="block text-[10px] text-[#6B7A8F] font-bold mb-1">
+              <label className="block text-[10px] text-[#8A8580] font-bold mb-1">
                 FULL REGISTERED NAME
               </label>
               <input
@@ -737,22 +735,22 @@ function WithdrawModal({
             </div>
 
             {numAmount >= MIN_WITHDRAW && (
-              <div className="bg-[#F5F7FA] border border-[#E1E7EF] rounded-2xl p-3 text-xs">
+              <div className="bg-[#15151A] border border-[#2A2823] rounded-2xl p-3 text-xs">
                 <div className="flex justify-between mb-1">
-                  <span className="text-[#6B7A8F]">You request</span>
-                  <span className="font-semibold text-[#0A2540]">
+                  <span className="text-[#8A8580]">You request</span>
+                  <span className="font-semibold text-[#F5F2ED]">
                     UGX {numAmount.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between mb-1">
-                  <span className="text-[#6B7A8F]">Fee (15%)</span>
-                  <span className="font-semibold text-[#E11D48]">
+                  <span className="text-[#8A8580]">Fee (15%)</span>
+                  <span className="font-semibold text-[#FF8A8A]">
                     -UGX {fee.toLocaleString()}
                   </span>
                 </div>
-                <div className="flex justify-between border-t border-[#E1E7EF] pt-1 mt-1">
-                  <span className="text-[#6B7A8F]">You receive</span>
-                  <span className="font-bold text-[#00B8DB]">
+                <div className="flex justify-between border-t border-[#2A2823] pt-1 mt-1">
+                  <span className="text-[#8A8580]">You receive</span>
+                  <span className="font-bold text-[#E0A44C]">
                     UGX {net.toLocaleString()}
                   </span>
                 </div>
@@ -760,7 +758,7 @@ function WithdrawModal({
             )}
 
             {msg && (
-              <div className="text-sm text-[#E11D48] bg-[#FFF1F3] rounded-xl px-3 py-2 border border-[#E11D48]/30">
+              <div className="text-sm text-[#FF8A8A] bg-[#2A1416] rounded-xl px-3 py-2 border border-[#E5484D]/40">
                 {msg}
               </div>
             )}
@@ -769,22 +767,22 @@ function WithdrawModal({
               {loading ? 'Submitting…' : 'Request withdrawal'}
             </button>
 
-            <p className="text-[10px] text-[#6B7A8F] text-center">
+            <p className="text-[10px] text-[#8A8580] text-center">
               Withdrawals are processed within 24 hours.
             </p>
           </form>
         ) : (
           <div className="text-center py-4">
             <div className="text-5xl mb-3">✅</div>
-            <div className="font-semibold text-[#0A2540] mb-1">
+            <div className="font-semibold text-[#F5F2ED] mb-1">
               Request submitted
             </div>
-            <div className="text-sm text-[#6B7A8F] mb-4">
+            <div className="text-sm text-[#8A8580] mb-4">
               You'll receive UGX {net.toLocaleString()} once approved.
             </div>
             <button
               onClick={onSuccess}
-              className="mt-2 text-xs text-[#6B7A8F] underline"
+              className="mt-2 text-xs text-[#8A8580] underline"
             >
               Close
             </button>
