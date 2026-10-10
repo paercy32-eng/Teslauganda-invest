@@ -3,13 +3,20 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+type LevelStats = {
+  totalInvite: number;
+  validInvite: number;
+  totalIncome: number;
+  teamInvest: number;
+};
+
 type TeamData = {
   referralCode: string;
   totalIncome: number;
   totalInvitations: number;
-  level1Stats?: { totalInvite: number; validInvite: number; totalIncome: number; teamInvest: number };
-  level2Stats?: { totalInvite: number; validInvite: number; totalIncome: number; teamInvest: number };
-  level3Stats?: { totalInvite: number; validInvite: number; totalIncome: number; teamInvest: number };
+  level1Stats?: LevelStats;
+  level2Stats?: LevelStats;
+  level3Stats?: LevelStats;
 };
 
 export default function TeamPage() {
@@ -48,13 +55,25 @@ export default function TeamPage() {
   }
 
   const referralLink = `https://safranfrance.vercel.app/register?ref=${data?.referralCode || ''}`;
-  
-  const currentStats = 
+
+  // Calculate grand totals across all levels
+  const grandTotalIncome =
+    (data?.level1Stats?.totalIncome || 0) +
+    (data?.level2Stats?.totalIncome || 0) +
+    (data?.level3Stats?.totalIncome || 0);
+
+  const grandTotalInvites =
+    (data?.level1Stats?.totalInvite || 0) +
+    (data?.level2Stats?.totalInvite || 0) +
+    (data?.level3Stats?.totalInvite || 0);
+
+  // Get current level stats based on active tab
+  const currentStats =
     activeLevel === 1 ? data?.level1Stats :
     activeLevel === 2 ? data?.level2Stats :
     data?.level3Stats;
 
-  const stats = currentStats || { totalInvite: 0, validInvite: 0, totalIncome: 0, teamInvest: 0 };
+  const levelReferrals = currentStats?.totalInvite || 0;
 
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in">
@@ -64,15 +83,15 @@ export default function TeamPage() {
         <p className="text-[#8A8580] text-sm mt-1">Invite friends &amp; earn commissions</p>
       </div>
 
-      {/* Top Stats */}
+      {/* Top Grand Totals */}
       <div className="grid grid-cols-2 gap-3 mb-6">
         <div className="card p-4 text-center bg-[#15151A] border-[#2A2823]">
           <div className="text-[10px] text-[#8A8580] font-bold uppercase tracking-wider mb-1">Total Income</div>
-          <div className="text-2xl font-bold text-[#E0A44C]">UGX {(data?.totalIncome ?? 0).toLocaleString()}</div>
+          <div className="text-2xl font-bold text-[#E0A44C]">UGX {grandTotalIncome.toLocaleString()}</div>
         </div>
         <div className="card p-4 text-center bg-[#15151A] border-[#2A2823]">
           <div className="text-[10px] text-[#8A8580] font-bold uppercase tracking-wider mb-1">Total Invitations</div>
-          <div className="text-2xl font-bold text-[#F5F2ED]">{data?.totalInvitations ?? 0}</div>
+          <div className="text-2xl font-bold text-[#F5F2ED]">{grandTotalInvites}</div>
         </div>
       </div>
 
@@ -132,24 +151,18 @@ export default function TeamPage() {
         })}
       </div>
 
-      {/* Level Statistics */}
-      <div className="grid grid-cols-2 gap-3">
-        <StatBox label="TOTAL INVITE" value={stats.totalInvite} />
-        <StatBox label="VALID INVITE" value={stats.validInvite} />
-        <StatBox label="TOTAL INCOME" value={`UGX ${stats.totalIncome.toLocaleString()}`} highlight />
-        <StatBox label="TEAM INVEST" value={`UGX ${stats.teamInvest.toLocaleString()}`} highlight />
+      {/* Single Level Stats Display */}
+      <div className="card p-6 text-center bg-[#15151A] border-[#2A2823]">
+        <div className="text-[10px] text-[#8A8580] font-bold tracking-wider mb-2">
+          LEVEL {activeLevel} REFERRALS
+        </div>
+        <div className="text-4xl font-bold text-[#F5F2ED]">
+          {levelReferrals}
+        </div>
+        <div className="text-[10px] text-[#8A8580] mt-2">
+          Total number of invites on this level
+        </div>
       </div>
     </main>
-  );
-}
-
-function StatBox({ label, value, highlight }: { label: string; value: string | number; highlight?: boolean }) {
-  return (
-    <div className="card p-4 text-center bg-[#15151A] border-[#2A2823]">
-      <div className="text-[10px] text-[#8A8580] font-bold tracking-wider mb-1">{label}</div>
-      <div className={`text-lg font-bold ${highlight ? 'text-[#E0A44C]' : 'text-[#F5F2ED]'}`}>
-        {value}
-      </div>
-    </div>
   );
 }
