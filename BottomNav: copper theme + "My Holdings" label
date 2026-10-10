@@ -5,8 +5,8 @@ import { usePathname } from 'next/navigation';
 
 type IconProps = { active: boolean };
 
-const ACTIVE = '#00D9FF';
-const INACTIVE = '#9BA8B8';
+const ACTIVE = '#E0A44C';
+const INACTIVE = '#5A5750';
 
 function HomeIcon({ active }: IconProps) {
   const color = active ? ACTIVE : INACTIVE;
@@ -17,7 +17,7 @@ function HomeIcon({ active }: IconProps) {
         stroke={color}
         strokeWidth="1.8"
         strokeLinejoin="round"
-        fill={active ? '#0A2540' : 'none'}
+        fill={active ? '#2A1F13' : 'none'}
       />
     </svg>
   );
@@ -38,7 +38,7 @@ function CarIcon({ active }: IconProps) {
         stroke={color}
         strokeWidth="1.8"
         strokeLinejoin="round"
-        fill={active ? '#0A2540' : 'none'}
+        fill={active ? '#2A1F13' : 'none'}
       />
     </svg>
   );
@@ -54,7 +54,7 @@ function TeamIcon({ active }: IconProps) {
         r="3.2"
         stroke={color}
         strokeWidth="1.8"
-        fill={active ? '#0A2540' : 'none'}
+        fill={active ? '#2A1F13' : 'none'}
       />
       <circle
         cx="17"
@@ -62,7 +62,7 @@ function TeamIcon({ active }: IconProps) {
         r="2.4"
         stroke={color}
         strokeWidth="1.8"
-        fill={active ? '#0A2540' : 'none'}
+        fill={active ? '#2A1F13' : 'none'}
       />
       <path
         d="M2.5 19c.7-3.2 3.3-5 6.5-5s5.8 1.8 6.5 5M15 14.2c2.7.2 4.7 1.7 5.4 4.3"
@@ -84,7 +84,7 @@ function ProfileIcon({ active }: IconProps) {
         r="3.5"
         stroke={color}
         strokeWidth="1.8"
-        fill={active ? '#0A2540' : 'none'}
+        fill={active ? '#2A1F13' : 'none'}
       />
       <path
         d="M4.5 20c.9-3.6 3.9-5.5 7.5-5.5s6.6 1.9 7.5 5.5"
@@ -98,7 +98,7 @@ function ProfileIcon({ active }: IconProps) {
 
 const tabs = [
   { href: '/', label: 'Home', Icon: HomeIcon },
-  { href: '/my-tesla', label: 'My Robot', Icon: CarIcon },
+  { href: '/my-tesla', label: 'My Holdings', Icon: CarIcon },
   { href: '/team', label: 'Team', Icon: TeamIcon },
   { href: '/profile', label: 'Profile', Icon: ProfileIcon },
 ];
@@ -107,7 +107,7 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E1E7EF]">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0F0F12] border-t border-[#2A2823]">
       <div className="mx-auto max-w-md grid grid-cols-4">
         {tabs.map((t) => {
           const active = pathname === t.href;
