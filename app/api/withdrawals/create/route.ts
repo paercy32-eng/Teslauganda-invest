@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { verifySession, SESSION_COOKIE } from '@/lib/auth';
 
-const MIN_WITHDRAW = 5000;
+const MIN_WITHDRAW = 1500;
 const WITHDRAW_OPEN_HOUR = 9;
 const WITHDRAW_OPEN_MINUTE = 30;
 const WITHDRAW_CLOSE_HOUR = 18;
