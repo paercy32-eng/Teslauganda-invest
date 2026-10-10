@@ -22,39 +22,50 @@ export async function GET(req: NextRequest) {
     const session = await verifySession(token);
     if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
 
-    // 2. Get team size (direct referrals)
-    // Note: Adjust this query if your referral logic uses a different table/column
-    const { count: teamSize } = await supabaseAdmin
-      .from('users')
-      .select('*', { count: 'exact', head: true })
-      .eq('referred_by', session.userId);
+    // 2. Get team stats from the SAME RPC the Team page uses
+    const { data, error } = await supabaseAdmin.rpc('user_team_stats', {
+      p_user_id: session.userId,
+    });
 
-    // 3. Get team investment
-    // Note: This assumes you track team investment somewhere, or you can sum up 
-    // the price_paid from the rentals table for all your downlines.
-    // For now, we will default to 0 if not found.
-    let teamInvestment = 0;
-    
-    // Example (Uncomment and adjust if you have a team_investment column):
-    // const { data: user } = await supabaseAdmin
-    //   .from('users')
-    //   .select('team_investment')
-    //   .eq('id', session.userId)
-    //   .single();
-    // teamInvestment = user?.team_investment || 0;
+    if (error) {
+      console.error('Rewards stats error:', error);
+      return NextResponse.json({ error: 'Failed to load team stats' }, { status: 500 });
+    }
 
-    // 4. Map tiers and check if they are claimed/unlocked
+    // 3. Calculate total network size and total investment from all levels
+    const level1 = data?.levels?.['1'] || {};
+    const level2 = data?.levels?.['2'] || {};
+    const level3 = data?.levels?.['3'] || {};
+
+    const teamSize =
+      Number(level1.invites || 0) +
+      Number(level2.invites || 0) +
+      Number(level3.invites || 0);
+
+    const teamInvestment =
+      Number(level1.invest || 0) +
+      Number(level2.invest || 0) +
+      Number(level3.invest || 0);
+
+    // 4. Map tiers to check if they are claimed/unlocked
     const tiers = REWARD_TIERS.map((tier) => ({
       target: tier.target,
       reward: tier.reward,
-      isClaimed: teamInvestment >= tier.target, // Unlocks automatically when reached
+      isClaimed: teamInvestment >= tier.target,
     }));
 
-    return NextResponse.json({
-      teamInvestment,
-      teamSize: teamSize || 0,
-      tiers,
-    });
+    return NextResponse.json(
+      {
+        teamInvestment,
+        teamSize,
+        tiers,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        },
+      }
+    );
   } catch (err) {
     console.error('Rewards API error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
