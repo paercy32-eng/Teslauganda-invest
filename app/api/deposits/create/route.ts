@@ -4,7 +4,7 @@ import { verifySession, SESSION_COOKIE } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-const MIN_DEPOSIT = 15000;
+const MIN_DEPOSIT = 2000;
 
 // Normalize phone to international format: +256XXXXXXXXX
 function normalizePhone(input: string): string {
