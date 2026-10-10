@@ -1,10 +1,8 @@
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-export const fetchCache = 'force-no-store';
-
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { verifySession, SESSION_COOKIE } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 const MIN_DEPOSIT = 15000;
 
@@ -44,10 +42,6 @@ export async function POST(req: NextRequest) {
     }
 
     const cleanPhone = String(phone).trim();
-    if (!/^\+?\d{9,15}$/.test(cleanPhone)) {
-      return NextResponse.json({ error: 'Enter a valid phone number' }, { status: 400 });
-    }
-
     const normalizedPhone = normalizePhone(cleanPhone);
 
     // 3. Load user
@@ -59,11 +53,10 @@ export async function POST(req: NextRequest) {
 
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-    // 4. Generate unique reference (used to match webhook back)
-    const reference = `SAF-${Date.now()}-${user.id.slice(0, 6)}`;
+    // 4. Generate unique UUID reference (MarzPay requires UUID v4)
+    const reference = crypto.randomUUID();
 
-    // 5. Save pending deposit row FIRST (before calling MarzPay)
-    //    This lets us match the webhook back to this record.
+    // 5. Save pending deposit row FIRST
     const { data: deposit, error: insErr } = await supabaseAdmin
       .from('tesla_deposits')
       .insert({
@@ -82,38 +75,36 @@ export async function POST(req: NextRequest) {
 
     // 6. Get MarzPay credentials
     const marzpayKey = process.env.MARZPAY_API_KEY;
+    const marzpaySecret = process.env.MARZPAY_API_SECRET;
     const marzpayBaseUrl = 'https://wallet.wearemarz.com/api/v1';
-      const appUrl = 'https://safranfrance.vercel.app';
+    const appUrl = 'https://safranfrance.vercel.app';
 
-    if (!marzpayKey) {
-      console.error('Missing MARZPAY_API_KEY');
-      await supabaseAdmin
-        .from('tesla_deposits')
-        .update({ status: 'failed' })
-        .eq('id', deposit.id);
-
-      return NextResponse.json(
-        { error: 'Payment gateway not configured' },
-        { status: 500 }
-      );
+    if (!marzpayKey || !marzpaySecret) {
+      console.error('Missing MARZPAY credentials in Vercel');
+      await supabaseAdmin.from('tesla_deposits').update({ status: 'failed' }).eq('id', deposit.id);
+      return NextResponse.json({ error: 'Payment gateway not configured' }, { status: 500 });
     }
 
-    // 7. Call MarzPay collect endpoint
-    const marzpayRes = await fetch(`${marzpayBaseUrl}/collections`, {
+    // Create Basic Auth Token
+    const authToken = Buffer.from(`${marzpayKey}:${marzpaySecret}`).toString('base64');
+
+    // 7. Call MarzPay collect-money endpoint
+    const marzpayRes = await fetch(`${marzpayBaseUrl}/collect-money`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${marzpayKey}`,
+        'Authorization': `Basic ${authToken}`,
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
       body: JSON.stringify({
         amount: numAmount,
         phone_number: normalizedPhone,
+        country: 'UG', // Required by MarzPay
+        reference: reference, // Must be UUID
         callback_url: `${appUrl}/api/webhooks/marzpay`,
         description: `Safran deposit for ${user.name || user.phone}`,
         metadata: [
           { depositId: deposit.id },
-          { reference },
         ],
       }),
     });
@@ -121,25 +112,16 @@ export async function POST(req: NextRequest) {
     const marzpayData = await marzpayRes.json().catch(() => ({}));
     console.log('MarzPay collect response:', marzpayData);
 
-    if (!marzpayRes.ok || marzpayData?.success === false) {
+    if (!marzpayRes.ok || marzpayData?.status === 'error') {
       console.error('MarzPay collect failed:', marzpayData);
-      await supabaseAdmin
-        .from('tesla_deposits')
-        .update({ status: 'failed' })
-        .eq('id', deposit.id);
-
+      await supabaseAdmin.from('tesla_deposits').update({ status: 'failed' }).eq('id', deposit.id);
       return NextResponse.json(
-        {
-          error:
-            marzpayData?.message ||
-            marzpayData?.error ||
-            'Payment request failed',
-        },
+        { error: marzpayData?.message || marzpayData?.error || 'Payment request failed' },
         { status: 400 }
       );
     }
 
-    // 8. Return success — PIN prompt sent to phone
+    // 8. Return success
     return NextResponse.json({
       success: true,
       depositId: deposit.id,
@@ -147,8 +129,9 @@ export async function POST(req: NextRequest) {
       amount: numAmount,
       message: 'A PIN prompt was sent to your phone. Enter your PIN to complete.',
     });
+
   } catch (err) {
     console.error('Deposit create error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
-        }
+    }
