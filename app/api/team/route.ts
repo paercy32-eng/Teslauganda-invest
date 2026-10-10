@@ -22,38 +22,36 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to load team stats' }, { status: 500 });
     }
 
-    return NextResponse.json(
-      {
-        referralCode: data?.referral_code ?? '',
-        totalEarnings: Number(data?.total_income ?? 0),
-        totalInvites: Number(data?.total_invites ?? 0),
-        levels: {
-          1: {
-            count: Number(data?.levels?.['1']?.invites ?? 0),
-            validCount: Number(data?.levels?.['1']?.valid ?? 0),
-            earnings: Number(data?.levels?.['1']?.income ?? 0),
-            invest: Number(data?.levels?.['1']?.invest ?? 0),
-          },
-          2: {
-            count: Number(data?.levels?.['2']?.invites ?? 0),
-            validCount: Number(data?.levels?.['2']?.valid ?? 0),
-            earnings: Number(data?.levels?.['2']?.income ?? 0),
-            invest: Number(data?.levels?.['2']?.invest ?? 0),
-          },
-          3: {
-            count: Number(data?.levels?.['3']?.invites ?? 0),
-            validCount: Number(data?.levels?.['3']?.valid ?? 0),
-            earnings: Number(data?.levels?.['3']?.income ?? 0),
-            invest: Number(data?.levels?.['3']?.invest ?? 0),
-          },
-        },
+    // Map the RPC response to the exact format the frontend expects
+    const responseData = {
+      referralCode: data?.referral_code ?? '',
+      totalIncome: Number(data?.total_income ?? 0),
+      totalInvitations: Number(data?.total_invites ?? 0),
+      level1Stats: {
+        totalInvite: Number(data?.levels?.['1']?.invites ?? 0),
+        validInvite: Number(data?.levels?.['1']?.valid ?? 0),
+        totalIncome: Number(data?.levels?.['1']?.income ?? 0),
+        teamInvest: Number(data?.levels?.['1']?.invest ?? 0),
       },
-      {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-        },
-      }
-    );
+      level2Stats: {
+        totalInvite: Number(data?.levels?.['2']?.invites ?? 0),
+        validInvite: Number(data?.levels?.['2']?.valid ?? 0),
+        totalIncome: Number(data?.levels?.['2']?.income ?? 0),
+        teamInvest: Number(data?.levels?.['2']?.invest ?? 0),
+      },
+      level3Stats: {
+        totalInvite: Number(data?.levels?.['3']?.invites ?? 0),
+        validInvite: Number(data?.levels?.['3']?.valid ?? 0),
+        totalIncome: Number(data?.levels?.['3']?.income ?? 0),
+        teamInvest: Number(data?.levels?.['3']?.invest ?? 0),
+      },
+    };
+
+    return NextResponse.json(responseData, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      },
+    });
   } catch (err) {
     console.error('Team route error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
