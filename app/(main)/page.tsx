@@ -116,7 +116,8 @@ export default function HomePage() {
       {/* Products */}
       <h2 className="text-2xl font-bold mb-4 px-2 text-[#F5F2ED]">Products</h2>
 
-      <div className="grid grid-cols-2 gap-3">
+      {/* CHANGED FROM GRID TO SPACE-Y (LIST VIEW) */}
+      <div className="space-y-3">
         {products.map((p) => (
           <ProductCard key={p.id} product={p} onRent={handleRent} />
         ))}
@@ -246,4 +247,4 @@ function Row({
       </span>
     </div>
   );
-              }
+                   }
