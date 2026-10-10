@@ -18,16 +18,27 @@ export default function RewardsPage() {
 
   useEffect(() => {
     async function load() {
-      const res = await fetch('/api/rewards');
-      if (res.status === 401) {
-        router.replace('/login');
-        return;
+      try {
+        const res = await fetch('/api/rewards');
+        
+        if (res.status === 401) {
+          router.replace('/login');
+          return;
+        }
+
+        if (!res.ok) {
+          throw new Error('Failed to load rewards');
+        }
+
+        const data = await res.json();
+        setTeamInvestment(data.teamInvestment ?? 0);
+        setTeamSize(data.teamSize ?? 0);
+        setTiers(data.tiers ?? []);
+      } catch (err) {
+        console.error('Rewards load error:', err);
+      } finally {
+        setLoading(false); // This ensures loading STOPS no matter what
       }
-      const data = await res.json();
-      setTeamInvestment(data.teamInvestment ?? 0);
-      setTeamSize(data.teamSize ?? 0);
-      setTiers(data.tiers ?? []);
-      setLoading(false);
     }
     load();
   }, [router]);
