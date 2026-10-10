@@ -46,23 +46,23 @@ export default function MyRobotPage() {
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in">
       <div className="px-2 mb-5">
-        <h1 className="text-3xl font-bold text-[#0A2540]">My Robot</h1>
+        <h1 className="text-3xl font-bold text-[#0A2540]">My Holdings</h1>
         <p className="text-[#6B7A8F] text-sm mt-1">
           {rentals.length === 0
-            ? 'Your rented robots will appear here.'
-            : `You have ${rentals.length} active rental${rentals.length > 1 ? 's' : ''}.`}
+            ? 'Your active investments will appear here.'
+            : `You have ${rentals.length} active investment${rentals.length > 1 ? 's' : ''}.`}
         </p>
       </div>
 
       {rentals.length === 0 ? (
         <div className="text-center text-[#6B7A8F] py-16">
           <div className="text-5xl mb-3">🤖</div>
-          <div className="mb-4">No rentals yet.</div>
+          <div className="mb-4">No holdings yet.</div>
           <button
             onClick={() => router.push('/')}
             className="btn-primary max-w-[200px] mx-auto"
           >
-            Browse Robots
+            Browse Investments
           </button>
         </div>
       ) : (
