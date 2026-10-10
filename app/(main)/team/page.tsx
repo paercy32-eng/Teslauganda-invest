@@ -1,202 +1,155 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-
-type LevelStats = {
-  count: number;
-  validCount: number;
-  earnings: number;
-  invest: number;
-};
 
 type TeamData = {
   referralCode: string;
-  totalEarnings: number;
-  totalInvites: number;
-  levels: {
-    1: LevelStats;
-    2: LevelStats;
-    3: LevelStats;
-  };
+  totalIncome: number;
+  totalInvitations: number;
+  level1Stats?: { totalInvite: number; validInvite: number; totalIncome: number; teamInvest: number };
+  level2Stats?: { totalInvite: number; validInvite: number; totalIncome: number; teamInvest: number };
+  level3Stats?: { totalInvite: number; validInvite: number; totalIncome: number; teamInvest: number };
 };
 
 export default function TeamPage() {
   const router = useRouter();
   const [data, setData] = useState<TeamData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [activeLevel, setActiveLevel] = useState<1 | 2 | 3>(1);
   const [copied, setCopied] = useState<'code' | 'link' | null>(null);
 
-  const load = useCallback(async (showRefresh = false) => {
-    if (showRefresh) setRefreshing(true);
-    else setLoading(true);
-
-    try {
-      const res = await fetch('/api/team?t=' + Date.now(), {
-        cache: 'no-store',
-      });
+  useEffect(() => {
+    async function load() {
+      const res = await fetch('/api/team');
       if (res.status === 401) {
         router.replace('/login');
         return;
       }
       const json = await res.json();
       setData(json);
-    } catch (err) {
-      console.error(err);
-    } finally {
       setLoading(false);
-      setRefreshing(false);
     }
+    load();
   }, [router]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  function copy(text: string, kind: 'code' | 'link') {
+  const copyToClipboard = (text: string, type: 'code' | 'link') => {
     navigator.clipboard.writeText(text);
-    setCopied(kind);
-    setTimeout(() => setCopied(null), 1500);
-  }
+    setCopied(type);
+    setTimeout(() => setCopied(null), 2000);
+  };
 
-  if (loading || !data) {
+  if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <div className="text-[#6B7A8F]">Loading…</div>
+        <div className="text-[#8A8580]">Loading…</div>
       </main>
     );
   }
 
-  const levelStats = data.levels[activeLevel];
-  const levelPercent = activeLevel === 1 ? 25 : activeLevel === 2 ? 2 : 1;
-  const referralLink = `https://safranfrance.vercel.app/register?ref=${data.referralCode}`;
+  const referralLink = `https://safranfrance.vercel.app/register?ref=${data?.referralCode || ''}`;
+  
+  const currentStats = 
+    activeLevel === 1 ? data?.level1Stats :
+    activeLevel === 2 ? data?.level2Stats :
+    data?.level3Stats;
+
+  const stats = currentStats || { totalInvite: 0, validInvite: 0, totalIncome: 0, teamInvest: 0 };
 
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in">
       {/* Header */}
-      <div className="px-2 pt-4 pb-6 text-center relative">
-        <h1 className="text-3xl font-bold text-[#0A2540]">Safranfrance Team</h1>
-        <p className="text-[#6B7A8F] text-sm mt-1">
-          Invite friends &amp; earn commissions
-        </p>
-        <button
-          onClick={() => load(true)}
-          disabled={refreshing}
-          className="absolute right-2 top-4 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#0A2540] text-[#00D9FF] disabled:opacity-50"
-        >
-          {refreshing ? '…' : '↻ Refresh'}
-        </button>
+      <div className="px-2 mb-6">
+        <h1 className="text-3xl font-bold text-[#F5F2ED]">Safranfrance Team</h1>
+        <p className="text-[#8A8580] text-sm mt-1">Invite friends &amp; earn commissions</p>
       </div>
 
-      <div className="space-y-4">
-        {/* Top summary cards */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="card p-4 text-center">
-            <div className="text-[10px] tracking-wider text-[#6B7A8F] font-semibold mb-1">
-              TOTAL INCOME
+      {/* Top Stats */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="card p-4 text-center bg-[#15151A] border-[#2A2823]">
+          <div className="text-[10px] text-[#8A8580] font-bold uppercase tracking-wider mb-1">Total Income</div>
+          <div className="text-2xl font-bold text-[#E0A44C]">UGX {(data?.totalIncome ?? 0).toLocaleString()}</div>
+        </div>
+        <div className="card p-4 text-center bg-[#15151A] border-[#2A2823]">
+          <div className="text-[10px] text-[#8A8580] font-bold uppercase tracking-wider mb-1">Total Invitations</div>
+          <div className="text-2xl font-bold text-[#F5F2ED]">{data?.totalInvitations ?? 0}</div>
+        </div>
+      </div>
+
+      {/* Referral Details */}
+      <div className="card p-5 mb-6 bg-[#1A1A1F] border-[#2A2823] space-y-4">
+        {/* Invitation Code */}
+        <div>
+          <label className="block text-[10px] text-[#8A8580] font-bold mb-2 tracking-wider">INVITATION CODE</label>
+          <div className="flex gap-2">
+            <div className="flex-1 bg-[#15151A] border border-[#2A2823] rounded-xl px-4 py-3 text-[#F5F2ED] font-bold tracking-widest">
+              {data?.referralCode || '------'}
             </div>
-            <div className="text-2xl font-bold text-[#00B8DB]">
-              UGX {data.totalEarnings.toLocaleString()}
-            </div>
-          </div>
-          <div className="card p-4 text-center">
-            <div className="text-[10px] tracking-wider text-[#6B7A8F] font-semibold mb-1">
-              TOTAL INVITATIONS
-            </div>
-            <div className="text-2xl font-bold text-[#00B8DB]">
-              {data.totalInvites}
-            </div>
+            <button
+              onClick={() => copyToClipboard(data?.referralCode || '', 'code')}
+              className="bg-[#C8833A] text-white font-bold px-4 rounded-xl text-xs active:scale-95 transition"
+            >
+              {copied === 'code' ? 'Copied!' : 'COPY'}
+            </button>
           </div>
         </div>
 
-        {/* Invitation code + link */}
-        <div className="card p-5 space-y-4">
-          <div>
-            <div className="text-[11px] tracking-wider text-[#6B7A8F] font-semibold mb-2">
-              INVITATION CODE
+        {/* Invitation Link */}
+        <div>
+          <label className="block text-[10px] text-[#8A8580] font-bold mb-2 tracking-wider">INVITATION LINK</label>
+          <div className="flex gap-2">
+            <div className="flex-1 bg-[#15151A] border border-[#2A2823] rounded-xl px-4 py-3 text-[#F5F2ED] text-xs truncate">
+              {referralLink}
             </div>
-            <div className="flex gap-2">
-              <div className="flex-1 rounded-xl px-4 py-3 font-bold text-[#0A2540] bg-[#F5F7FA] border border-[#E1E7EF]">
-                {data.referralCode}
-              </div>
-              <button
-                onClick={() => copy(data.referralCode, 'code')}
-                className="px-5 rounded-xl font-bold text-[#0A2540] text-sm bg-[#00D9FF] active:scale-[0.97] transition"
-              >
-                {copied === 'code' ? '✓' : 'COPY'}
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <div className="text-[11px] tracking-wider text-[#6B7A8F] font-semibold mb-2">
-              INVITATION LINK
-            </div>
-            <div className="flex gap-2">
-              <div className="flex-1 rounded-xl px-4 py-3 text-[#6B7A8F] text-xs truncate bg-[#F5F7FA] border border-[#E1E7EF]">
-                {referralLink}
-              </div>
-              <button
-                onClick={() => copy(referralLink, 'link')}
-                className="px-5 rounded-xl font-bold text-[#0A2540] text-sm bg-[#00D9FF] active:scale-[0.97] transition"
-              >
-                {copied === 'link' ? '✓' : 'COPY'}
-              </button>
-            </div>
+            <button
+              onClick={() => copyToClipboard(referralLink, 'link')}
+              className="bg-[#C8833A] text-white font-bold px-4 rounded-xl text-xs active:scale-95 transition"
+            >
+              {copied === 'link' ? 'Copied!' : 'COPY'}
+            </button>
           </div>
         </div>
+      </div>
 
-        {/* Level tabs */}
-        <div className="grid grid-cols-3 gap-2">
-          {([1, 2, 3] as const).map((lvl) => {
-            const pct = lvl === 1 ? 25 : lvl === 2 ? 2 : 1;
-            const active = activeLevel === lvl;
-            return (
-              <button
-                key={lvl}
-                onClick={() => setActiveLevel(lvl)}
-                className="rounded-xl py-3 text-sm font-semibold transition border"
-                style={{
-                  background: active ? '#0A2540' : '#FFFFFF',
-                  color: active ? '#00D9FF' : '#6B7A8F',
-                  borderColor: active ? '#0A2540' : '#E1E7EF',
-                }}
-              >
-                Level {lvl} ({pct}%)
-              </button>
-            );
-          })}
-        </div>
+      {/* Level Tabs */}
+      <div className="grid grid-cols-3 gap-2 mb-4">
+        {([1, 2, 3] as const).map((lvl) => {
+          const percent = lvl === 1 ? '25%' : lvl === 2 ? '2%' : '1%';
+          const isActive = activeLevel === lvl;
+          return (
+            <button
+              key={lvl}
+              onClick={() => setActiveLevel(lvl)}
+              className={`py-3 rounded-2xl text-xs font-semibold transition border ${
+                isActive
+                  ? 'bg-[#C8833A] border-[#C8833A] text-white shadow-lg shadow-[#C8833A]/20'
+                  : 'bg-[#1A1A1F] border-[#2A2823] text-[#8A8580]'
+              }`}
+            >
+              Level {lvl} ({percent})
+            </button>
+          );
+        })}
+      </div>
 
-        {/* Level stats grid */}
-        <div className="card p-4">
-          <div className="grid grid-cols-2 gap-3">
-            <StatBox label="TOTAL INVITE" value={levelStats.count.toString()} />
-            <StatBox label="VALID INVITE" value={levelStats.validCount.toString()} />
-            <StatBox
-              label="TOTAL INCOME"
-              value={`UGX ${levelStats.earnings.toLocaleString()}`}
-            />
-            <StatBox
-              label="TEAM INVEST"
-              value={`UGX ${levelStats.invest.toLocaleString()}`}
-            />
-          </div>
-        </div>
+      {/* Level Statistics */}
+      <div className="grid grid-cols-2 gap-3">
+        <StatBox label="TOTAL INVITE" value={stats.totalInvite} />
+        <StatBox label="VALID INVITE" value={stats.validInvite} />
+        <StatBox label="TOTAL INCOME" value={`UGX ${stats.totalIncome.toLocaleString()}`} highlight />
+        <StatBox label="TEAM INVEST" value={`UGX ${stats.teamInvest.toLocaleString()}`} highlight />
       </div>
     </main>
   );
 }
 
-function StatBox({ label, value }: { label: string; value: string }) {
+function StatBox({ label, value, highlight }: { label: string; value: string | number; highlight?: boolean }) {
   return (
-    <div className="rounded-xl p-3 text-center bg-[#F5F7FA] border border-[#E1E7EF]">
-      <div className="text-[9px] tracking-wider text-[#6B7A8F] font-semibold mb-1">
-        {label}
+    <div className="card p-4 text-center bg-[#15151A] border-[#2A2823]">
+      <div className="text-[10px] text-[#8A8580] font-bold tracking-wider mb-1">{label}</div>
+      <div className={`text-lg font-bold ${highlight ? 'text-[#E0A44C]' : 'text-[#F5F2ED]'}`}>
+        {value}
       </div>
-      <div className="text-lg font-bold text-[#00B8DB]">{value}</div>
     </div>
   );
 }
