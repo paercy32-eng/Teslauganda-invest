@@ -6,12 +6,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { verifySession, SESSION_COOKIE } from '@/lib/auth';
 
-const MIN_WITHDRAW = 4000;
+const MIN_WITHDRAW = 5000;
 const WITHDRAW_OPEN_HOUR = 9;
 const WITHDRAW_OPEN_MINUTE = 30;
-const WITHDRAW_CLOSE_HOUR = 17; // 5:00 PM EAT
+const WITHDRAW_CLOSE_HOUR = 18;
 const WITHDRAW_CLOSE_MINUTE = 0;
-const DAILY_LIMIT = 1;
+const DAILY_LIMIT = 2;
 
 export async function POST(req: NextRequest) {
   try {
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     if (!activeRentals || activeRentals === 0) {
       return NextResponse.json(
         {
-          error: 'You need at least one active rental before you can withdraw. Please rent a robot first.',
+          error: 'You need at least one active investment before you can withdraw. Please invest first.',
           reason: 'no_active_rental',
         },
         { status: 400 }
@@ -98,10 +98,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 6. Prevent duplicate pending withdrawal
+    // 6. Duplicate pending
     const { data: existingPending } = await supabaseAdmin
       .from('tesla_withdrawals')
-      .select('id, amount, created_at')
+      .select('id, amount')
       .eq('user_id', session.userId)
       .eq('status', 'pending')
       .maybeSingle();
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
     if (existingPending) {
       return NextResponse.json(
         {
-          error: `You already have a pending withdrawal of UGX ${Number(existingPending.amount).toLocaleString()}. Wait for it to be processed before submitting another.`,
+          error: `You already have a pending withdrawal of UGX ${Number(existingPending.amount).toLocaleString()}. Wait for it to be processed.`,
           pendingWithdrawalId: existingPending.id,
         },
         { status: 400 }
@@ -142,13 +142,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
     }
 
-    // 8. Deduct balance immediately
+    // 8. Deduct balance
     await supabaseAdmin
       .from('users')
       .update({ balance: Number(user.balance) - numAmount })
       .eq('id', session.userId);
 
-    // 9. Create withdrawal request
+    // 9. Create withdrawal (status = pending, shown as "Reviewing")
     const { data: withdrawal, error: insErr } = await supabaseAdmin
       .from('tesla_withdrawals')
       .insert({
@@ -171,7 +171,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create request' }, { status: 500 });
     }
 
-    // 10. Log transaction
     await supabaseAdmin.from('tesla_transactions').insert({
       user_id: session.userId,
       type: 'withdrawal_request',
