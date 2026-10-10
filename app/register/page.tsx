@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import SafranLogo from '@/components/SafranLogo';
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -51,7 +51,7 @@ export default function RegisterPage() {
           name,
           phone,
           password,
-          confirmPassword, // 👈 THIS WAS ADDED PREVIOUSLY
+          confirmPassword,
           referralCode: referralCode.trim() || undefined,
         }),
       });
@@ -198,5 +198,18 @@ export default function RegisterPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+// 👇 WRAP THE COMPONENT IN SUSPENSE
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#131317]">
+        <div className="text-[#8A8580]">Loading…</div>
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }
