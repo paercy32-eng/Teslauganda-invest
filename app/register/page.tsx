@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import SafranLogo from '@/components/SafranLogo';
 
 function RegisterForm() {
   const router = useRouter();
@@ -70,19 +71,20 @@ function RegisterForm() {
 
   return (
     <main className="min-h-screen px-6 py-10 animate-fade-in">
-      <div className="flex items-center gap-2 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-[#0A2540] flex items-center justify-center text-[#00D9FF] font-bold text-xl">
-          R
-        </div>
-        <span className="text-2xl font-bold text-[#0A2540]">Robots Invest</span>
+      <div className="mb-8">
+        <SafranLogo
+          size={44}
+          textColor="#F5F2ED"
+          accentColor="#1A1A1F"
+        />
       </div>
 
-      <h1 className="text-3xl font-bold mb-2 text-[#0A2540]">Create account</h1>
-      <p className="text-[#6B7A8F] mb-8">Start renting. Start earning.</p>
+      <h1 className="text-3xl font-bold mb-2 text-[#F5F2ED]">Create account</h1>
+      <p className="text-[#8A8580] mb-8">Start investing. Start earning.</p>
 
       <form onSubmit={onSubmit} className="space-y-4" autoComplete="off">
         <div>
-          <label className="block text-sm text-[#6B7A8F] mb-2">Full Name</label>
+          <label className="block text-sm text-[#8A8580] mb-2">Full Name</label>
           <input
             type="text"
             name="name"
@@ -96,7 +98,7 @@ function RegisterForm() {
         </div>
 
         <div>
-          <label className="block text-sm text-[#6B7A8F] mb-2">Phone Number</label>
+          <label className="block text-sm text-[#8A8580] mb-2">Phone Number</label>
           <input
             type="tel"
             name="phone"
@@ -110,7 +112,7 @@ function RegisterForm() {
         </div>
 
         <div>
-          <label className="block text-sm text-[#6B7A8F] mb-2">Password</label>
+          <label className="block text-sm text-[#8A8580] mb-2">Password</label>
           <input
             type="password"
             name="password"
@@ -124,7 +126,7 @@ function RegisterForm() {
         </div>
 
         <div>
-          <label className="block text-sm text-[#6B7A8F] mb-2">Confirm Password</label>
+          <label className="block text-sm text-[#8A8580] mb-2">Confirm Password</label>
           <input
             type="password"
             name="confirmPassword"
@@ -138,14 +140,14 @@ function RegisterForm() {
         </div>
 
         <div>
-          <label className="block text-sm text-[#6B7A8F] mb-2">
-            Referral Code <span className="text-[#9BA8B8]">(optional)</span>
+          <label className="block text-sm text-[#8A8580] mb-2">
+            Referral Code <span className="text-[#5A5750]">(optional)</span>
           </label>
           <input
             type="text"
             name="referralCode"
             className="input-light uppercase"
-            placeholder="ROBOXXXXX"
+            placeholder="SAFRAN-XXXXX"
             value={form.referralCode}
             onChange={(e) => update('referralCode', e.target.value.toUpperCase())}
             autoComplete="off"
@@ -153,7 +155,7 @@ function RegisterForm() {
         </div>
 
         {error && (
-          <div className="bg-[#FFF1F3] border border-[#E11D48]/30 rounded-2xl px-4 py-3 text-sm text-[#E11D48]">
+          <div className="bg-[#2A1416] border border-[#E5484D]/40 rounded-2xl px-4 py-3 text-sm text-[#FF8A8A]">
             {error}
           </div>
         )}
@@ -163,9 +165,9 @@ function RegisterForm() {
         </button>
       </form>
 
-      <p className="text-center text-[#6B7A8F] mt-6">
+      <p className="text-center text-[#8A8580] mt-6">
         Already have an account?{' '}
-        <Link href="/login" className="text-[#00B8DB] font-semibold">
+        <Link href="/login" className="text-[#E0A44C] font-semibold">
           Log in
         </Link>
       </p>
@@ -178,7 +180,7 @@ export default function RegisterPage() {
     <Suspense
       fallback={
         <main className="min-h-screen flex items-center justify-center">
-          <div className="text-[#6B7A8F]">Loading…</div>
+          <div className="text-[#8A8580]">Loading…</div>
         </main>
       }
     >
