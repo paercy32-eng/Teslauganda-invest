@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
     // 6. Get MarzPay credentials
     const marzpayKey = process.env.MARZPAY_API_KEY;
     const marzpayBaseUrl = 'https://wallet.wearemarz.com/api/v1';
-      process.env.NEXT_PUBLIC_APP_URL || 'https://safranfrance.vercel.app';
+      const appUrl = 'https://safranfrance.vercel.app';
 
     if (!marzpayKey) {
       console.error('Missing MARZPAY_API_KEY');
