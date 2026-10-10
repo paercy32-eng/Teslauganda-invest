@@ -156,8 +156,8 @@ export async function POST(req: NextRequest) {
       };
 
       // If success → status = completed (final)
-      // If failed → status = approved (admin needs to retry)
-      const newStatus = isDisbursementSuccess ? 'completed' : wd.status;
+// If failed → status = failed (final)
+const newStatus = isDisbursementSuccess ? 'completed' : 'failed';
 
       await supabaseAdmin
         .from('tesla_withdrawals')
