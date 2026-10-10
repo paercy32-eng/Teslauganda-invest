@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import SafranLogo from '@/components/SafranLogo';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -16,6 +18,14 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // 👇 THIS READS THE URL AND PREFILLS THE REFERRAL CODE
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    if (ref) {
+      setReferralCode(ref.toUpperCase());
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,16 +45,16 @@ export default function RegisterPage() {
 
     try {
       const res = await fetch('/api/auth/register', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    name,
-    phone,
-    password,
-    confirmPassword, // 👈 THIS IS THE MISSING LINE
-    referralCode: referralCode.trim() || undefined,
-  }),
-});
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          phone,
+          password,
+          confirmPassword, // 👈 THIS WAS ADDED PREVIOUSLY
+          referralCode: referralCode.trim() || undefined,
+        }),
+      });
 
       const data = await res.json();
 
@@ -62,7 +72,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="min-h-screen relative flex items-center justify-center px-4 py-10 overflow-hidden bg-[#0F0F12]">
+    <main className="min-h-screen relative flex items-center justify-center px-4 py-10 overflow-hidden bg-[#131317]">
       {/* Decorative Background Elements */}
       <div className="absolute top-[-10%] right-[-10%] w-80 h-80 bg-[#C8833A] rounded-full mix-blend-screen filter blur-[120px] opacity-20"></div>
       <div className="absolute bottom-[-10%] left-[-10%] w-80 h-80 bg-[#E0A44C] rounded-full mix-blend-screen filter blur-[120px] opacity-10"></div>
@@ -78,7 +88,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Form Card */}
-        <div className="card p-6 bg-[#1A1A1F]/80 backdrop-blur-xl border border-[#2A2823] shadow-2xl">
+        <div className="card p-6 bg-[#1C1C21]/80 backdrop-blur-xl border border-[#2A2A30] shadow-2xl">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Full Name */}
             <div>
@@ -90,7 +100,7 @@ export default function RegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter your full name"
-                className="w-full bg-[#15151A] border border-[#2A2823] rounded-xl px-4 py-3.5 text-[#F5F2ED] placeholder-[#4A4843] focus:outline-none focus:border-[#C8833A] transition"
+                className="w-full bg-[#131317] border border-[#2A2A30] rounded-xl px-4 py-3.5 text-[#F5F2ED] placeholder-[#4A4843] focus:outline-none focus:border-[#C8833A] transition"
                 required
               />
             </div>
@@ -105,7 +115,7 @@ export default function RegisterPage() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="Enter your phone number"
-                className="w-full bg-[#15151A] border border-[#2A2823] rounded-xl px-4 py-3.5 text-[#F5F2ED] placeholder-[#4A4843] focus:outline-none focus:border-[#C8833A] transition"
+                className="w-full bg-[#131317] border border-[#2A2A30] rounded-xl px-4 py-3.5 text-[#F5F2ED] placeholder-[#4A4843] focus:outline-none focus:border-[#C8833A] transition"
                 required
               />
             </div>
@@ -122,7 +132,7 @@ export default function RegisterPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="At least 6 characters"
-                    className="w-full bg-[#15151A] border border-[#2A2823] rounded-xl px-4 py-3.5 text-[#F5F2ED] placeholder-[#4A4843] focus:outline-none focus:border-[#C8833A] transition pr-12"
+                    className="w-full bg-[#131317] border border-[#2A2A30] rounded-xl px-4 py-3.5 text-[#F5F2ED] placeholder-[#4A4843] focus:outline-none focus:border-[#C8833A] transition pr-12"
                     required
                   />
                   <button
@@ -144,7 +154,7 @@ export default function RegisterPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Repeat your password"
-                  className="w-full bg-[#15151A] border border-[#2A2823] rounded-xl px-4 py-3.5 text-[#F5F2ED] placeholder-[#4A4843] focus:outline-none focus:border-[#C8833A] transition"
+                  className="w-full bg-[#131317] border border-[#2A2A30] rounded-xl px-4 py-3.5 text-[#F5F2ED] placeholder-[#4A4843] focus:outline-none focus:border-[#C8833A] transition"
                   required
                 />
               </div>
@@ -160,7 +170,7 @@ export default function RegisterPage() {
                 value={referralCode}
                 onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                 placeholder="Enter referral code"
-                className="w-full bg-[#15151A] border border-[#2A2823] rounded-xl px-4 py-3.5 text-[#F5F2ED] placeholder-[#4A4843] focus:outline-none focus:border-[#C8833A] transition"
+                className="w-full bg-[#131317] border border-[#2A2A30] rounded-xl px-4 py-3.5 text-[#F5F2ED] placeholder-[#4A4843] focus:outline-none focus:border-[#C8833A] transition"
               />
             </div>
 
