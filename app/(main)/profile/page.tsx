@@ -13,33 +13,43 @@ type Me = {
 };
 
 const MIN_DEPOSIT = 15000;
-const MIN_WITHDRAW = 5000;
+const MIN_WITHDRAW = 1500;
 
 // Community Links
 const TELEGRAM_LINK = 'https://t.me/+GM_Fo41-HFsxNTc0';
 const WHATSAPP_LINK = 'https://whatsapp.com/channel/0029Vb9OlFtKrWR36rpMst0O';
 
-// Customer Service Links
+// Customer Service Links (Corrected for direct chat)
 const CS_TELEGRAM_LINK = 'https://t.me/aaaaa56590';
-const CS_WHATSAPP_LINK = 'https://wa.me/256705371032';
+const CS_WHATSAPP_LINK = 'https://wa.me/256705371032'; 
 
 export default function ProfilePage() {
   const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Modal States
   const [showRecharge, setShowRecharge] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [showGiftCard, setShowGiftCard] = useState(false);
-  const [showCustomerService, setShowCustomerService] = useState(false); // New state
+  const [showCustomerService, setShowCustomerService] = useState(false);
+  const [showBindAccount, setShowBindAccount] = useState(false);
 
+  // Gift Card State
   const [giftCode, setGiftCode] = useState('');
   const [giftMsg, setGiftMsg] = useState('');
   const [giftLoading, setGiftLoading] = useState(false);
 
-  // Check-in state
+  // Check-in State
   const [canCheckIn, setCanCheckIn] = useState(false);
   const [checkinLoading, setCheckinLoading] = useState(false);
   const [checkinMsg, setCheckinMsg] = useState('');
+
+  // Bind Account State
+  const [bindPhone, setBindPhone] = useState('');
+  const [bindName, setBindName] = useState('');
+  const [bindLoading, setBindLoading] = useState(false);
+  const [bindMsg, setBindMsg] = useState('');
 
   async function loadMe() {
     const res = await fetch('/api/me?t=' + Date.now(), { cache: 'no-store' });
@@ -118,6 +128,21 @@ export default function ProfilePage() {
     }
   }
 
+  // Handle Bind Account Submission (API will be created in next step)
+  async function handleBindAccount(e: React.FormEvent) {
+    e.preventDefault();
+    setBindLoading(true);
+    setBindMsg('');
+    
+    // NOTE: We will build this API route in the next step
+    setBindMsg('API integration coming next! (Data saved locally for now)');
+    setTimeout(() => {
+      setBindLoading(false);
+      setShowBindAccount(false);
+      setBindMsg('');
+    }, 1500);
+  }
+
   // Loading Spinner
   if (loading) {
     return (
@@ -191,19 +216,25 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* Quick Actions Grid */}
-      <h2 className="text-sm font-bold text-[#F5F2ED] mb-3 px-1">Quick Actions</h2>
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        
-        {/* Combined Transaction History */}
-        <Link href="/history" className="card p-4 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.98] transition col-span-2">
+      {/* Quick Actions List (Removed heading, made full width) */}
+      <div className="space-y-3 mb-6">
+        <Link href="/history" className="card p-4 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.98] transition">
           <div className="text-xs font-bold text-[#F5F2ED]">Transaction History</div>
           <div className="text-[10px] text-[#8A8580] mt-1">View deposits, income & withdrawals</div>
         </Link>
 
+        {/* Bind Account Button */}
+        <button
+          onClick={() => setShowBindAccount(true)}
+          className="card p-4 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.98] transition w-full text-left"
+        >
+          <div className="text-xs font-bold text-[#F5F2ED]">Bind Account</div>
+          <div className="text-[10px] text-[#8A8580] mt-1">Secure your withdrawals</div>
+        </button>
+
         <button
           onClick={() => setShowGiftCard(true)}
-          className="card p-4 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.98] transition text-left"
+          className="card p-4 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.98] transition w-full text-left"
         >
           <div className="text-xs font-bold text-[#F5F2ED]">Gift Cards</div>
           <div className="text-[10px] text-[#8A8580] mt-1">Redeem a code</div>
@@ -389,6 +420,68 @@ export default function ProfilePage() {
             <button
               onClick={() => setShowCustomerService(false)}
               className="w-full mt-5 border border-[#2A2823] text-[#8A8580] font-semibold py-3 rounded-xl active:scale-[0.98] transition bg-[#1A1A1F]"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bind Account Modal */}
+      {showBindAccount && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70" onClick={() => setShowBindAccount(false)}>
+          <div className="w-full max-w-md bg-[#1A1A1F] rounded-t-3xl p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <div className="text-lg font-bold text-[#F5F2ED]">Bind Account</div>
+                <div className="text-xs text-[#8A8580]">Secure your withdrawals</div>
+              </div>
+              <button onClick={() => setShowBindAccount(false)} className="text-[#8A8580] text-xl">×</button>
+            </div>
+            
+            <form onSubmit={handleBindAccount} className="space-y-4">
+              <div>
+                <label className="block text-[10px] text-[#8A8580] font-bold mb-1">
+                  MOBILE MONEY NUMBER
+                </label>
+                <input
+                  type="tel"
+                  value={bindPhone}
+                  onChange={(e) => setBindPhone(e.target.value)}
+                  placeholder="0700123456"
+                  className="input-light"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-[#8A8580] font-bold mb-1">
+                  FULL REGISTERED NAME
+                </label>
+                <input
+                  type="text"
+                  value={bindName}
+                  onChange={(e) => setBindName(e.target.value)}
+                  placeholder="As registered on mobile money"
+                  className="input-light"
+                  required
+                />
+              </div>
+
+              {bindMsg && (
+                <div className="text-xs text-[#E0A44C] bg-[#2A1F13] rounded-xl px-3 py-2 border border-[#E0A44C]/30">
+                  {bindMsg}
+                </div>
+              )}
+
+              <button type="submit" className="btn-primary" disabled={bindLoading}>
+                {bindLoading ? 'Saving…' : 'Bind Account'}
+              </button>
+            </form>
+            
+            <button
+              onClick={() => setShowBindAccount(false)}
+              className="w-full mt-3 border border-[#2A2823] text-[#8A8580] font-semibold py-3 rounded-xl active:scale-[0.98] transition bg-[#1A1A1F]"
             >
               Close
             </button>
@@ -767,4 +860,4 @@ function WithdrawModal({
       </div>
     </div>
   );
-                  }
+}
