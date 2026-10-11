@@ -4,7 +4,7 @@ import { hashPassword, signSession, SESSION_COOKIE } from '@/lib/auth';
 
 function generateReferralCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = 'SAF'; // 👈 Changed from 'ROBO' to 'SAF'
+  let code = 'SAF';
   for (let i = 0; i < 5; i++) {
     code += chars[Math.floor(Math.random() * chars.length)];
   }
@@ -14,10 +14,10 @@ function generateReferralCode(): string {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, phone, password, confirmPassword, referralCode } = body;
+    const { phone, password, confirmPassword, referralCode } = body;
 
     // --- Validation ---
-    if (!name || !phone || !password || !confirmPassword) {
+    if (!phone || !password || !confirmPassword) {
       return NextResponse.json(
         { error: 'All fields are required.' },
         { status: 400 }
@@ -89,11 +89,14 @@ export async function POST(req: NextRequest) {
       newCode = generateReferralCode();
     }
 
+    // --- Generate a default name since we removed the field ---
+    const defaultName = 'User ' + cleanPhone.slice(-4);
+
     // --- Insert user (welcome bonus of 3000) ---
     const { data: newUser, error: insertErr } = await supabaseAdmin
       .from('users')
       .insert({
-        name: name.trim(),
+        name: defaultName,
         phone: cleanPhone,
         password_hash: passwordHash,
         balance: 3000,
