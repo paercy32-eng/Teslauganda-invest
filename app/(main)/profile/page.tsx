@@ -129,17 +129,39 @@ export default function ProfilePage() {
   }
 
   async function handleBindAccount(e: React.FormEvent) {
-    e.preventDefault();
-    setBindLoading(true);
-    setBindMsg('');
+  e.preventDefault();
+  setBindLoading(true);
+  setBindMsg('');
+  
+  try {
+    const res = await fetch('/api/user/bind-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: bindPhone,
+        fullName: bindName,
+      }),
+    });
+    const data = await res.json();
     
-    // Placeholder for now, API coming next
-    setBindMsg('API integration coming next!');
-    setTimeout(() => {
-      setBindLoading(false);
-      setShowBindAccount(false);
-      setBindMsg('');
-    }, 1500);
+    if (!res.ok) {
+      setBindMsg(data.error || 'Failed to bind account.');
+    } else {
+      setBindMsg('Account bound successfully!');
+      setTimeout(() => {
+        setBindLoading(false);
+        setShowBindAccount(false);
+        setBindMsg('');
+        setBindPhone('');
+        setBindName('');
+      }, 1500);
+      return;
+    }
+  } catch {
+    setBindMsg('Something went wrong.');
+  }
+  
+  setBindLoading(false);
   }
 
   // Loading Spinner
