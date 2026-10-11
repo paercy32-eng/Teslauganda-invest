@@ -129,39 +129,41 @@ export async function POST(req: NextRequest) {
 
       // Get MarzPay credentials
       const marzpayKey = process.env.MARZPAY_API_KEY;
-      const marzpayBaseUrl =
-        process.env.MARZPAY_BASE_URL || 'https://wallet.wearemarz.com/api/v1';
-      const appUrl =
-        process.env.NEXT_PUBLIC_APP_URL || 'https://safranfrance.vercel.app';
+      const marzpaySecret = process.env.MARZPAY_API_SECRET;
+      const marzpayBaseUrl = 'https://wallet.wearemarz.com/api/v1';
+      const appUrl = 'https://safranfrance.vercel.app';
 
-      if (!marzpayKey) {
+      if (!marzpayKey || !marzpaySecret) {
         return NextResponse.json(
           { error: 'Payment gateway not configured' },
           { status: 500 }
         );
       }
 
-      // Generate unique reference for this payout
-      const payoutRef = `WD-${withdrawalId.slice(0, 8)}-${Date.now()}`;
+      // Create Basic Auth Token
+      const authToken = Buffer.from(`${marzpayKey}:${marzpaySecret}`).toString('base64');
+
+      // Generate unique UUID reference for this payout (MarzPay requires UUID v4)
+      const payoutRef = crypto.randomUUID();
 
       // Call MarzPay send-money
       const marzpayRes = await fetch(`${marzpayBaseUrl}/send-money`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${marzpayKey}`,
+          Authorization: `Basic ${authToken}`,
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
         body: JSON.stringify({
           amount: userNet,
           phone_number: payoutPhone,
+          country: 'UG', // Required by MarzPay
           recipient_name: payoutName,
-          reference: payoutRef,
+          reference: payoutRef, // Must be UUID
           callback_url: `${appUrl}/api/webhooks/marzpay`,
           description: `Safran withdrawal payout`,
           metadata: [
             { withdrawalId },
-            { reference: payoutRef },
           ],
         }),
       });
@@ -169,7 +171,7 @@ export async function POST(req: NextRequest) {
       const marzpayData = await marzpayRes.json().catch(() => ({}));
       console.log('MarzPay payout response:', marzpayData);
 
-      if (!marzpayRes.ok || marzpayData?.success === false) {
+      if (!marzpayRes.ok || marzpayData?.status === 'error') {
         console.error('MarzPay payout failed:', marzpayData);
         return NextResponse.json(
           {
@@ -278,4 +280,4 @@ export async function POST(req: NextRequest) {
     console.error('Admin withdrawals action error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
-        }
+}
