@@ -19,7 +19,7 @@ const MIN_WITHDRAW = 5000;
 const TELEGRAM_LINK = 'https://t.me/+GM_Fo41-HFsxNTc0';
 const WHATSAPP_LINK = 'https://whatsapp.com/channel/0029Vb9OlFtKrWR36rpMst0O';
 
-// Customer Service Links (Corrected for direct chat)
+// Customer Service Links
 const CS_TELEGRAM_LINK = 'https://t.me/aaaaa56590';
 const CS_WHATSAPP_LINK = 'https://wa.me/256705371032'; 
 
@@ -128,14 +128,13 @@ export default function ProfilePage() {
     }
   }
 
-  // Handle Bind Account Submission (API will be created in next step)
   async function handleBindAccount(e: React.FormEvent) {
     e.preventDefault();
     setBindLoading(true);
     setBindMsg('');
     
-    // NOTE: We will build this API route in the next step
-    setBindMsg('API integration coming next! (Data saved locally for now)');
+    // Placeholder for now, API coming next
+    setBindMsg('API integration coming next!');
     setTimeout(() => {
       setBindLoading(false);
       setShowBindAccount(false);
@@ -189,7 +188,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Daily Check-in */}
-      <div className="card p-4 bg-[#1A1A1F] border-[#2A2823] mb-5">
+      <div className="bg-[#1A1A1F] border border-[#2A2823] rounded-2xl p-4 mb-5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex-1">
             <div className="font-bold text-[#F5F2ED] text-sm">Daily Check-in</div>
@@ -216,17 +215,16 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* Quick Actions List (Removed heading, made full width) */}
+      {/* Quick Actions List */}
       <div className="space-y-3 mb-6">
-        <Link href="/history" className="card p-4 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.98] transition">
+        <Link href="/history" className="block w-full bg-[#1A1A1F] border border-[#2A2823] rounded-2xl p-4 active:scale-[0.98] transition">
           <div className="text-xs font-bold text-[#F5F2ED]">Transaction History</div>
           <div className="text-[10px] text-[#8A8580] mt-1">View deposits, income & withdrawals</div>
         </Link>
 
-        {/* Bind Account Button */}
         <button
           onClick={() => setShowBindAccount(true)}
-          className="card p-4 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.98] transition w-full text-left"
+          className="block w-full text-left bg-[#1A1A1F] border border-[#2A2823] rounded-2xl p-4 active:scale-[0.98] transition"
         >
           <div className="text-xs font-bold text-[#F5F2ED]">Bind Account</div>
           <div className="text-[10px] text-[#8A8580] mt-1">Secure your withdrawals</div>
@@ -234,13 +232,13 @@ export default function ProfilePage() {
 
         <button
           onClick={() => setShowGiftCard(true)}
-          className="card p-4 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.98] transition w-full text-left"
+          className="block w-full text-left bg-[#1A1A1F] border border-[#2A2823] rounded-2xl p-4 active:scale-[0.98] transition"
         >
           <div className="text-xs font-bold text-[#F5F2ED]">Gift Cards</div>
           <div className="text-[10px] text-[#8A8580] mt-1">Redeem a code</div>
         </button>
 
-        <Link href="/rewards" className="card p-4 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.98] transition">
+        <Link href="/rewards" className="block w-full bg-[#1A1A1F] border border-[#2A2823] rounded-2xl p-4 active:scale-[0.98] transition">
           <div className="text-xs font-bold text-[#F5F2ED]">Rewards</div>
           <div className="text-[10px] text-[#8A8580] mt-1">Team milestones</div>
         </Link>
@@ -253,7 +251,7 @@ export default function ProfilePage() {
         {/* Customer Service Button */}
         <button
           onClick={() => setShowCustomerService(true)}
-          className="card p-4 flex items-center gap-3 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.99] transition w-full text-left"
+          className="block w-full text-left bg-[#1A1A1F] border border-[#2A2823] rounded-2xl p-4 flex items-center gap-3 active:scale-[0.99] transition"
         >
           <div className="w-10 h-10 rounded-xl bg-[#C8833A] flex items-center justify-center text-white">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
@@ -272,7 +270,7 @@ export default function ProfilePage() {
           href={TELEGRAM_LINK}
           target="_blank"
           rel="noopener noreferrer"
-          className="card p-4 flex items-center gap-3 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.99] transition"
+          className="block w-full bg-[#1A1A1F] border border-[#2A2823] rounded-2xl p-4 flex items-center gap-3 active:scale-[0.99] transition"
         >
           <div className="w-10 h-10 rounded-xl bg-[#229ED9] flex items-center justify-center">
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-white">
@@ -291,7 +289,7 @@ export default function ProfilePage() {
           href={WHATSAPP_LINK}
           target="_blank"
           rel="noopener noreferrer"
-          className="card p-4 flex items-center gap-3 bg-[#1A1A1F] border-[#2A2823] active:scale-[0.99] transition"
+          className="block w-full bg-[#1A1A1F] border border-[#2A2823] rounded-2xl p-4 flex items-center gap-3 active:scale-[0.99] transition"
         >
           <div className="w-10 h-10 rounded-xl bg-[#25D366] flex items-center justify-center">
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-white">
@@ -860,4 +858,4 @@ function WithdrawModal({
       </div>
     </div>
   );
-}
+          }
