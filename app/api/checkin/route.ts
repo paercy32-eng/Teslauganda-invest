@@ -80,3 +80,47 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
+
+export async function GET(req: NextRequest) {
+  try {
+    const token = req.cookies.get(SESSION_COOKIE)?.value;
+    if (!token) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    const session = await verifySession(token);
+    if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('last_checkin_at')
+      .eq('id', session.userId)
+      .maybeSingle();
+
+    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
+    // Check if already checked in today (EAT timezone)
+    let canCheckIn = true;
+    if (user.last_checkin_at) {
+      const nowUTC = new Date();
+      const nowEAT = new Date(nowUTC.getTime() + 3 * 60 * 60 * 1000);
+      const todayStartEAT = Date.UTC(
+        nowEAT.getUTCFullYear(),
+        nowEAT.getUTCMonth(),
+        nowEAT.getUTCDate(),
+        0, 0, 0, 0
+      );
+      const lastCheckinUTC = new Date(user.last_checkin_at).getTime();
+      const lastCheckinEAT = lastCheckinUTC + 3 * 60 * 60 * 1000;
+      if (lastCheckinEAT >= todayStartEAT) {
+        canCheckIn = false;
+      }
+    }
+
+    return NextResponse.json({
+      canCheckIn,
+      bonus: 200,
+      lastCheckinAt: user.last_checkin_at,
+    });
+  } catch (err) {
+    console.error('Check-in GET error:', err);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
+}
