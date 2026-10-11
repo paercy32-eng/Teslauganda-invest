@@ -13,9 +13,8 @@ type Me = {
 };
 
 const MIN_DEPOSIT = 15000;
-const MIN_WITHDRAW = 5000;
+const MIN_WITHDRAW = 1500;
 
-// 👇 YOUR LINKS ARE HERE
 const TELEGRAM_LINK = 'https://t.me/+GM_Fo41-HFsxNTc0';
 const WHATSAPP_LINK = 'https://whatsapp.com/channel/0029Vb9OlFtKrWR36rpMst0O';
 
@@ -31,6 +30,11 @@ export default function ProfilePage() {
   const [giftMsg, setGiftMsg] = useState('');
   const [giftLoading, setGiftLoading] = useState(false);
 
+  // Check-in state
+  const [canCheckIn, setCanCheckIn] = useState(false);
+  const [checkinLoading, setCheckinLoading] = useState(false);
+  const [checkinMsg, setCheckinMsg] = useState('');
+
   async function loadMe() {
     const res = await fetch('/api/me?t=' + Date.now(), { cache: 'no-store' });
     if (res.status === 401) {
@@ -42,9 +46,41 @@ export default function ProfilePage() {
     setLoading(false);
   }
 
+  async function loadCheckinStatus() {
+    try {
+      const res = await fetch('/api/checkin?t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setCanCheckIn(data.canCheckIn === true);
+      }
+    } catch {}
+  }
+
   useEffect(() => {
     loadMe();
+    loadCheckinStatus();
   }, [router]);
+
+  async function handleCheckIn() {
+    setCheckinLoading(true);
+    setCheckinMsg('');
+    try {
+      const res = await fetch('/api/checkin', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        setCheckinMsg(data.error || 'Check-in failed.');
+      } else {
+        setCheckinMsg(data.message || 'You earned UGX 200!');
+        setCanCheckIn(false);
+        await loadMe();
+      }
+    } catch {
+      setCheckinMsg('Something went wrong.');
+    } finally {
+      setCheckinLoading(false);
+      setTimeout(() => setCheckinMsg(''), 4000);
+    }
+  }
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -117,6 +153,34 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {/* Daily Check-in */}
+      <div className="card p-4 bg-[#1A1A1F] border-[#2A2823] mb-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex-1">
+            <div className="font-bold text-[#F5F2ED] text-sm">Daily Check-in</div>
+            <div className="text-[10px] text-[#8A8580] mt-0.5">
+              Earn UGX 200 every day
+            </div>
+          </div>
+          <button
+            onClick={handleCheckIn}
+            disabled={!canCheckIn || checkinLoading}
+            className={`px-5 py-2.5 rounded-xl text-xs font-bold active:scale-[0.98] transition ${
+              canCheckIn
+                ? 'bg-gradient-to-r from-[#C8833A] to-[#E0A44C] text-white shadow-lg shadow-[#C8833A]/20'
+                : 'bg-[#2A2823] text-[#8A8580] cursor-not-allowed'
+            }`}
+          >
+            {checkinLoading ? '...' : canCheckIn ? 'Check In' : 'Claimed'}
+          </button>
+        </div>
+        {checkinMsg && (
+          <div className="mt-3 text-xs text-[#E0A44C] bg-[#2A1F13] rounded-xl px-3 py-2 border border-[#E0A44C]/30">
+            {checkinMsg}
+          </div>
+        )}
+      </div>
+
       {/* Quick Actions Grid */}
       <h2 className="text-sm font-bold text-[#F5F2ED] mb-3 px-1">Quick Actions</h2>
       <div className="grid grid-cols-2 gap-3 mb-6">
@@ -147,7 +211,6 @@ export default function ProfilePage() {
       {/* Community Section */}
       <h2 className="text-sm font-bold text-[#F5F2ED] mb-3 px-1">Join Our Community</h2>
       <div className="space-y-3 mb-6">
-        {/* Telegram Card */}
         <a
           href={TELEGRAM_LINK}
           target="_blank"
@@ -162,7 +225,6 @@ export default function ProfilePage() {
           <div className="text-[#8A8580]">→</div>
         </a>
 
-        {/* WhatsApp Card */}
         <a
           href={WHATSAPP_LINK}
           target="_blank"
@@ -243,7 +305,7 @@ export default function ProfilePage() {
 }
 
 // ============================================================
-// RECHARGE MODAL — MarzPay flow
+// RECHARGE MODAL
 // ============================================================
 function RechargeModal({
   onClose,
@@ -258,12 +320,11 @@ function RechargeModal({
   const [msg, setMsg] = useState('');
   const [sent, setSent] = useState(false);
   const [pollCount, setPollCount] = useState(0);
-  const [minDeposit, setMinDeposit] = useState(2000); // Default fallback
+  const [minDeposit, setMinDeposit] = useState(2000);
 
   useEffect(() => {
     async function prefill() {
       try {
-        // Fetch the minimum deposit from Supabase
         const settingsRes = await fetch('/api/settings');
         if (settingsRes.ok) {
           const settingsData = await settingsRes.json();
@@ -272,8 +333,6 @@ function RechargeModal({
             setAmount(String(settingsData.minDeposit));
           }
         }
-
-        // Fetch user phone
         const res = await fetch('/api/me');
         if (res.ok) {
           const data = await res.json();
@@ -420,7 +479,7 @@ function RechargeModal({
       </div>
     </div>
   );
-              }
+}
 
 // ============================================================
 // WITHDRAW MODAL
@@ -592,7 +651,8 @@ function WithdrawModal({
           </form>
         ) : (
           <div className="text-center py-4">
-            <div className="font-semibold text-[#F5F2ED] mb-1 text-lg">
+            <div className="text-5xl mb-3">✅</div>
+            <div className="font-semibold text-[#F5F2ED] mb-1">
               Request submitted
             </div>
             <div className="text-xs text-[#E0A44C] font-semibold mb-2">
@@ -612,4 +672,4 @@ function WithdrawModal({
       </div>
     </div>
   );
-                                          }
+      }
