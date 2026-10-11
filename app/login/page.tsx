@@ -41,7 +41,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen relative flex items-center justify-center px-4 overflow-hidden bg-[#0F0F12]">
+    <main className="min-h-screen relative flex items-center justify-center px-4 overflow-hidden bg-[#131317]">
       {/* Decorative Background Elements */}
       <div className="absolute top-[-10%] left-[-10%] w-72 h-72 bg-[#C8833A] rounded-full mix-blend-screen filter blur-[100px] opacity-20"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-72 h-72 bg-[#E0A44C] rounded-full mix-blend-screen filter blur-[100px] opacity-10"></div>
@@ -55,15 +55,18 @@ export default function LoginPage() {
         </div>
 
         {/* Form Card */}
-        <div className="card p-6 bg-[#1A1A1F]/80 backdrop-blur-xl border border-[#2A2823] shadow-2xl">
-          <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="bg-[#1A1A1F] border border-[#2A2823] rounded-3xl p-6 shadow-2xl">
+          <form onSubmit={handleSubmit} name="login-form" autoComplete="on" className="space-y-5">
             {/* Phone Number */}
             <div>
-              <label className="block text-[10px] text-[#8A8580] font-bold mb-2 tracking-wider uppercase">
+              <label htmlFor="login-phone" className="block text-[10px] text-[#8A8580] font-bold mb-2 tracking-wider uppercase">
                 Phone Number
               </label>
               <input
+                id="login-phone"
+                name="phone"
                 type="tel"
+                autoComplete="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="Enter your phone number"
@@ -74,12 +77,15 @@ export default function LoginPage() {
 
             {/* Password */}
             <div>
-              <label className="block text-[10px] text-[#8A8580] font-bold mb-2 tracking-wider uppercase">
+              <label htmlFor="login-password" className="block text-[10px] text-[#8A8580] font-bold mb-2 tracking-wider uppercase">
                 Password
               </label>
               <div className="relative">
                 <input
+                  id="login-password"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
