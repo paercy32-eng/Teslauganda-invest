@@ -13,11 +13,15 @@ type Me = {
 };
 
 const MIN_DEPOSIT = 15000;
-const MIN_WITHDRAW = 1500;
+const MIN_WITHDRAW = 5000;
+
+// Community Links
+const TELEGRAM_LINK = 'https://t.me/+GM_Fo41-HFsxNTc0';
+const WHATSAPP_LINK = 'https://whatsapp.com/channel/0029Vb9OlFtKrWR36rpMst0O';
 
 // Customer Service Links
 const CS_TELEGRAM_LINK = 'https://t.me/aaaaa56590';
-const CS_WHATSAPP_LINK = 'https://wa.me/256705371032'; // International format for 0705371032
+const CS_WHATSAPP_LINK = 'https://wa.me/256705371032';
 
 export default function ProfilePage() {
   const router = useRouter();
