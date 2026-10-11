@@ -6,7 +6,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { verifySession, SESSION_COOKIE } from '@/lib/auth';
 
-// GET — fetch currently bound account
 export async function GET(req: NextRequest) {
   try {
     const token = req.cookies.get(SESSION_COOKIE)?.value;
@@ -14,17 +13,20 @@ export async function GET(req: NextRequest) {
     const session = await verifySession(token);
     if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
 
-    const { data: user } = await supabaseAdmin
+    const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('bound_phone, bound_name')
       .eq('id', session.userId)
       .maybeSingle();
 
-    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    if (error) {
+      console.error('Bind account GET error:', error);
+      return NextResponse.json({ error: 'Failed to load.' }, { status: 500 });
+    }
 
     return NextResponse.json({
-      boundPhone: user.bound_phone,
-      boundName: user.bound_name,
+      boundPhone: user?.bound_phone || '',
+      boundName: user?.bound_name || '',
     });
   } catch (err) {
     console.error('Bind account GET error:', err);
@@ -32,7 +34,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST — save or update bound account
 export async function POST(req: NextRequest) {
   try {
     const token = req.cookies.get(SESSION_COOKIE)?.value;
@@ -43,10 +44,7 @@ export async function POST(req: NextRequest) {
     const { phone, fullName } = await req.json();
 
     if (!phone || !fullName) {
-      return NextResponse.json(
-        { error: 'Phone number and full name are required.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Phone number and full name are required.' }, { status: 400 });
     }
 
     const cleanPhone = String(phone).trim();
