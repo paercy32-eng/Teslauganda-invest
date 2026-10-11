@@ -29,8 +29,11 @@ export async function GET(req: NextRequest) {
       .from('tesla_withdrawals')
       .select('id, user_id, amount, status, phone, full_name, created_at, reviewed_at, meta');
 
-    if (status !== 'all') {
-      query = query.eq('status', status);
+    if (status === 'approved') {
+  // Include both approved and completed in the 'approved' filter
+  query = query.in('status', ['approved', 'completed']);
+} else if (status !== 'all') {
+  query = query.eq('status', status);
     }
 
     const { data, error } = await query;
