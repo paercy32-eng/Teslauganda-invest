@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
       // Create Basic Auth Token
       const authToken = Buffer.from(`${marzpayKey}:${marzpaySecret}`).toString('base64');
 
-      // Generate unique UUID reference for this payout (MarzPay requires UUID v4)
+      // Generate unique UUID reference for this payout
       const payoutRef = crypto.randomUUID();
 
       // Call MarzPay send-money
@@ -159,9 +159,9 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           amount: userNet,
           phone_number: payoutPhone,
-          country: 'UG', // Required by MarzPay
+          country: 'UG',
           recipient_name: payoutName,
-          reference: payoutRef, // Must be UUID
+          reference: payoutRef,
           callback_url: `${appUrl}/api/webhooks/marzpay`,
           description: `Safran withdrawal payout`,
           metadata: [
@@ -216,17 +216,22 @@ export async function POST(req: NextRequest) {
         })
         .eq('id', wd.user_id);
 
-      await supabaseAdmin.from('tesla_transactions').insert({
-        user_id: wd.user_id,
-        type: 'withdrawal',
-        amount: Number(wd.amount),
-        status: 'completed',
-        meta: {
-          approved_by: session.username,
-          marzpay_payout_reference: payoutRef,
-          user_net: userNet,
-        },
-      });
+      // 👇 UPDATED: Update the existing 'withdrawal_request' transaction instead of creating a new one
+      await supabaseAdmin
+        .from('tesla_transactions')
+        .update({
+          type: 'withdrawal',
+          status: 'completed',
+          meta: {
+            approved_by: session.username,
+            marzpay_payout_reference: payoutRef,
+            user_net: userNet,
+            withdrawal_id: withdrawalId,
+          },
+        })
+        .eq('user_id', wd.user_id)
+        .eq('type', 'withdrawal_request')
+        .eq('meta->>withdrawal_id', withdrawalId);
 
       await supabaseAdmin.from('tesla_admin_logs').insert({
         admin_action: 'approve_withdrawal',
@@ -262,13 +267,19 @@ export async function POST(req: NextRequest) {
         })
         .eq('id', withdrawalId);
 
-      await supabaseAdmin.from('tesla_transactions').insert({
-        user_id: wd.user_id,
-        type: 'withdrawal_refund',
-        amount: Number(wd.amount),
-        status: 'completed',
-        meta: { rejected_by: session.username },
-      });
+      // Update the original request to rejected
+      await supabaseAdmin
+        .from('tesla_transactions')
+        .update({
+          status: 'rejected',
+          meta: {
+            rejected_by: session.username,
+            withdrawal_id: withdrawalId,
+          },
+        })
+        .eq('user_id', wd.user_id)
+        .eq('type', 'withdrawal_request')
+        .eq('meta->>withdrawal_id', withdrawalId);
 
       await supabaseAdmin.from('tesla_admin_logs').insert({
         admin_action: 'reject_withdrawal',
@@ -316,6 +327,33 @@ export async function POST(req: NextRequest) {
         })
         .eq('id', withdrawalId);
 
+      // Refund the user's balance
+      const { data: user } = await supabaseAdmin
+        .from('users')
+        .select('balance')
+        .eq('id', wd.user_id)
+        .maybeSingle();
+
+      await supabaseAdmin
+        .from('users')
+        .update({ balance: Number(user?.balance ?? 0) + Number(wd.amount) })
+        .eq('id', wd.user_id);
+
+      // Update the transaction to failed
+      await supabaseAdmin
+        .from('tesla_transactions')
+        .update({
+          status: 'failed',
+          type: 'withdrawal_failed',
+          meta: {
+            failed_by: session.username,
+            withdrawal_id: withdrawalId,
+          },
+        })
+        .eq('user_id', wd.user_id)
+        .eq('type', 'withdrawal_request')
+        .eq('meta->>withdrawal_id', withdrawalId);
+
       await supabaseAdmin.from('tesla_admin_logs').insert({
         admin_action: 'mark_withdrawal_failed',
         target_user_id: wd.user_id,
@@ -333,4 +371,4 @@ export async function POST(req: NextRequest) {
     console.error('Admin withdrawals action error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
-}
+          }
