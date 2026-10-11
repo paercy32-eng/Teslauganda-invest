@@ -28,6 +28,10 @@ export default function ProfilePage() {
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
   
+  // Bound Account State
+  const [boundPhone, setBoundPhone] = useState('');
+  const [boundName, setBoundName] = useState('');
+
   // Modal States
   const [showRecharge, setShowRecharge] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
@@ -45,7 +49,7 @@ export default function ProfilePage() {
   const [checkinLoading, setCheckinLoading] = useState(false);
   const [checkinMsg, setCheckinMsg] = useState('');
 
-  // Bind Account State
+  // Bind Account Form State
   const [bindPhone, setBindPhone] = useState('');
   const [bindName, setBindName] = useState('');
   const [bindLoading, setBindLoading] = useState(false);
@@ -62,6 +66,17 @@ export default function ProfilePage() {
     setLoading(false);
   }
 
+  async function loadBoundAccount() {
+    try {
+      const res = await fetch('/api/user/bind-account?t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.boundPhone) setBoundPhone(data.boundPhone);
+        if (data.boundName) setBoundName(data.boundName);
+      }
+    } catch {}
+  }
+
   async function loadCheckinStatus() {
     try {
       const res = await fetch('/api/checkin?t=' + Date.now(), { cache: 'no-store' });
@@ -74,6 +89,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     loadMe();
+    loadBoundAccount();
     loadCheckinStatus();
   }, [router]);
 
@@ -129,39 +145,43 @@ export default function ProfilePage() {
   }
 
   async function handleBindAccount(e: React.FormEvent) {
-  e.preventDefault();
-  setBindLoading(true);
-  setBindMsg('');
-  
-  try {
-    const res = await fetch('/api/user/bind-account', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        phone: bindPhone,
-        fullName: bindName,
-      }),
-    });
-    const data = await res.json();
+    e.preventDefault();
+    setBindLoading(true);
+    setBindMsg('');
     
-    if (!res.ok) {
-      setBindMsg(data.error || 'Failed to bind account.');
-    } else {
-      setBindMsg('Account bound successfully!');
-      setTimeout(() => {
-        setBindLoading(false);
-        setShowBindAccount(false);
-        setBindMsg('');
-        setBindPhone('');
-        setBindName('');
-      }, 1500);
-      return;
+    try {
+      const res = await fetch('/api/user/bind-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: bindPhone,
+          fullName: bindName,
+        }),
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        setBindMsg(data.error || 'Failed to bind account.');
+      } else {
+        setBindMsg('Account bound successfully!');
+        // Update the main state so the Withdraw modal uses the new details immediately
+        setBoundPhone(bindPhone);
+        setBoundName(bindName);
+        
+        setTimeout(() => {
+          setBindLoading(false);
+          setShowBindAccount(false);
+          setBindMsg('');
+          setBindPhone('');
+          setBindName('');
+        }, 1500);
+        return;
+      }
+    } catch {
+      setBindMsg('Something went wrong.');
     }
-  } catch {
-    setBindMsg('Something went wrong.');
-  }
-  
-  setBindLoading(false);
+    
+    setBindLoading(false);
   }
 
   // Loading Spinner
@@ -249,7 +269,9 @@ export default function ProfilePage() {
           className="block w-full text-left bg-[#1A1A1F] border border-[#2A2823] rounded-2xl p-4 active:scale-[0.98] transition"
         >
           <div className="text-xs font-bold text-[#F5F2ED]">Bind Account</div>
-          <div className="text-[10px] text-[#8A8580] mt-1">Secure your withdrawals</div>
+          <div className="text-[10px] text-[#8A8580] mt-1">
+            {boundPhone ? `Bound to ${boundPhone}` : 'Secure your withdrawals'}
+          </div>
         </button>
 
         <button
@@ -346,11 +368,15 @@ export default function ProfilePage() {
       {showWithdraw && (
         <WithdrawModal
           balance={me?.balance ?? 0}
-          defaultPhone={me?.phone ?? ''}
-          defaultName={me?.name ?? ''}
+          boundPhone={boundPhone}
+          boundName={boundName}
           onClose={() => setShowWithdraw(false)}
           onSuccess={async () => {
             await loadMe();
+          }}
+          onRequestBind={() => {
+            setShowWithdraw(false);
+            setShowBindAccount(true);
           }}
         />
       )}
@@ -694,20 +720,20 @@ function RechargeModal({
 // ============================================================
 function WithdrawModal({
   balance,
-  defaultPhone,
-  defaultName,
+  boundPhone,
+  boundName,
   onClose,
   onSuccess,
+  onRequestBind,
 }: {
   balance: number;
-  defaultPhone: string;
-  defaultName: string;
+  boundPhone: string;
+  boundName: string;
   onClose: () => void;
   onSuccess: () => void;
+  onRequestBind: () => void;
 }) {
   const [amount, setAmount] = useState(String(MIN_WITHDRAW));
-  const [phone, setPhone] = useState(defaultPhone);
-  const [fullName, setFullName] = useState(defaultName);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
   const [done, setDone] = useState(false);
@@ -716,9 +742,16 @@ function WithdrawModal({
   const fee = Math.round(numAmount * 0.15);
   const net = Math.round(numAmount * 0.85);
 
+  const hasBoundAccount = boundPhone && boundName;
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setMsg('');
+
+    if (!hasBoundAccount) {
+      setMsg('Please bind an account first.');
+      return;
+    }
 
     if (numAmount < MIN_WITHDRAW) {
       setMsg(`Minimum withdrawal is UGX ${MIN_WITHDRAW.toLocaleString()}`);
@@ -737,8 +770,8 @@ function WithdrawModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: numAmount,
-          phone: phone.trim(),
-          fullName: fullName.trim(),
+          phone: boundPhone,
+          fullName: boundName,
         }),
       });
       const data = await res.json();
@@ -773,7 +806,29 @@ function WithdrawModal({
           <button onClick={onClose} className="text-[#8A8580] text-xl">×</button>
         </div>
 
-        {!done ? (
+        {!hasBoundAccount ? (
+          <div className="text-center py-6">
+            <div className="text-4xl mb-3">🔒</div>
+            <div className="font-semibold text-[#F5F2ED] mb-2">
+              Account Not Bound
+            </div>
+            <div className="text-xs text-[#8A8580] mb-5">
+              You need to bind a mobile money account before you can withdraw.
+            </div>
+            <button
+              onClick={onRequestBind}
+              className="btn-primary"
+            >
+              Bind Account Now
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full mt-3 text-xs text-[#8A8580] underline"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : !done ? (
           <form onSubmit={submit} className="space-y-3">
             <div>
               <label className="block text-[10px] text-[#8A8580] font-bold mb-1">
@@ -792,32 +847,23 @@ function WithdrawModal({
               </div>
             </div>
 
-            <div>
-              <label className="block text-[10px] text-[#8A8580] font-bold mb-1">
-                MOBILE MONEY NUMBER
-              </label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="0700123456"
-                className="input-light"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-[10px] text-[#8A8580] font-bold mb-1">
-                FULL REGISTERED NAME
-              </label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="As registered on mobile money"
-                className="input-light"
-                required
-              />
+            <div className="bg-[#15151A] border border-[#2A2823] rounded-xl p-3">
+              <div className="text-[10px] text-[#8A8580] font-bold mb-1">
+                WITHDRAW TO
+              </div>
+              <div className="text-sm font-bold text-[#F5F2ED]">
+                {boundPhone}
+              </div>
+              <div className="text-xs text-[#8A8580] mt-0.5">
+                {boundName}
+              </div>
+              <button
+                type="button"
+                onClick={onRequestBind}
+                className="text-[10px] text-[#E0A44C] underline mt-2"
+              >
+                Change Account
+              </button>
             </div>
 
             {numAmount >= MIN_WITHDRAW && (
