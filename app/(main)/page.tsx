@@ -92,21 +92,17 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
+      <main className="min-h-screen flex items-center justify-center bg-[#131317]">
         <div className="text-[#8A8580]">Loading…</div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen px-4 py-6 animate-fade-in">
+    <main className="min-h-screen px-4 py-6 animate-fade-in bg-[#131317]">
       {/* Header */}
       <div className="flex items-center justify-between mb-6 px-2">
-        <SafranLogo
-          size={36}
-          textColor="#F5F2ED"
-          accentColor="#1A1A1F"
-        />
+        <SafranLogo size={36} textColor="#F5F2ED" accentColor="#1A1A1F" />
         <div className="text-right">
           <div className="text-[11px] text-[#8A8580]">Welcome back</div>
           <div className="text-sm font-semibold text-[#F5F2ED]">{me?.name}</div>
@@ -116,8 +112,7 @@ export default function HomePage() {
       {/* Products */}
       <h2 className="text-2xl font-bold mb-4 px-2 text-[#F5F2ED]">Products</h2>
 
-      {/* CHANGED FROM GRID TO SPACE-Y (LIST VIEW) */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {products.map((p) => (
           <ProductCard key={p.id} product={p} onRent={handleRent} />
         ))}
@@ -139,6 +134,9 @@ export default function HomePage() {
   );
 }
 
+// ============================================================
+// RENT MODAL (Investment Confirmation) — CENTERED
+// ============================================================
 function RentModal({
   product,
   balance,
@@ -167,11 +165,11 @@ function RentModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-[#1A1A1F] rounded-t-3xl p-5 max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-md bg-[#1A1A1F] rounded-3xl p-5 max-h-[90vh] overflow-y-auto animate-fade-in border border-[#2A2823] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-start mb-4">
@@ -192,9 +190,7 @@ function RentModal({
 
         {shortfall > 0 && !feedback && (
           <div className="bg-[#2A1416] border border-[#E5484D]/40 rounded-2xl px-3 py-2 text-xs text-[#FF8A8A] mb-3">
-            You need UGX {shortfall.toLocaleString()} more. Recharge your balance
-            (and note that your first investment requires approved deposits to
-            cover the full price).
+            You need UGX {shortfall.toLocaleString()} more. Recharge your balance.
           </div>
         )}
 
@@ -211,7 +207,11 @@ function RentModal({
         )}
 
         {!feedback?.ok && (
-          <button onClick={go} className="btn-primary" disabled={loading}>
+          <button
+            onClick={go}
+            className="w-full bg-gradient-to-r from-[#C8833A] to-[#E0A44C] text-white font-bold py-3.5 rounded-xl active:scale-[0.98] transition shadow-lg shadow-[#C8833A]/20 disabled:opacity-50"
+            disabled={loading}
+          >
             {loading ? 'Processing…' : `Invest UGX ${price.toLocaleString()}`}
           </button>
         )}
@@ -247,4 +247,4 @@ function Row({
       </span>
     </div>
   );
-                   }
+}
