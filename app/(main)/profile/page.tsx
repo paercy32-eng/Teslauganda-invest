@@ -252,16 +252,28 @@ function RechargeModal({
   onClose: () => void;
   onSuccess: () => void;
 }) {
-  const [amount, setAmount] = useState(String(MIN_DEPOSIT));
+  const [amount, setAmount] = useState('2000');
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
   const [sent, setSent] = useState(false);
   const [pollCount, setPollCount] = useState(0);
+  const [minDeposit, setMinDeposit] = useState(2000); // Default fallback
 
   useEffect(() => {
     async function prefill() {
       try {
+        // Fetch the minimum deposit from Supabase
+        const settingsRes = await fetch('/api/settings');
+        if (settingsRes.ok) {
+          const settingsData = await settingsRes.json();
+          if (settingsData.minDeposit) {
+            setMinDeposit(settingsData.minDeposit);
+            setAmount(String(settingsData.minDeposit));
+          }
+        }
+
+        // Fetch user phone
         const res = await fetch('/api/me');
         if (res.ok) {
           const data = await res.json();
@@ -346,11 +358,11 @@ function RechargeModal({
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="input-light"
-                min={MIN_DEPOSIT}
+                min={minDeposit}
                 required
               />
               <div className="text-[10px] text-[#8A8580] mt-1">
-                Minimum: UGX {MIN_DEPOSIT.toLocaleString()}
+                Minimum: UGX {minDeposit.toLocaleString()}
               </div>
             </div>
 
@@ -383,7 +395,8 @@ function RechargeModal({
           </form>
         ) : (
           <div className="text-center py-4">
-            <div className="font-semibold text-[#F5F2ED] mb-1 text-lg">
+            <div className="text-5xl mb-3">📱</div>
+            <div className="font-semibold text-[#F5F2ED] mb-1">
               Check your phone
             </div>
             <div className="text-sm text-[#8A8580] mb-4">
@@ -407,7 +420,7 @@ function RechargeModal({
       </div>
     </div>
   );
-}
+              }
 
 // ============================================================
 // WITHDRAW MODAL
