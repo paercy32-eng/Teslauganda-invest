@@ -13,7 +13,7 @@ type Me = {
 };
 
 const MIN_DEPOSIT = 15000;
-const MIN_WITHDRAW = 1500;
+const MIN_WITHDRAW = 5000;
 
 const TELEGRAM_LINK = 'https://t.me/+GM_Fo41-HFsxNTc0';
 const WHATSAPP_LINK = 'https://whatsapp.com/channel/0029Vb9OlFtKrWR36rpMst0O';
