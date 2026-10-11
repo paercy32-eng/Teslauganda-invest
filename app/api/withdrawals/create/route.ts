@@ -52,22 +52,24 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 4. Active rental check
-    const { count: activeRentals } = await supabaseAdmin
-      .from('tesla_rentals')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', session.userId)
-      .eq('status', 'active');
+    // 4. Active rental check (skipped for exempted users)
+if (!bypass) {
+  const { count: activeRentals } = await supabaseAdmin
+    .from('tesla_rentals')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', session.userId)
+    .eq('status', 'active');
 
-    if (!activeRentals || activeRentals === 0) {
-      return NextResponse.json(
-        {
-          error: 'You need at least one active investment before you can withdraw. Please invest first.',
-          reason: 'no_active_rental',
-        },
-        { status: 400 }
-      );
-    }
+  if (!activeRentals || activeRentals === 0) {
+    return NextResponse.json(
+      {
+        error: 'You need at least one active investment before you can withdraw. Please invest first.',
+        reason: 'no_active_rental',
+      },
+      { status: 400 }
+    );
+  }
+}
 
     // 5. Daily limit check (skipped for exempted users)
     if (!bypass) {
