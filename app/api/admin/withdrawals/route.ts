@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST — approve or reject
+// POST — approve, reject, mark_completed, or mark_failed
 export async function POST(req: NextRequest) {
   try {
     const token = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
 
     const { withdrawalId, action } = await req.json();
 
-    if (!withdrawalId || !['approve', 'reject'].includes(action)) {
+    if (!withdrawalId || !['approve', 'reject', 'mark_completed', 'mark_failed'].includes(action)) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
@@ -98,7 +98,9 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (!wd) return NextResponse.json({ error: 'Withdrawal not found' }, { status: 404 });
-    if (wd.status !== 'pending') {
+
+    // Only allow approve/reject if it's still pending
+    if ((action === 'approve' || action === 'reject') && wd.status !== 'pending') {
       return NextResponse.json({ error: `Already ${wd.status}` }, { status: 400 });
     }
 
@@ -184,7 +186,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Update withdrawal: status = approved (UI shows "Reviewed"), store payout metadata
+      // Update withdrawal: status = approved
       await supabaseAdmin
         .from('tesla_withdrawals')
         .update({
@@ -240,42 +242,93 @@ export async function POST(req: NextRequest) {
     // ==============================
     // REJECT — refund
     // ==============================
-    const { data: user } = await supabaseAdmin
-      .from('users')
-      .select('balance')
-      .eq('id', wd.user_id)
-      .maybeSingle();
+    if (action === 'reject') {
+      const { data: user } = await supabaseAdmin
+        .from('users')
+        .select('balance')
+        .eq('id', wd.user_id)
+        .maybeSingle();
 
-    await supabaseAdmin
-      .from('users')
-      .update({ balance: Number(user?.balance ?? 0) + Number(wd.amount) })
-      .eq('id', wd.user_id);
+      await supabaseAdmin
+        .from('users')
+        .update({ balance: Number(user?.balance ?? 0) + Number(wd.amount) })
+        .eq('id', wd.user_id);
 
-    await supabaseAdmin
-      .from('tesla_withdrawals')
-      .update({
-        status: 'rejected',
-        reviewed_at: new Date().toISOString(),
-      })
-      .eq('id', withdrawalId);
+      await supabaseAdmin
+        .from('tesla_withdrawals')
+        .update({
+          status: 'rejected',
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq('id', withdrawalId);
 
-    await supabaseAdmin.from('tesla_transactions').insert({
-      user_id: wd.user_id,
-      type: 'withdrawal_refund',
-      amount: Number(wd.amount),
-      status: 'completed',
-      meta: { rejected_by: session.username },
-    });
+      await supabaseAdmin.from('tesla_transactions').insert({
+        user_id: wd.user_id,
+        type: 'withdrawal_refund',
+        amount: Number(wd.amount),
+        status: 'completed',
+        meta: { rejected_by: session.username },
+      });
 
-    await supabaseAdmin.from('tesla_admin_logs').insert({
-      admin_action: 'reject_withdrawal',
-      target_user_id: wd.user_id,
-      amount: Number(wd.amount),
-      reason: null,
-      meta: { withdrawal_id: withdrawalId },
-    });
+      await supabaseAdmin.from('tesla_admin_logs').insert({
+        admin_action: 'reject_withdrawal',
+        target_user_id: wd.user_id,
+        amount: Number(wd.amount),
+        reason: null,
+        meta: { withdrawal_id: withdrawalId },
+      });
 
-    return NextResponse.json({ success: true, status: 'rejected' });
+      return NextResponse.json({ success: true, status: 'rejected' });
+    }
+
+    // ==============================
+    // MARK COMPLETED
+    // ==============================
+    if (action === 'mark_completed') {
+      await supabaseAdmin
+        .from('tesla_withdrawals')
+        .update({
+          status: 'completed',
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq('id', withdrawalId);
+
+      await supabaseAdmin.from('tesla_admin_logs').insert({
+        admin_action: 'mark_withdrawal_completed',
+        target_user_id: wd.user_id,
+        amount: Number(wd.amount),
+        reason: null,
+        meta: { withdrawal_id: withdrawalId },
+      });
+
+      return NextResponse.json({ success: true, status: 'completed' });
+    }
+
+    // ==============================
+    // MARK FAILED
+    // ==============================
+    if (action === 'mark_failed') {
+      await supabaseAdmin
+        .from('tesla_withdrawals')
+        .update({
+          status: 'failed',
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq('id', withdrawalId);
+
+      await supabaseAdmin.from('tesla_admin_logs').insert({
+        admin_action: 'mark_withdrawal_failed',
+        target_user_id: wd.user_id,
+        amount: Number(wd.amount),
+        reason: null,
+        meta: { withdrawal_id: withdrawalId },
+      });
+
+      return NextResponse.json({ success: true, status: 'failed' });
+    }
+
+    return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
+
   } catch (err) {
     console.error('Admin withdrawals action error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
