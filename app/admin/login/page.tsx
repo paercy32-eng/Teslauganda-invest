@@ -38,12 +38,12 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="min-h-screen px-6 py-10 animate-fade-in flex flex-col justify-center">
+    <main className="min-h-screen px-6 py-10 animate-fade-in flex flex-col justify-center bg-gray-50">
       <div className="flex items-center gap-2 mb-8 justify-center">
         <div className="w-10 h-10 rounded-xl bg-[#0A2540] flex items-center justify-center text-[#00D9FF] font-bold text-xl">
           A
         </div>
-        <span className="text-2xl font-bold text-[#0A2540]">Robots Invest Admin</span>
+        <span className="text-2xl font-bold text-[#0A2540]">Safran Admin</span>
       </div>
 
       <h1 className="text-2xl font-bold mb-2 text-center text-[#0A2540]">
@@ -51,11 +51,22 @@ export default function AdminLoginPage() {
       </h1>
       <p className="text-[#6B7A8F] mb-8 text-center text-sm">Restricted area</p>
 
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form
+        onSubmit={onSubmit}
+        name="admin-login-form"
+        id="admin-login-form"
+        autoComplete="on"
+        className="space-y-4"
+      >
         <div>
-          <label className="block text-sm text-[#6B7A8F] mb-2">Username</label>
+          <label htmlFor="admin-username" className="block text-sm text-[#6B7A8F] mb-2">
+            Username
+          </label>
           <input
+            id="admin-username"
+            name="username"
             type="text"
+            autoComplete="username"
             className="input-light"
             placeholder="admin"
             value={username}
@@ -65,9 +76,14 @@ export default function AdminLoginPage() {
         </div>
 
         <div>
-          <label className="block text-sm text-[#6B7A8F] mb-2">Password</label>
+          <label htmlFor="admin-password" className="block text-sm text-[#6B7A8F] mb-2">
+            Password
+          </label>
           <input
+            id="admin-password"
+            name="password"
             type="password"
+            autoComplete="current-password"
             className="input-light"
             placeholder="••••••••"
             value={password}
