@@ -2,167 +2,232 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
-type LevelStats = {
-  totalInvite: number;
-  validInvite: number;
-  totalIncome: number;
-  teamInvest: number;
-};
+interface ReferralEntry {
+  id: string;
+  referred_id: string;
+  name: string;
+  phone: string;
+  earnings: number;
+  joined_at: string;
+}
 
-type TeamData = {
+interface ReferralsResponse {
   referralCode: string;
-  totalIncome: number;
-  totalInvitations: number;
-  level1Stats?: LevelStats;
-  level2Stats?: LevelStats;
-  level3Stats?: LevelStats;
+  totalEarnings: number;
+  counts: { level1: number; level2: number; level3: number };
+  levels: {
+    level1: ReferralEntry[];
+    level2: ReferralEntry[];
+    level3: ReferralEntry[];
+  };
+}
+
+const LEVEL_RATES: Record<number, string> = {
+  1: '20%',
+  2: '3%',
+  3: '1%',
 };
 
 export default function TeamPage() {
   const router = useRouter();
-  const [data, setData] = useState<TeamData | null>(null);
+  const [data, setData] = useState<ReferralsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeLevel, setActiveLevel] = useState<1 | 2 | 3>(1);
-  const [copied, setCopied] = useState<'code' | 'link' | null>(null);
 
-  useEffect(() => {
-    async function load() {
-      const res = await fetch('/api/team');
-      if (res.status === 401) {
-        router.replace('/login');
+  async function loadReferrals() {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/team?t=' + Date.now(), {
+        cache: 'no-store',
+      });
+      const json = await res.json();
+
+      if (!res.ok) {
+        toast.error(json.error || 'Could not load team');
+        setLoading(false);
         return;
       }
-      const json = await res.json();
+
       setData(json);
       setLoading(false);
+    } catch (err) {
+      toast.error('Network error');
+      setLoading(false);
     }
-    load();
-  }, [router]);
+  }
 
-  const copyToClipboard = (text: string, type: 'code' | 'link') => {
-    navigator.clipboard.writeText(text);
-    setCopied(type);
-    setTimeout(() => setCopied(null), 2000);
-  };
+  useEffect(() => {
+    loadReferrals();
+  }, []);
+
+  async function copyToClipboard(text: string, type: 'code' | 'link') {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(type === 'code' ? 'Code copied!' : 'Link copied!');
+    } catch {
+      toast.error('Could not copy');
+    }
+  }
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <div className="text-[#8A8580]">Loading…</div>
-      </main>
+      <div className="flex justify-center py-20 bg-gray-50 min-h-screen">
+        <div className="w-8 h-8 rounded-full border-2 border-green-600 border-t-transparent animate-spin" />
+      </div>
     );
   }
 
-  const referralLink = `https://safranfrance.vercel.app/register?ref=${data?.referralCode || ''}`;
+  if (!data) {
+    return (
+      <div className="text-center py-12 bg-gray-50 min-h-screen">
+        <p className="text-gray-500 text-sm">Could not load team data.</p>
+      </div>
+    );
+  }
 
-  // Calculate grand totals across all levels
-  const grandTotalIncome =
-    (data?.level1Stats?.totalIncome || 0) +
-    (data?.level2Stats?.totalIncome || 0) +
-    (data?.level3Stats?.totalIncome || 0);
+  const sumEarnings = (list: ReferralEntry[]) =>
+    list.reduce((sum, r) => sum + (Number(r.earnings) || 0), 0);
 
-  const grandTotalInvites =
-    (data?.level1Stats?.totalInvite || 0) +
-    (data?.level2Stats?.totalInvite || 0) +
-    (data?.level3Stats?.totalInvite || 0);
+  const currentLevelList =
+    activeLevel === 1
+      ? data.levels.level1
+      : activeLevel === 2
+      ? data.levels.level2
+      : data.levels.level3;
 
-  // Get current level stats based on active tab
-  const currentStats =
-    activeLevel === 1 ? data?.level1Stats :
-    activeLevel === 2 ? data?.level2Stats :
-    data?.level3Stats;
+  const currentCount =
+    activeLevel === 1
+      ? data.counts.level1
+      : activeLevel === 2
+      ? data.counts.level2
+      : data.counts.level3;
 
-  const levelReferrals = currentStats?.totalInvite || 0;
+  const currentEarnings = sumEarnings(currentLevelList);
+  const referralLink = `https://chinasaikenpumps.vercel.app/register?ref=${data.referralCode}`;
 
   return (
-    <main className="min-h-screen px-4 py-6 animate-fade-in">
+    <div className="animate-fade-in bg-gray-50 min-h-screen pb-24">
+      
       {/* Header */}
-      <div className="px-2 mb-6">
-        <h1 className="text-3xl font-bold text-[#F5F2ED]">Safranfrance Team</h1>
-        <p className="text-[#8A8580] text-sm mt-1">Invite friends &amp; earn commissions</p>
+      <div className="bg-white px-4 py-6 shadow-sm mb-4">
+        <h1 className="text-2xl font-extrabold text-gray-900">Saiken Team</h1>
+        <p className="text-green-600 font-semibold text-xs mt-1 tracking-wide uppercase">Build your network & earn commissions</p>
       </div>
 
-      {/* Top Grand Totals */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="card p-4 text-center bg-[#15151A] border-[#2A2823]">
-          <div className="text-[10px] text-[#8A8580] font-bold uppercase tracking-wider mb-1">Total Income</div>
-          <div className="text-2xl font-bold text-[#E0A44C]">UGX {grandTotalIncome.toLocaleString()}</div>
-        </div>
-        <div className="card p-4 text-center bg-[#15151A] border-[#2A2823]">
-          <div className="text-[10px] text-[#8A8580] font-bold uppercase tracking-wider mb-1">Total Invitations</div>
-          <div className="text-2xl font-bold text-[#F5F2ED]">{grandTotalInvites}</div>
-        </div>
-      </div>
-
-      {/* Referral Details */}
-      <div className="card p-5 mb-6 bg-[#1A1A1F] border-[#2A2823] space-y-4">
-        {/* Invitation Code */}
-        <div>
-          <label className="block text-[10px] text-[#8A8580] font-bold mb-2 tracking-wider">INVITATION CODE</label>
-          <div className="flex gap-2">
-            <div className="flex-1 bg-[#15151A] border border-[#2A2823] rounded-xl px-4 py-3 text-[#F5F2ED] font-bold tracking-widest">
-              {data?.referralCode || '------'}
-            </div>
-            <button
-              onClick={() => copyToClipboard(data?.referralCode || '', 'code')}
-              className="bg-[#C8833A] text-white font-bold px-4 rounded-xl text-xs active:scale-95 transition"
-            >
-              {copied === 'code' ? 'Copied!' : 'COPY'}
-            </button>
+      <div className="px-4">
+        
+        {/* Educational Image Section */}
+        <div className="mb-5 rounded-2xl overflow-hidden shadow-sm border border-gray-200 relative">
+          {/* 👇 YOUR NEW IMAGE IS HERE */}
+          <img 
+            src="/grok_image_1792588008016.jpg" 
+            alt="Engineers teaching pump operation" 
+            className="w-full h-48 object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-4">
+            <h2 className="text-white font-bold text-lg leading-tight">Empowering Local Expertise</h2>
+            <p className="text-gray-200 text-xs mt-1">Join us in revolutionizing industrial pump technology.</p>
           </div>
         </div>
 
-        {/* Invitation Link */}
-        <div>
-          <label className="block text-[10px] text-[#8A8580] font-bold mb-2 tracking-wider">INVITATION LINK</label>
-          <div className="flex gap-2">
-            <div className="flex-1 bg-[#15151A] border border-[#2A2823] rounded-xl px-4 py-3 text-[#F5F2ED] text-xs truncate">
-              {referralLink}
-            </div>
-            <button
-              onClick={() => copyToClipboard(referralLink, 'link')}
-              className="bg-[#C8833A] text-white font-bold px-4 rounded-xl text-xs active:scale-95 transition"
-            >
-              {copied === 'link' ? 'Copied!' : 'COPY'}
-            </button>
+        {/* Top Totals */}
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm text-center">
+            <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total Commission</div>
+            <div className="text-xl font-bold text-green-600">UGX {data.totalEarnings.toLocaleString()}</div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm text-center">
+            <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total Team Size</div>
+            <div className="text-xl font-bold text-gray-900">{data.counts.level1 + data.counts.level2 + data.counts.level3}</div>
           </div>
         </div>
-      </div>
 
-      {/* Level Tabs */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        {([1, 2, 3] as const).map((lvl) => {
-          const percent = lvl === 1 ? '25%' : lvl === 2 ? '2%' : '1%';
-          const isActive = activeLevel === lvl;
-          return (
-            <button
-              key={lvl}
-              onClick={() => setActiveLevel(lvl)}
-              className={`py-3 rounded-2xl text-xs font-semibold transition border ${
-                isActive
-                  ? 'bg-[#C8833A] border-[#C8833A] text-white shadow-lg shadow-[#C8833A]/20'
-                  : 'bg-[#1A1A1F] border-[#2A2823] text-[#8A8580]'
-              }`}
-            >
-              Level {lvl} ({percent})
-            </button>
-          );
-        })}
-      </div>
+        {/* Referral Link Section */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm mb-6">
+          <div className="mb-4">
+            <label className="block text-[10px] text-gray-500 font-bold mb-1.5 uppercase tracking-wider">Your Invite Code</label>
+            <div className="flex gap-2">
+              <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-gray-900 font-bold font-mono tracking-widest text-sm">
+                {data.referralCode}
+              </div>
+              <button
+                onClick={() => copyToClipboard(data.referralCode, 'code')}
+                className="bg-green-600 text-white px-4 rounded-xl text-xs font-bold active:scale-95 transition"
+              >
+                Copy
+              </button>
+            </div>
+          </div>
 
-      {/* Single Level Stats Display */}
-      <div className="card p-6 text-center bg-[#15151A] border-[#2A2823]">
-        <div className="text-[10px] text-[#8A8580] font-bold tracking-wider mb-2">
-          LEVEL {activeLevel} REFERRALS
+          <div>
+            <label className="block text-[10px] text-gray-500 font-bold mb-1.5 uppercase tracking-wider">Your Invite Link</label>
+            <div className="flex gap-2">
+              <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-gray-500 text-xs truncate">
+                {referralLink}
+              </div>
+              <button
+                onClick={() => copyToClipboard(referralLink, 'link')}
+                className="bg-green-600 text-white px-4 rounded-xl text-xs font-bold active:scale-95 transition"
+              >
+                Copy
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="text-4xl font-bold text-[#F5F2ED]">
-          {levelReferrals}
+
+        {/* Level Tabs */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          {([1, 2, 3] as const).map((level) => {
+            const count = level === 1 ? data.counts.level1 : level === 2 ? data.counts.level2 : data.counts.level3;
+            const isActive = activeLevel === level;
+
+            return (
+              <button
+                key={level}
+                onClick={() => setActiveLevel(level)}
+                className={`py-3 rounded-2xl text-xs font-bold transition flex flex-col items-center leading-tight border ${
+                  isActive
+                    ? 'bg-green-600 text-white border-green-600 shadow-md shadow-green-600/20'
+                    : 'bg-white border-gray-200 text-gray-600'
+                }`}
+              >
+                <span>Level {level} ({count})</span>
+                <span className={`text-[10px] mt-1 font-semibold ${isActive ? 'text-green-200' : 'text-green-600'}`}>
+                  {LEVEL_RATES[level]}
+                </span>
+              </button>
+            );
+          })}
         </div>
-        <div className="text-[10px] text-[#8A8580] mt-2">
-          Total number of invites on this level
+
+        {/* Level Stats */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm mb-4">
+          <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
+            <div>
+              <p className="text-gray-900 font-bold text-sm">Level {activeLevel} Network</p>
+              <p className="text-gray-500 text-[10px]">Direct {activeLevel === 1 ? 'referrals' : 'sub-referrals'}</p>
+            </div>
+            <p className="text-gray-900 font-extrabold text-2xl">{currentCount}</p>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-900 font-bold text-sm">Earned from Level {activeLevel}</p>
+              <p className="text-gray-500 text-[10px]">Commission generated</p>
+            </div>
+            <div className="text-right">
+              <p className="text-green-600 font-extrabold text-lg">UGX {currentEarnings.toLocaleString()}</p>
+            </div>
+          </div>
         </div>
+
+        <p className="text-center text-gray-400 text-[10px] mt-6 px-4">
+          Commissions are credited automatically to your wallet when your team members invest in Saiken Pumps.
+        </p>
+
       </div>
-    </main>
+    </div>
   );
 }
