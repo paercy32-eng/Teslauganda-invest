@@ -5,14 +5,7 @@ export const fetchCache = 'force-no-store';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { verifyAdminSession, ADMIN_SESSION_COOKIE } from '@/lib/admin-auth';
-
-// Normalize phone to +256XXXXXXXXX
-function normalizePhone(input: string): string {
-  let phone = (input || '').replace(/[^\d]/g, '');
-  if (phone.startsWith('0')) phone = '256' + phone.slice(1);
-  if (phone.startsWith('7') && phone.length === 9) phone = '256' + phone;
-  return '+' + phone;
-}
+import { pesajet } from '@/lib/pesajet'; // <-- Added PesaJet Import
 
 // GET — list withdrawals
 export async function GET(req: NextRequest) {
@@ -30,10 +23,10 @@ export async function GET(req: NextRequest) {
       .select('id, user_id, amount, status, phone, full_name, created_at, reviewed_at, meta');
 
     if (status === 'approved') {
-  // Include both approved and completed in the 'approved' filter
-  query = query.in('status', ['approved', 'completed']);
-} else if (status !== 'all') {
-  query = query.eq('status', status);
+      // Include both approved and completed in the 'approved' filter
+      query = query.in('status', ['approved', 'completed']);
+    } else if (status !== 'all') {
+      query = query.eq('status', status);
     }
 
     const { data, error } = await query;
@@ -108,11 +101,11 @@ export async function POST(req: NextRequest) {
     }
 
     // ==============================
-    // APPROVE
+    // APPROVE (PesaJet Payout)
     // ==============================
     if (action === 'approve') {
       const existingMeta = (wd.meta && typeof wd.meta === 'object') ? wd.meta : {};
-      const alreadySent = (existingMeta as any)?.marzpay_payout?.reference;
+      const alreadySent = (existingMeta as any)?.pesajet_payout?.transactionId;
 
       if (alreadySent) {
         return NextResponse.json({
@@ -128,123 +121,99 @@ export async function POST(req: NextRequest) {
         .maybeSingle();
 
       const payoutPhoneRaw = wd.phone || payer?.phone || '';
-      const payoutPhone = normalizePhone(payoutPhoneRaw);
       const payoutName = wd.full_name || payer?.name || 'User';
-      const userNet = Math.round(Number(wd.amount) * 0.85);
+      const userNet = Math.round(Number(wd.amount) * 0.85); // 85% net
 
-      // Get MarzPay credentials
-      const marzpayKey = process.env.MARZPAY_API_KEY;
-      const marzpaySecret = process.env.MARZPAY_API_SECRET;
-      const marzpayBaseUrl = 'https://wallet.wearemarz.com/api/v1';
-      const appUrl = 'https://safranfrance.vercel.app';
-
-      if (!marzpayKey || !marzpaySecret) {
-        return NextResponse.json(
-          { error: 'Payment gateway not configured' },
-          { status: 500 }
-        );
+      // 1. Format Phone for PesaJet (+256...)
+      const formattedPhone = pesajet.utils.formatPhoneNumber(payoutPhoneRaw);
+      
+      // 2. Detect Network Provider
+      let provider = pesajet.utils.detectProvider(payoutPhoneRaw);
+      if (!provider) {
+        provider = 'mtn'; // Fallback if shared network (e.g., 073)
       }
 
-      // Create Basic Auth Token
-      const authToken = Buffer.from(`${marzpayKey}:${marzpaySecret}`).toString('base64');
-
-      // Generate unique UUID reference for this payout
+      // 3. Generate unique reference
       const payoutRef = crypto.randomUUID();
 
-      // Call MarzPay send-money
-      const marzpayRes = await fetch(`${marzpayBaseUrl}/send-money`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Basic ${authToken}`,
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
+      try {
+        // 4. Send the money via PesaJet
+        const payout = await pesajet.payments.create({
+          type: 'DISBURSEMENT',
           amount: userNet,
-          phone_number: payoutPhone,
-          country: 'UG',
-          recipient_name: payoutName,
+          currency: 'UGX',
+          phoneNumber: formattedPhone,
+          provider: provider,
           reference: payoutRef,
-          callback_url: `${appUrl}/api/webhooks/marzpay`,
-          description: `Safran withdrawal payout`,
-          metadata: [
-            { withdrawalId },
-          ],
-        }),
-      });
+          description: `Withdrawal payout for ${payoutName}`,
+        });
 
-      const marzpayData = await marzpayRes.json().catch(() => ({}));
-      console.log('MarzPay payout response:', marzpayData);
+        console.log('PesaJet Payout initiated:', payout.transactionId);
 
-      if (!marzpayRes.ok || marzpayData?.status === 'error') {
-        console.error('MarzPay payout failed:', marzpayData);
+        // Update withdrawal: status = approved
+        await supabaseAdmin
+          .from('tesla_withdrawals')
+          .update({
+            status: 'approved',
+            reviewed_at: new Date().toISOString(),
+            meta: {
+              pesajet_payout: payout,
+              payout_reference: payoutRef,
+              user_net: userNet,
+              payout_phone: formattedPhone,
+              payout_name: payoutName,
+            },
+          })
+          .eq('id', withdrawalId);
+
+        // Bump user's total_withdrawn
+        const { data: userFull } = await supabaseAdmin
+          .from('users')
+          .select('total_withdrawn')
+          .eq('id', wd.user_id)
+          .maybeSingle();
+
+        await supabaseAdmin
+          .from('users')
+          .update({
+            total_withdrawn: Number(userFull?.total_withdrawn ?? 0) + Number(wd.amount),
+          })
+          .eq('id', wd.user_id);
+
+        // Update the existing 'withdrawal_request' transaction
+        await supabaseAdmin
+          .from('tesla_transactions')
+          .update({
+            type: 'withdrawal',
+            status: 'completed',
+            meta: {
+              approved_by: session.username,
+              pesajet_payout_reference: payoutRef,
+              user_net: userNet,
+              withdrawal_id: withdrawalId,
+            },
+          })
+          .eq('user_id', wd.user_id)
+          .eq('type', 'withdrawal_request')
+          .eq('meta->>withdrawal_id', withdrawalId);
+
+        await supabaseAdmin.from('tesla_admin_logs').insert({
+          admin_action: 'approve_withdrawal',
+          target_user_id: wd.user_id,
+          amount: Number(wd.amount),
+          reason: null,
+          meta: { withdrawal_id: withdrawalId, method: 'pesajet_payout' },
+        });
+
+        return NextResponse.json({ success: true, status: 'approved' });
+
+      } catch (apiError: any) {
+        console.error('PesaJet Payout failed:', apiError);
         return NextResponse.json(
-          {
-            error:
-              marzpayData?.message ||
-              marzpayData?.error ||
-              'Payout request failed',
-          },
+          { error: apiError.message || 'Payout request failed' },
           { status: 400 }
         );
       }
-
-      // Update withdrawal: status = approved
-      await supabaseAdmin
-        .from('tesla_withdrawals')
-        .update({
-          status: 'approved',
-          reviewed_at: new Date().toISOString(),
-          meta: {
-            marzpay_payout: marzpayData?.data ?? marzpayData,
-            payout_reference: payoutRef,
-            user_net: userNet,
-            payout_phone: payoutPhone,
-            payout_name: payoutName,
-          },
-        })
-        .eq('id', withdrawalId);
-
-      // Bump user's total_withdrawn
-      const { data: userFull } = await supabaseAdmin
-        .from('users')
-        .select('total_withdrawn')
-        .eq('id', wd.user_id)
-        .maybeSingle();
-
-      await supabaseAdmin
-        .from('users')
-        .update({
-          total_withdrawn: Number(userFull?.total_withdrawn ?? 0) + Number(wd.amount),
-        })
-        .eq('id', wd.user_id);
-
-      // 👇 UPDATED: Update the existing 'withdrawal_request' transaction instead of creating a new one
-      await supabaseAdmin
-        .from('tesla_transactions')
-        .update({
-          type: 'withdrawal',
-          status: 'completed',
-          meta: {
-            approved_by: session.username,
-            marzpay_payout_reference: payoutRef,
-            user_net: userNet,
-            withdrawal_id: withdrawalId,
-          },
-        })
-        .eq('user_id', wd.user_id)
-        .eq('type', 'withdrawal_request')
-        .eq('meta->>withdrawal_id', withdrawalId);
-
-      await supabaseAdmin.from('tesla_admin_logs').insert({
-        admin_action: 'approve_withdrawal',
-        target_user_id: wd.user_id,
-        amount: Number(wd.amount),
-        reason: null,
-        meta: { withdrawal_id: withdrawalId, method: 'marzpay_payout' },
-      });
-
-      return NextResponse.json({ success: true, status: 'approved' });
     }
 
     // ==============================
@@ -374,4 +343,4 @@ export async function POST(req: NextRequest) {
     console.error('Admin withdrawals action error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
-          }
+                         }
