@@ -4,12 +4,14 @@ export const fetchCache = 'force-no-store';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getCurrentAdmin } from '@/lib/auth';
+import { verifyAdminSession, ADMIN_SESSION_COOKIE } from '@/lib/admin-auth';
 
 export async function GET(req: NextRequest) {
   try {
-    const admin = await getCurrentAdmin();
-    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const token = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const session = await verifyAdminSession(token);
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { data, error } = await supabaseAdmin
       .from('gift_cards')
@@ -26,8 +28,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const admin = await getCurrentAdmin();
-    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const token = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const session = await verifyAdminSession(token);
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { value, quantity } = await req.json();
     const numValue = Number(value);
@@ -40,7 +44,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Quantity must be between 1 and 100' }, { status: 400 });
     }
 
-    // 1. Delete old active codes to keep it clean
+    // 1. Delete old active codes
     await supabaseAdmin
       .from('gift_cards')
       .delete()
