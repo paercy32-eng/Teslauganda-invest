@@ -1,38 +1,50 @@
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-export const fetchCache = 'force-no-store';
-
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase-admin';
-import { verifyAdminSession, ADMIN_SESSION_COOKIE } from '@/lib/admin-auth';
+import { db } from '@/lib/firebase-admin';
+import { getCurrentAdmin } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    const token = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const session = await verifyAdminSession(token);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const admin = await getCurrentAdmin();
+    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { count: totalUsers } = await supabaseAdmin
-      .from('users')
-      .select('id', { count: 'exact', head: true });
+    // 1. Total Users
+    const usersSnapshot = await db.collection('users').count().get();
+    const totalUsers = usersSnapshot.data().count;
 
-    const { data: agg, error: aggErr } = await supabaseAdmin.rpc('admin_stats');
+    // 2. Total Deposited (Only completed)
+    const depositsSnapshot = await db.collection('payments').where('status', '==', 'completed').get();
+    let totalDeposited = 0;
+    depositsSnapshot.forEach(doc => {
+      totalDeposited += Number(doc.data().amount) || 0;
+    });
 
-    if (aggErr) {
-      console.error('admin_stats RPC error:', aggErr);
-      return NextResponse.json({ error: 'Failed to load stats' }, { status: 500 });
-    }
+    // 3. Total Invested
+    const modulesSnapshot = await db.collection('user_modules').get();
+    let totalInvested = 0;
+    modulesSnapshot.forEach(doc => {
+      totalInvested += Number(doc.data().price_paid) || 0;
+    });
 
-    const row = Array.isArray(agg) ? agg[0] : agg;
+    // 4. Total Withdrawn (Only completed)
+    const withdrawalsSnapshot = await db.collection('withdrawals').where('status', '==', 'completed').get();
+    let totalWithdrawn = 0;
+    withdrawalsSnapshot.forEach(doc => {
+      totalWithdrawn += Number(doc.data().amount) || 0;
+    });
+
+    // 5. Pending Withdrawals
+    const pendingSnapshot = await db.collection('withdrawals').where('status', '==', 'pending').count().get();
+    const pendingWithdrawals = pendingSnapshot.data().count;
 
     return NextResponse.json(
       {
-        totalUsers: totalUsers ?? 0,
-        totalDeposited: Number(row?.total_deposited ?? 0),
-        totalInvested: Number(row?.total_invested ?? 0),
-        totalWithdrawn: Number(row?.total_withdrawn ?? 0),
-        pendingWithdrawals: Number(row?.pending_withdrawals ?? 0),
+        totalUsers,
+        totalDeposited,
+        totalInvested,
+        totalWithdrawn,
+        pendingWithdrawals,
       },
       {
         headers: {
@@ -40,7 +52,7 @@ export async function GET(req: NextRequest) {
         },
       }
     );
-  } catch (err) {
+  } catch (err: any) {
     console.error('Admin stats error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
