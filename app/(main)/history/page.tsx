@@ -55,16 +55,17 @@ export default function HistoryPage() {
   }
 
   function typeStyle(type: string): { bg: string; icon: string } {
+    // Updated to light theme colors
     if (['deposit', 'welcome', 'daily_checkin', 'giftcard', 'referral', 'reward', 'rental_earning'].includes(type)) {
-      return { bg: 'bg-green-900/30 text-green-400 border-green-700/40', icon: '+' };
+      return { bg: 'bg-emerald-50 text-emerald-600 border-emerald-200', icon: '+' };
     }
     if (['withdrawal', 'withdrawal_request'].includes(type)) {
-      return { bg: 'bg-red-900/30 text-red-400 border-red-700/40', icon: '−' };
+      return { bg: 'bg-red-50 text-red-600 border-red-200', icon: '−' };
     }
     if (type === 'withdrawal_refund') {
-      return { bg: 'bg-blue-900/30 text-blue-400 border-blue-700/40', icon: '+' };
+      return { bg: 'bg-blue-50 text-blue-600 border-blue-200', icon: '+' };
     }
-    return { bg: 'bg-[#2A2823] text-[#8A8580] border-[#3A3833]', icon: '' };
+    return { bg: 'bg-slate-100 text-slate-500 border-slate-200', icon: '' };
   }
 
   function isCredit(type: string): boolean {
@@ -83,8 +84,8 @@ export default function HistoryPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#131317]">
-        <svg className="animate-spin h-8 w-8 text-[#C8833A]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <svg className="animate-spin h-8 w-8 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
@@ -93,11 +94,11 @@ export default function HistoryPage() {
   }
 
   return (
-    <main className="min-h-screen px-4 py-6 animate-fade-in pb-24">
+    <main className="min-h-screen px-4 py-6 animate-fade-in pb-24 bg-slate-50">
       {/* Header */}
       <div className="flex items-center gap-3 mb-5 px-2">
-        <Link href="/profile" className="text-[#8A8580] text-xl">←</Link>
-        <h1 className="text-xl font-bold text-[#F5F2ED]">Transaction History</h1>
+        <Link href="/profile" className="text-slate-400 text-xl active:scale-95 transition">←</Link>
+        <h1 className="text-xl font-bold text-slate-900">Transaction History</h1>
       </div>
 
       {/* Filters */}
@@ -111,10 +112,10 @@ export default function HistoryPage() {
           <button
             key={f.k}
             onClick={() => setFilter(f.k as Filter)}
-            className={`py-2 rounded-xl text-[11px] font-semibold transition border ${
+            className={`py-2 rounded-xl text-[11px] font-bold transition border ${
               filter === f.k
-                ? 'bg-[#C8833A] border-[#C8833A] text-white'
-                : 'bg-[#1A1A1F] border-[#2A2823] text-[#8A8580]'
+                ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
+                : 'bg-white border-slate-200 text-slate-500'
             }`}
           >
             {f.label}
@@ -125,8 +126,8 @@ export default function HistoryPage() {
       {/* Transactions List */}
       {filtered.length === 0 ? (
         <div className="text-center py-16">
-          <div className="w-16 h-16 rounded-full bg-[#1A1A1F] border border-[#2A2823] flex items-center justify-center mx-auto mb-4">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#8A8580" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
+          <div className="w-16 h-16 rounded-full bg-white border border-slate-200 flex items-center justify-center mx-auto mb-4 shadow-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
               <line x1="8" y1="6" x2="21" y2="6"></line>
               <line x1="8" y1="12" x2="21" y2="12"></line>
               <line x1="8" y1="18" x2="21" y2="18"></line>
@@ -135,8 +136,8 @@ export default function HistoryPage() {
               <line x1="3" y1="18" x2="3.01" y2="18"></line>
             </svg>
           </div>
-          <div className="text-[#8A8580] text-sm mb-1">No transactions yet</div>
-          <div className="text-[#5A5853] text-xs">
+          <div className="text-slate-500 text-sm font-semibold mb-1">No transactions yet</div>
+          <div className="text-slate-400 text-xs">
             {filter === 'all' ? 'Your activity will appear here.' : `No ${filter} found.`}
           </div>
         </div>
@@ -148,24 +149,24 @@ export default function HistoryPage() {
             return (
               <div
                 key={t.id}
-                className="bg-[#1A1A1F] border border-[#2A2823] rounded-2xl p-4 flex items-center gap-3"
+                className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-3 shadow-sm"
               >
                 <div className={`w-9 h-9 rounded-xl border flex items-center justify-center font-bold ${style.bg}`}>
                   {credit ? '↓' : '↑'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-[#F5F2ED] truncate">
+                  <div className="text-xs font-bold text-slate-900 truncate">
                     {typeLabel(t.type)}
                   </div>
-                  <div className="text-[10px] text-[#8A8580] mt-0.5">
+                  <div className="text-[10px] text-slate-500 mt-0.5">
                     {new Date(t.created_at).toLocaleString()}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className={`text-sm font-bold ${credit ? 'text-green-400' : 'text-red-400'}`}>
+                  <div className={`text-sm font-bold ${credit ? 'text-emerald-600' : 'text-red-600'}`}>
                     {credit ? '+' : '−'}UGX {Number(t.amount).toLocaleString()}
                   </div>
-                  <div className="text-[9px] text-[#8A8580] uppercase mt-0.5">
+                  <div className="text-[9px] text-slate-400 font-semibold uppercase mt-0.5">
                     {t.status}
                   </div>
                 </div>
@@ -176,4 +177,4 @@ export default function HistoryPage() {
       )}
     </main>
   );
-        }
+}
