@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import SafranLogo from '@/components/SafranLogo';
 
 type Me = {
   id: string;
@@ -19,6 +18,17 @@ export default function ProfilePage() {
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
   
+  // Background Carousel State
+  const [bgIndex, setBgIndex] = useState(0);
+  
+  // YOUR ACTUAL IMAGES FROM THE PUBLIC FOLDER
+  const bgImages = [
+    '/1792617346732.jpg', 
+    '/1792617375235.jpg', 
+    '/1792617408682.jpg', 
+    '/1792617441023.jpg'
+  ];
+
   // Bound Account State
   const [boundPhone, setBoundPhone] = useState('');
   const [boundName, setBoundName] = useState('');
@@ -79,7 +89,14 @@ export default function ProfilePage() {
     loadMe();
     loadBoundAccount();
     loadCheckinStatus();
-  }, [router]);
+
+    // Carousel Timer: Changes image every 4 seconds
+    const interval = setInterval(() => {
+      setBgIndex((prev) => (prev + 1) % bgImages.length);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [router, bgImages.length]);
 
   async function handleCheckIn() {
     setCheckinLoading(true);
@@ -184,33 +201,63 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in pb-24 bg-slate-50">
-      {/* Header */}
+      {/* Header with New Logo */}
       <div className="flex items-center justify-between px-2 mb-5">
-        <SafranLogo size={32} textColor="#0F172A" accentColor="#10B981" />
+        <div className="flex items-center gap-2">
+          {/* SAIKEN PUMPS LOGO */}
+          <div className="relative flex items-center justify-center w-10 h-10 bg-emerald-600 rounded-xl shadow-lg shadow-emerald-600/30 overflow-hidden">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-white">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" fill="currentColor"/>
+              <circle cx="12" cy="12" r="4" fill="currentColor"/>
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-lg font-black text-slate-900 leading-tight tracking-tight">SAIKEN</h1>
+            <p className="text-[10px] text-emerald-600 font-bold tracking-widest uppercase">Pumps</p>
+          </div>
+        </div>
         <div className="text-right">
-          <div className="text-[11px] text-slate-500">Signed in</div>
+          <div className="text-[11px] text-slate-500 font-medium">Signed in</div>
           <div className="text-sm font-semibold text-slate-900">{me?.name}</div>
         </div>
       </div>
 
-      {/* Balance & Stats Card */}
-      <div className="bg-white rounded-3xl p-5 mb-5 shadow-sm border border-slate-200">
-        <div className="text-xs text-slate-500 font-semibold mb-1 uppercase tracking-wider">Available Balance</div>
-        <div className="text-4xl font-black text-slate-900 mb-5">
-          UGX {me?.balance?.toLocaleString() ?? 0}
-        </div>
+      {/* Balance & Stats Card (With Background Carousel) */}
+      <div className="relative rounded-3xl mb-5 shadow-sm border border-slate-200 overflow-hidden bg-slate-900">
         
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3">
-            <div className="text-[10px] text-emerald-700 font-bold uppercase mb-0.5">Total Deposited</div>
-            <div className="text-sm font-bold text-emerald-800">
-              UGX {(me?.total_deposited ?? 0).toLocaleString()}
-            </div>
+        {/* Background Images Carousel */}
+        {bgImages.map((img, index) => (
+          <div
+            key={img}
+            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ${
+              index === bgIndex ? 'opacity-100' : 'opacity-0'
+            }`}
+            style={{ backgroundImage: `url('${img}')` }}
+          />
+        ))}
+        
+        {/* Dark Overlay for Readability */}
+        <div className="absolute inset-0 bg-slate-900/60" />
+
+        {/* Card Content (Transparent Background) */}
+        <div className="relative z-10 p-5">
+          <div className="text-xs text-white/80 font-semibold mb-1 uppercase tracking-wider">Balance</div>
+          <div className="text-4xl font-black text-white mb-5 drop-shadow-md">
+            UGX {me?.balance?.toLocaleString() ?? 0}
           </div>
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3">
-            <div className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Total Withdrawn</div>
-            <div className="text-sm font-bold text-slate-700">
-              UGX {(me?.total_withdrawn ?? 0).toLocaleString()}
+          
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-3">
+              <div className="text-[10px] text-emerald-300 font-bold uppercase mb-0.5">Total Deposited</div>
+              <div className="text-sm font-bold text-white">
+                UGX {(me?.total_deposited ?? 0).toLocaleString()}
+              </div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-3">
+              <div className="text-[10px] text-slate-300 font-bold uppercase mb-0.5">Total Withdrawn</div>
+              <div className="text-sm font-bold text-white">
+                UGX {(me?.total_withdrawn ?? 0).toLocaleString()}
+              </div>
             </div>
           </div>
         </div>
@@ -378,4 +425,4 @@ export default function ProfilePage() {
       )}
     </main>
   );
-}
+    }
