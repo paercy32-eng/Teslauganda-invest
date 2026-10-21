@@ -26,16 +26,15 @@ export default function WelcomeModal() {
       
       {/* Popup Container with Your Background Image */}
       <div 
-        className="relative w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border border-white/40"
+        className="relative w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border border-white/40 bg-slate-900"
         style={{
-          // Using your exact image file
           backgroundImage: "url('/1792618456855.jpg')", 
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
       >
-        {/* Transparent Overlay (bg-white/85 keeps it slightly transparent so the image shows through) */}
-        <div className="absolute inset-0 bg-white/85 backdrop-blur-md" />
+        {/* Lighter Transparent Overlay - Removed the heavy blur */}
+        <div className="absolute inset-0 bg-white/40" />
 
         {/* Close Button (Red X) */}
         <button 
@@ -51,12 +50,13 @@ export default function WelcomeModal() {
         {/* Content */}
         <div className="relative z-10 p-6 flex flex-col items-center">
           
-          <h2 className="text-xl font-black text-slate-900 mb-4 text-center mt-2 drop-shadow-sm">
+          {/* Added a drop shadow to make the title pop against the image */}
+          <h2 className="text-xl font-black text-white mb-4 text-center mt-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             Welcome to Saiken Pumps
           </h2>
 
-          {/* Rules Box */}
-          <div className="w-full border border-emerald-600 rounded-xl overflow-hidden mb-5 bg-white/60">
+          {/* Rules Box - Made slightly transparent white so image shows through slightly */}
+          <div className="w-full border border-emerald-600 rounded-xl overflow-hidden mb-5 bg-white/80 backdrop-blur-sm shadow-lg">
             <div className="p-3 text-center text-sm font-bold text-emerald-800 border-b border-emerald-600">
               Minimum deposit: UGX 20,000
             </div>
@@ -71,17 +71,19 @@ export default function WelcomeModal() {
             </div>
           </div>
 
-          {/* Security Warning */}
-          <p className="text-xs text-slate-800 text-center font-bold leading-relaxed mb-6 px-1">
-            Official customer service will <span className="text-red-600">never</span> proactively ask for your password or screenshots of your deposits; please remain vigilant.
-          </p>
+          {/* Security Warning - Added semi-transparent background so it's readable over the image */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-3 mb-6 shadow-lg">
+            <p className="text-xs text-slate-800 text-center font-bold leading-relaxed">
+              Official customer service will <span className="text-red-600">never</span> proactively ask for your password or screenshots of your deposits; please remain vigilant.
+            </p>
+          </div>
 
           {/* Telegram Button */}
           <a 
-            href="https://t.me/+GM_Fo41-HFsxNTc0" // Replace with your actual Telegram link if different
+            href="https://t.me/+GM_Fo41-HFsxNTc0" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition active:scale-[0.98] shadow-md shadow-emerald-600/30"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition active:scale-[0.98] shadow-lg shadow-emerald-600/40"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
               <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
