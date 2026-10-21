@@ -1,28 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { verifySession, SESSION_COOKIE } from '@/lib/auth';
+import { pesajet } from '@/lib/pesajet';
 
 export const dynamic = 'force-dynamic';
 
 const MIN_DEPOSIT = 2000;
 
-// Normalize phone to international format: +256XXXXXXXXX
-function normalizePhone(input: string): string {
-  let phone = (input || '').replace(/[^\d]/g, '');
-  if (phone.startsWith('0')) phone = '256' + phone.slice(1);
-  if (phone.startsWith('7') && phone.length === 9) phone = '256' + phone;
-  return '+' + phone;
-}
-
 export async function POST(req: NextRequest) {
   try {
-    // 1. Auth
+    // 1. Auth Check
     const token = req.cookies.get(SESSION_COOKIE)?.value;
     if (!token) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     const session = await verifySession(token);
     if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
 
-    // 2. Parse body
+    // 2. Parse and Validate Body
     const { amount, phone } = await req.json();
     const numAmount = Number(amount);
 
@@ -41,10 +34,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
     }
 
-    const cleanPhone = String(phone).trim();
-    const normalizedPhone = normalizePhone(cleanPhone);
-
-    // 3. Load user
+    // 3. Load User
     const { data: user } = await supabaseAdmin
       .from('users')
       .select('id, name, phone')
@@ -53,17 +43,28 @@ export async function POST(req: NextRequest) {
 
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-    // 4. Generate unique UUID reference (MarzPay requires UUID v4)
+    // 4. Format Phone & Detect Provider using PesaJet Utils
+    // PesaJet expects +256XXXXXXXXX
+    const formattedPhone = pesajet.utils.formatPhoneNumber(phone);
+    
+    // Detect MTN or Airtel. 
+    // Note: If it's a shared prefix (like 073), it returns null, so we default to 'mtn'
+    let provider = pesajet.utils.detectProvider(phone);
+    if (!provider) {
+      provider = 'mtn'; 
+    }
+
+    // 5. Generate unique reference
     const reference = crypto.randomUUID();
 
-    // 5. Save pending deposit row FIRST
+    // 6. Save pending deposit row FIRST in the 'payments' table
     const { data: deposit, error: insErr } = await supabaseAdmin
-      .from('tesla_deposits')
+      .from('payments')
       .insert({
         user_id: user.id,
         amount: numAmount,
         status: 'pending',
-        reference,
+        reference: reference,
       })
       .select('id, reference, amount, status, created_at')
       .single();
@@ -73,65 +74,42 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create deposit' }, { status: 500 });
     }
 
-    // 6. Get MarzPay credentials
-    const marzpayKey = process.env.MARZPAY_API_KEY;
-    const marzpaySecret = process.env.MARZPAY_API_SECRET;
-    const marzpayBaseUrl = 'https://wallet.wearemarz.com/api/v1';
-    const appUrl = 'https://safranfrance.vercel.app';
-
-    if (!marzpayKey || !marzpaySecret) {
-      console.error('Missing MARZPAY credentials in Vercel');
-      await supabaseAdmin.from('tesla_deposits').update({ status: 'failed' }).eq('id', deposit.id);
-      return NextResponse.json({ error: 'Payment gateway not configured' }, { status: 500 });
-    }
-
-    // Create Basic Auth Token
-    const authToken = Buffer.from(`${marzpayKey}:${marzpaySecret}`).toString('base64');
-
-    // 7. Call MarzPay collect-money endpoint
-    const marzpayRes = await fetch(`${marzpayBaseUrl}/collect-money`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${authToken}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({
+    // 7. Call PesaJet to initiate the Collection (STK Push / USSD Prompt)
+    try {
+      const payment = await pesajet.payments.create({
+        type: 'COLLECTION', // Note: If PesaJet docs say use 'DEPOSIT' instead, change this word.
         amount: numAmount,
-        phone_number: normalizedPhone,
-        country: 'UG', // Required by MarzPay
-        reference: reference, // Must be UUID
-        callback_url: `${appUrl}/api/webhooks/marzpay`,
-        description: `Safran deposit for ${user.name || user.phone}`,
-        metadata: [
-          { depositId: deposit.id },
-        ],
-      }),
-    });
+        currency: 'UGX',
+        phoneNumber: formattedPhone,
+        provider: provider, // 'mtn' or 'airtel'
+        reference: reference,
+        description: `Deposit for ${user.name || user.phone}`,
+      });
 
-    const marzpayData = await marzpayRes.json().catch(() => ({}));
-    console.log('MarzPay collect response:', marzpayData);
+      console.log('PesaJet Collection initiated:', payment.transactionId);
 
-    if (!marzpayRes.ok || marzpayData?.status === 'error') {
-      console.error('MarzPay collect failed:', marzpayData);
-      await supabaseAdmin.from('tesla_deposits').update({ status: 'failed' }).eq('id', deposit.id);
+      // 8. Return success
+      return NextResponse.json({
+        success: true,
+        depositId: deposit.id,
+        reference,
+        amount: numAmount,
+        message: 'A PIN prompt was sent to your phone. Enter your PIN to complete.',
+      });
+
+    } catch (apiError: any) {
+      // If PesaJet fails, mark the deposit as failed so it doesn't stay pending forever
+      console.error('PesaJet API error:', apiError);
+      await supabaseAdmin.from('payments').update({ status: 'failed' }).eq('id', deposit.id);
+      
       return NextResponse.json(
-        { error: marzpayData?.message || marzpayData?.error || 'Payment request failed' },
+        { error: apiError.message || 'Payment request failed' },
         { status: 400 }
       );
     }
-
-    // 8. Return success
-    return NextResponse.json({
-      success: true,
-      depositId: deposit.id,
-      reference,
-      amount: numAmount,
-      message: 'A PIN prompt was sent to your phone. Enter your PIN to complete.',
-    });
 
   } catch (err) {
     console.error('Deposit create error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
-    }
+}
