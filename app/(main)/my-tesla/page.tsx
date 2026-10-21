@@ -46,7 +46,8 @@ export default function MyRobotPage() {
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in bg-slate-50 pb-24">
       <div className="px-2 mb-6">
-        <h1 className="text-3xl font-black text-slate-900">My Holdings</h1>
+        {/* Changed Title Here */}
+        <h1 className="text-3xl font-black text-slate-900">My Pumps</h1>
         <p className="text-slate-500 text-sm mt-1 font-medium">
           {rentals.length === 0
             ? 'Your active pumps will appear here.'
@@ -56,7 +57,6 @@ export default function MyRobotPage() {
 
       {rentals.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20">
-          {/* New 3D Order Box SVG */}
           <div className="mb-6 text-slate-300">
             <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M21 8L12 3L3 8V16L12 21L21 16V8Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
