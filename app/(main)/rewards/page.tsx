@@ -9,7 +9,7 @@ type Tier = {
   isClaimed: boolean;
 };
 
-// Hardcoded 6 Tiers as requested
+// Hardcoded 6 Tiers
 const DEFAULT_TIERS: Tier[] = [
   { target: 200000, reward: 10000, isClaimed: false },
   { target: 500000, reward: 25000, isClaimed: false },
@@ -44,7 +44,6 @@ export default function RewardsPage() {
         setTeamInvestment(data.teamInvestment ?? 0);
         setTeamSize(data.teamSize ?? 0);
         
-        // If the API returns tiers, use them. Otherwise, keep the default 6.
         if (data.tiers && data.tiers.length > 0) {
           setTiers(data.tiers);
         }
@@ -74,7 +73,6 @@ export default function RewardsPage() {
           backgroundImage: "url('https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80')" 
         }}
       />
-      {/* Soft white/slate overlay to ensure text is readable */}
       <div className="fixed inset-0 z-0 bg-slate-50/85 backdrop-blur-[3px]" />
 
       {/* Main Content Wrapper */}
@@ -83,7 +81,16 @@ export default function RewardsPage() {
         {/* Summary Card */}
         <div className="bg-white/90 backdrop-blur-md rounded-3xl p-5 mb-6 shadow-sm border border-slate-200">
           <div className="flex items-center gap-3 mb-4">
-            <span className="text-2xl">🎁</span>
+            {/* Replaced Gift Emoji with SVG */}
+            <div className="p-2 bg-emerald-100 rounded-xl text-emerald-600">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 12 20 22 4 22 4 12"></polyline>
+                <rect x="2" y="7" width="20" height="5"></rect>
+                <line x1="12" y1="22" x2="12" y2="7"></line>
+                <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+                <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+              </svg>
+            </div>
             <h1 className="text-xl font-black text-slate-900">Team Rewards</h1>
           </div>
           
@@ -98,9 +105,13 @@ export default function RewardsPage() {
             </div>
           </div>
 
-          <p className="text-xs text-slate-600 font-medium text-center flex items-center justify-center gap-1">
-            <span className="text-emerald-500">✔</span> Automatic claim once reached!
-          </p>
+          <div className="flex items-center justify-center gap-1.5 text-xs text-slate-600 font-medium">
+            {/* Replaced Check Emoji with SVG */}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Automatic claim once reached!
+          </div>
         </div>
 
         {/* Reward Tiers Header */}
@@ -117,8 +128,18 @@ export default function RewardsPage() {
               <div key={index} className="bg-white/90 backdrop-blur-md rounded-3xl p-4 shadow-sm border border-slate-200">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm ${isCompleted ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
-                      {isCompleted ? '✔' : '🔒'}
+                    {/* Replaced Lock/Check Emoji with SVG inside the circle */}
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isCompleted ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
+                      {isCompleted ? (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                      )}
                     </div>
                     <div>
                       <div className="font-bold text-slate-900 text-sm">UGX {tier.target.toLocaleString()}</div>
