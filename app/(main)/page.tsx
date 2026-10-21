@@ -88,42 +88,77 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[#111827]">
-        <div className="text-gray-400">Loading…</div>
+      <main className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-green-600 font-semibold">Loading…</div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen px-4 py-6 bg-[#111827] animate-fade-in pb-24">
+    <main className="min-h-screen px-4 py-6 bg-white animate-fade-in pb-24">
       
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 px-2">
+      <div className="flex items-center justify-between mb-4 px-2">
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-xl bg-[#EA580C] flex items-center justify-center text-white font-bold shadow-lg shadow-[#EA580C]/20">
+          <div className="w-10 h-10 rounded-xl bg-green-600 flex items-center justify-center text-white font-bold shadow-lg shadow-green-600/20">
             S
           </div>
           <div>
-            <h1 className="text-lg font-extrabold text-white leading-tight">SAIKEN</h1>
-            <p className="text-[10px] text-[#EA580C] font-bold tracking-wider">PUMPS</p>
+            <h1 className="text-lg font-extrabold text-gray-900 leading-tight">SAIKEN</h1>
+            <p className="text-[10px] text-green-600 font-bold tracking-wider">PUMPS</p>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-[10px] text-gray-400">Welcome back</div>
-          <div className="text-sm font-semibold text-white">{me?.name}</div>
+          <div className="text-[10px] text-gray-500">Welcome back</div>
+          <div className="text-sm font-bold text-gray-900">{me?.name}</div>
         </div>
       </div>
 
-      {/* Balance Display */}
-      <div className="bg-[#1F2937] border border-[#374151] rounded-2xl p-4 mb-6 flex items-center justify-between shadow-sm">
-        <div>
-          <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Available Balance</div>
-          <div className="text-2xl font-bold text-white">UGX {me?.balance?.toLocaleString() ?? 0}</div>
+      {/* Balance Card */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-4 mb-4 shadow-sm">
+        <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Available Balance</div>
+        <div className="text-3xl font-extrabold text-gray-900 mb-4">UGX {me?.balance?.toLocaleString() ?? 0}</div>
+        
+        {/* Deposit / Withdraw Buttons */}
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => router.push('/profile')}
+            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-sm active:scale-[0.98] transition shadow-md shadow-green-600/20"
+          >
+            Deposit
+          </button>
+          <button
+            onClick={() => router.push('/profile')}
+            className="bg-white border border-green-600 text-green-600 font-bold py-2.5 rounded-xl text-sm active:scale-[0.98] transition"
+          >
+            Withdraw
+          </button>
         </div>
       </div>
+
+      {/* Telegram Link */}
+      <a
+        href="https://t.me/+-sly86QRLz5mOGU0"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="w-full flex items-center justify-between bg-white border border-gray-200 rounded-2xl p-4 mb-6 shadow-sm active:scale-[0.99] transition"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-green-600 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5">
+              <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
+            </svg>
+          </div>
+          <div>
+            <div className="font-bold text-gray-900 text-sm">Join Telegram</div>
+            <div className="text-[10px] text-gray-500">Get updates & support</div>
+          </div>
+        </div>
+        <div className="text-green-600 font-bold">→</div>
+      </a>
 
       {/* Products List */}
-      <h2 className="text-lg font-bold mb-4 px-2 text-white">Investment Plans</h2>
+      <h2 className="text-lg font-bold mb-4 px-2 text-gray-900">Investment Plans</h2>
 
       <div className="space-y-3">
         {products.map((p) => (
@@ -176,22 +211,22 @@ function RentModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-[#1F2937] border border-[#374151] rounded-3xl p-5 max-h-[90vh] overflow-y-auto animate-fade-in shadow-2xl"
+        className="w-full max-w-md bg-white rounded-3xl p-5 max-h-[90vh] overflow-y-auto animate-fade-in shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-start mb-4">
           <div>
-            <div className="text-lg font-bold text-white">Confirm Investment</div>
-            <div className="text-xs text-[#EA580C] font-bold">{product.name}</div>
+            <div className="text-lg font-bold text-gray-900">Confirm Investment</div>
+            <div className="text-xs text-green-600 font-bold">{product.name}</div>
           </div>
           <button onClick={onClose} className="text-gray-400 text-xl">×</button>
         </div>
 
-        <div className="bg-[#111827] border border-[#374151] rounded-2xl p-4 text-xs mb-4 space-y-2">
+        <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-xs mb-4 space-y-2">
           <Row label="Price" value={`UGX ${price.toLocaleString()}`} />
           <Row label="Daily return" value={`UGX ${daily.toLocaleString()}`} highlight />
           <Row label="Duration" value={`${product.cycle_days} days`} />
@@ -200,8 +235,8 @@ function RentModal({
         </div>
 
         {shortfall > 0 && !feedback && (
-          <div className="bg-red-900/20 border border-red-500/30 rounded-2xl px-3 py-2 text-xs text-red-400 mb-3">
-            You need UGX {shortfall.toLocaleString()} more. Recharge your balance.
+          <div className="bg-red-50 border border-red-200 rounded-2xl px-3 py-2 text-xs text-red-600 mb-3">
+            You need UGX {shortfall.toLocaleString()} more. Deposit to your balance.
           </div>
         )}
 
@@ -209,8 +244,8 @@ function RentModal({
           <div
             className={`rounded-2xl px-3 py-2 text-sm mb-3 border ${
               feedback.ok
-                ? 'bg-green-900/20 border-green-500/30 text-green-400'
-                : 'bg-red-900/20 border-red-500/30 text-red-400'
+                ? 'bg-green-50 border-green-200 text-green-700'
+                : 'bg-red-50 border-red-200 text-red-600'
             }`}
           >
             {feedback.msg}
@@ -220,7 +255,7 @@ function RentModal({
         {!feedback?.ok && (
           <button
             onClick={go}
-            className="w-full bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold py-3.5 rounded-xl active:scale-[0.98] transition shadow-lg shadow-[#EA580C]/20 disabled:opacity-50"
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl active:scale-[0.98] transition shadow-md shadow-green-600/20 disabled:opacity-50"
             disabled={loading}
           >
             {loading ? 'Processing…' : `Invest UGX ${price.toLocaleString()}`}
@@ -248,10 +283,10 @@ function Row({
 }) {
   return (
     <div className="flex justify-between">
-      <span className="text-gray-400">{label}</span>
+      <span className="text-gray-500">{label}</span>
       <span
         className={`${bold ? 'font-bold' : 'font-semibold'} ${
-          highlight ? 'text-[#EA580C]' : 'text-white'
+          highlight ? 'text-green-600' : 'text-gray-900'
         }`}
       >
         {value}
