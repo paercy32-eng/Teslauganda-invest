@@ -3,7 +3,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import SafranLogo from '@/components/SafranLogo';
 
 function RegisterForm() {
   const router = useRouter();
@@ -18,7 +17,6 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Prefill referral code from URL (?ref=XXXXX)
   useEffect(() => {
     const ref = searchParams.get('ref');
     if (ref) {
@@ -47,7 +45,7 @@ function RegisterForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone,
+          phone: `+256${phone.replace(/^0+/, '')}`,
           password,
           confirmPassword,
           referralCode: referralCode.trim() || undefined,
@@ -70,106 +68,90 @@ function RegisterForm() {
   }
 
   return (
-    <main className="min-h-screen relative flex items-center justify-center px-4 py-10 overflow-hidden bg-[#131317]">
-      {/* Decorative Background Elements */}
-      <div className="absolute top-[-10%] right-[-10%] w-80 h-80 bg-[#C8833A] rounded-full mix-blend-screen filter blur-[120px] opacity-20"></div>
-      <div className="absolute bottom-[-10%] left-[-10%] w-80 h-80 bg-[#E0A44C] rounded-full mix-blend-screen filter blur-[120px] opacity-10"></div>
+    <main className="min-h-screen relative flex items-center justify-center px-4 py-8 overflow-hidden bg-[#111827]">
+      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 100%, #374151 0%, transparent 70%)' }}></div>
 
       <div className="w-full max-w-md relative z-10">
-        {/* Header */}
-        <div className="mb-8 px-2 text-center">
-          <div className="flex justify-center mb-4">
-            <SafranLogo size={40} textColor="#F5F2ED" accentColor="#1A1A1F" />
+        <div className="mb-6 px-2 text-center">
+          <div className="flex justify-center mb-3">
+            <div className="w-14 h-14 rounded-2xl bg-[#EA580C] flex items-center justify-center shadow-lg shadow-[#EA580C]/30">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-[#F5F2ED] mb-2">Create account</h1>
-          <p className="text-[#8A8580] text-sm">Start investing. Start earning.</p>
+          <h1 className="text-2xl font-extrabold text-white mb-1 tracking-tight">Join Saiken Pumps</h1>
+          <p className="text-gray-400 text-xs">Start investing in industrial machinery.</p>
         </div>
 
-        {/* Form Card */}
-        <div className="bg-[#1A1A1F] border border-[#2A2823] rounded-3xl p-6 shadow-2xl">
-          <form onSubmit={handleSubmit} name="register-form" autoComplete="on" className="space-y-4">
-            {/* Phone Number */}
+        <div className="bg-[#1F2937] border border-[#374151] rounded-3xl p-6 shadow-2xl">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="register-phone" className="block text-[10px] text-[#8A8580] font-bold mb-2 tracking-wider uppercase">
-                Phone Number
-              </label>
-              <input
-                id="register-phone"
-                name="phone"
-                type="tel"
-                autoComplete="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Enter your phone number"
-                className="w-full bg-[#15151A] border border-[#2A2823] rounded-xl px-4 py-3.5 text-[#F5F2ED] placeholder-[#4A4843] focus:outline-none focus:border-[#C8833A] transition"
-                required
-              />
+              <label className="block text-[10px] text-gray-400 font-bold mb-1.5 tracking-wider uppercase">Phone Number</label>
+              <div className="flex items-center bg-[#111827] border border-[#374151] rounded-xl focus-within:border-[#EA580C] transition overflow-hidden">
+                <span className="pl-4 pr-2 text-white text-sm font-bold select-none border-r border-[#374151]">
+                  +256
+                </span>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').replace(/^0+/, ''))}
+                  placeholder="700123456"
+                  className="w-full bg-transparent px-3 py-3.5 text-white placeholder-gray-500 focus:outline-none text-sm"
+                  required
+                />
+              </div>
             </div>
 
-            {/* Password */}
             <div>
-              <label htmlFor="register-password" className="block text-[10px] text-[#8A8580] font-bold mb-2 tracking-wider uppercase">
-                Password
-              </label>
+              <label className="block text-[10px] text-gray-400 font-bold mb-1.5 tracking-wider uppercase">Password</label>
               <div className="relative">
                 <input
-                  id="register-password"
-                  name="password"
                   type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="At least 6 characters"
-                  className="w-full bg-[#15151A] border border-[#2A2823] rounded-xl px-4 py-3.5 text-[#F5F2ED] placeholder-[#4A4843] focus:outline-none focus:border-[#C8833A] transition pr-12"
+                  className="w-full bg-[#111827] border border-[#374151] rounded-xl px-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:border-[#EA580C] transition pr-12 text-sm"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8A8580] text-xs font-semibold"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] font-semibold hover:text-white"
                 >
                   {showPassword ? 'Hide' : 'Show'}
                 </button>
               </div>
             </div>
 
-            {/* Confirm Password */}
             <div>
-              <label htmlFor="register-confirm-password" className="block text-[10px] text-[#8A8580] font-bold mb-2 tracking-wider uppercase">
-                Confirm Password
-              </label>
+              <label className="block text-[10px] text-gray-400 font-bold mb-1.5 tracking-wider uppercase">Confirm Password</label>
               <input
-                id="register-confirm-password"
-                name="confirmPassword"
                 type={showPassword ? 'text' : 'password'}
-                autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Repeat your password"
-                className="w-full bg-[#15151A] border border-[#2A2823] rounded-xl px-4 py-3.5 text-[#F5F2ED] placeholder-[#4A4843] focus:outline-none focus:border-[#C8833A] transition"
+                className="w-full bg-[#111827] border border-[#374151] rounded-xl px-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:border-[#EA580C] transition text-sm"
                 required
               />
             </div>
 
-            {/* Referral Code */}
             <div>
-              <label htmlFor="register-referral" className="block text-[10px] text-[#8A8580] font-bold mb-2 tracking-wider uppercase">
-                Referral Code <span className="text-[#4A4843] lowercase font-normal">(optional)</span>
+              <label className="block text-[10px] text-gray-400 font-bold mb-1.5 tracking-wider uppercase">
+                Referral Code <span className="text-gray-500 lowercase font-normal">(optional)</span>
               </label>
               <input
-                id="register-referral"
-                name="referralCode"
                 type="text"
-                autoComplete="off"
                 value={referralCode}
                 onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                placeholder="Enter referral code"
-                className="w-full bg-[#15151A] border border-[#2A2823] rounded-xl px-4 py-3.5 text-[#F5F2ED] placeholder-[#4A4843] focus:outline-none focus:border-[#C8833A] transition"
+                placeholder="SKN-XXXXX"
+                className="w-full bg-[#111827] border border-[#374151] rounded-xl px-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:border-[#EA580C] transition text-sm"
               />
             </div>
 
             {error && (
-              <div className="text-sm text-[#FF8A8A] bg-[#2A1416] rounded-xl px-4 py-3 border border-[#E5484D]/40">
+              <div className="text-xs text-red-400 bg-red-900/20 rounded-xl px-4 py-3 border border-red-500/30">
                 {error}
               </div>
             )}
@@ -177,16 +159,16 @@ function RegisterForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-[#C8833A] to-[#E0A44C] text-white font-bold py-3.5 rounded-xl active:scale-[0.98] transition shadow-lg shadow-[#C8833A]/20 mt-2"
+              className="w-full bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold py-3.5 rounded-xl active:scale-[0.98] transition text-sm mt-2 shadow-lg shadow-[#EA580C]/20"
             >
               {loading ? 'Creating account…' : 'Create Account'}
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-[#8A8580]">
+          <div className="mt-5 text-center text-xs text-gray-400">
             Already have an account?{' '}
-            <Link href="/login" className="text-[#E0A44C] font-bold hover:underline">
-              Log in
+            <Link href="/login" className="text-[#EA580C] font-bold hover:underline">
+              Sign in
             </Link>
           </div>
         </div>
@@ -198,11 +180,11 @@ function RegisterForm() {
 export default function RegisterPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-[#131317]">
-        <div className="w-8 h-8 rounded-full border-2 border-[#C8833A] border-t-transparent animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[#111827]">
+        <div className="w-8 h-8 rounded-full border-2 border-[#EA580C] border-t-transparent animate-spin" />
       </div>
     }>
       <RegisterForm />
     </Suspense>
   );
-}
+      }
