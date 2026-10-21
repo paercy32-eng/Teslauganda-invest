@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { signUserToken, USER_COOKIE_NAME, USER_COOKIE_OPTIONS } from '@/lib/jwt';
-import bcrypt from 'bcryptjs';
+import { hashPassword, signSession, SESSION_COOKIE } from '@/lib/auth';
 
 function generateReferralCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -58,7 +57,7 @@ export async function POST(req: NextRequest) {
     }
 
     // --- Hash password ---
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await hashPassword(password);
 
     // --- Generate unique referral code ---
     let newCode = generateReferralCode();
@@ -104,7 +103,7 @@ export async function POST(req: NextRequest) {
     });
 
     // --- Create session cookie ---
-    const token = signUserToken({
+    const token = await signSession({
       userId: newUser.id,
       phone: newUser.phone,
     });
@@ -119,11 +118,17 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    res.cookies.set(USER_COOKIE_NAME, token, USER_COOKIE_OPTIONS);
+    res.cookies.set(SESSION_COOKIE, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30,
+      path: '/',
+    });
 
     return res;
   } catch (err) {
     console.error('Register error:', err);
     return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 });
   }
-}
+                                    }
