@@ -1,13 +1,17 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getCurrentAdmin } from '@/lib/auth';
-
-export const dynamic = 'force-dynamic';
+import { verifyAdminSession, ADMIN_SESSION_COOKIE } from '@/lib/admin-auth';
 
 export async function GET(req: NextRequest) {
   try {
-    const admin = await getCurrentAdmin();
-    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const token = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const session = await verifyAdminSession(token);
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status') ?? 'pending';
