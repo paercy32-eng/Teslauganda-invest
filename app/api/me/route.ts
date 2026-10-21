@@ -18,9 +18,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
     }
 
+    // 1. Fetch user data (added total_withdrawn)
     const { data: user, error } = await supabaseAdmin
       .from('users')
-      .select('id, name, phone, balance, referral_code, is_bound, bound_phone, bound_full_name')
+      .select('id, name, phone, balance, referral_code, is_bound, bound_phone, bound_full_name, total_withdrawn')
       .eq('id', session.userId)
       .maybeSingle();
 
@@ -28,14 +29,33 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // 2. Calculate total deposited by summing completed payments
+    const { data: deposits } = await supabaseAdmin
+      .from('payments')
+      .select('amount')
+      .eq('user_id', session.userId)
+      .eq('status', 'completed');
+
+    const totalDeposited = (deposits ?? []).reduce(
+      (sum, d) => sum + Number(d.amount), 
+      0
+    );
+
+    // 3. Return combined data
     return NextResponse.json(
-  { user },
-  {
-    headers: {
-      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-    },
-  }
-);
+      { 
+        user: {
+          ...user,
+          total_deposited: totalDeposited,
+          total_withdrawn: Number(user.total_withdrawn || 0)
+        } 
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        },
+      }
+    );
   } catch (err) {
     console.error('Me error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
