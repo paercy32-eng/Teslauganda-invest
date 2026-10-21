@@ -24,7 +24,6 @@ function HomeIcon({ active }: IconProps) {
   );
 }
 
-// New Order Icon (Box)
 function OrderIcon({ active }: IconProps) {
   const color = active ? ACTIVE : INACTIVE;
   return (
@@ -100,7 +99,6 @@ function ProfileIcon({ active }: IconProps) {
 
 const tabs = [
   { href: '/', label: 'Home', Icon: HomeIcon },
-  // Changed label and icon here
   { href: '/my-tesla', label: 'Orders', Icon: OrderIcon }, 
   { href: '/team', label: 'Team', Icon: TeamIcon },
   { href: '/profile', label: 'Profile', Icon: ProfileIcon },
@@ -109,8 +107,12 @@ const tabs = [
 export default function BottomNav() {
   const pathname = usePathname();
 
+  // 🛑 HIDE NAV ON LOGIN AND REGISTER PAGES
+  if (pathname === '/login' || pathname === '/register' || pathname === '/admin/login') {
+    return null;
+  }
+
   return (
-    // Changed dark background to white with a subtle slate border
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
       <div className="mx-auto max-w-md grid grid-cols-4">
         {tabs.map((t) => {
