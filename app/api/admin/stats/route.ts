@@ -4,19 +4,21 @@ export const fetchCache = 'force-no-store';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getCurrentAdmin } from '@/lib/auth';
+import { verifyAdminSession, ADMIN_SESSION_COOKIE } from '@/lib/admin-auth';
 
 export async function GET(req: NextRequest) {
   try {
-    const admin = await getCurrentAdmin();
-    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const token = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const session = await verifyAdminSession(token);
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     // 1. Total Users
     const { count: totalUsers } = await supabaseAdmin
       .from('users')
       .select('id', { count: 'exact', head: true });
 
-    // 2. Total Deposited (from 'payments' table, only completed)
+    // 2. Total Deposited
     const { data: depositsData } = await supabaseAdmin
       .from('payments')
       .select('amount')
@@ -27,7 +29,7 @@ export async function GET(req: NextRequest) {
       0
     );
 
-    // 3. Total Invested (from 'user_modules' table)
+    // 3. Total Invested
     const { data: modulesData } = await supabaseAdmin
       .from('user_modules')
       .select('price_paid');
@@ -37,7 +39,7 @@ export async function GET(req: NextRequest) {
       0
     );
 
-    // 4. Total Withdrawn (from 'withdrawals' table, only completed)
+    // 4. Total Withdrawn
     const { data: withdrawalsData } = await supabaseAdmin
       .from('withdrawals')
       .select('amount')
@@ -48,7 +50,7 @@ export async function GET(req: NextRequest) {
       0
     );
 
-    // 5. Pending Withdrawals (count)
+    // 5. Pending Withdrawals
     const { count: pendingWithdrawals } = await supabaseAdmin
       .from('withdrawals')
       .select('id', { count: 'exact', head: true })
