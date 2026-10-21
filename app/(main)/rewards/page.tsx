@@ -37,7 +37,7 @@ export default function RewardsPage() {
       } catch (err) {
         console.error('Rewards load error:', err);
       } finally {
-        setLoading(false); // This ensures loading STOPS no matter what
+        setLoading(false);
       }
     }
     load();
@@ -45,85 +45,101 @@ export default function RewardsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <div className="text-[#8A8580]">Loading…</div>
+      <main className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-emerald-600 font-semibold">Loading…</div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen px-4 py-6 animate-fade-in">
-      {/* Summary Card */}
-      <div className="card p-5 mb-6 bg-[#1A1A1F] border-[#2A2823]">
-        <div className="flex items-center gap-3 mb-4">
-          <span className="text-2xl">🎁</span>
-          <h1 className="text-xl font-bold text-[#F5F2ED]">Team Investment Rewards</h1>
-        </div>
+    <main className="min-h-screen relative animate-fade-in pb-24">
+      {/* Background Image with Overlay */}
+      <div 
+        className="fixed inset-0 z-0 bg-cover bg-center"
+        style={{ 
+          // Using a placeholder image of people counting money. 
+          // You can replace this URL with your own custom image later!
+          backgroundImage: "url('https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80')" 
+        }}
+      />
+      {/* Soft white/slate overlay to ensure text is readable */}
+      <div className="fixed inset-0 z-0 bg-slate-50/85 backdrop-blur-[3px]" />
+
+      {/* Main Content Wrapper */}
+      <div className="relative z-10 px-4 pt-6">
         
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-[#15151A] border border-[#2A2823] rounded-xl p-3 text-center">
-            <div className="text-[10px] text-[#8A8580] font-bold tracking-wider mb-1">TEAM INVESTMENT</div>
-            <div className="text-lg font-bold text-[#E0A44C]">UGX {teamInvestment.toLocaleString()}</div>
+        {/* Summary Card */}
+        <div className="bg-white/90 backdrop-blur-md rounded-3xl p-5 mb-6 shadow-sm border border-slate-200">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-2xl">🎁</span>
+            <h1 className="text-xl font-black text-slate-900">Team Rewards</h1>
           </div>
-          <div className="bg-[#15151A] border border-[#2A2823] rounded-xl p-3 text-center">
-            <div className="text-[10px] text-[#8A8580] font-bold tracking-wider mb-1">TEAM SIZE</div>
-            <div className="text-lg font-bold text-[#F5F2ED]">{teamSize}</div>
+          
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-center">
+              <div className="text-[10px] text-slate-500 font-bold tracking-wider mb-1 uppercase">Team Investment</div>
+              <div className="text-lg font-bold text-emerald-600">UGX {teamInvestment.toLocaleString()}</div>
+            </div>
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-center">
+              <div className="text-[10px] text-slate-500 font-bold tracking-wider mb-1 uppercase">Team Size</div>
+              <div className="text-lg font-bold text-slate-900">{teamSize}</div>
+            </div>
           </div>
+
+          <p className="text-xs text-slate-600 font-medium text-center flex items-center justify-center gap-1">
+            <span className="text-emerald-500">✔</span> Automatic claim once reached!
+          </p>
         </div>
 
-        <p className="text-xs text-[#8A8580] text-center flex items-center justify-center gap-1">
-          <span className="text-[#E0A44C]">✔</span> Automatic claim once reached!
-        </p>
-      </div>
+        {/* Reward Tiers Header */}
+        <h2 className="text-lg font-bold text-slate-900 mb-3 px-1">Reward Tiers</h2>
 
-      {/* Reward Tiers Header */}
-      <h2 className="text-lg font-bold text-[#F5F2ED] mb-3 px-1">Reward Tiers</h2>
+        {/* Tiers List */}
+        <div className="space-y-3">
+          {tiers.map((tier, index) => {
+            const progress = Math.min((teamInvestment / tier.target) * 100, 100);
+            const isCompleted = teamInvestment >= tier.target;
+            const remaining = Math.max(tier.target - teamInvestment, 0);
 
-      {/* Tiers List */}
-      <div className="space-y-3">
-        {tiers.map((tier, index) => {
-          const progress = Math.min((teamInvestment / tier.target) * 100, 100);
-          const isCompleted = teamInvestment >= tier.target;
-          const remaining = Math.max(tier.target - teamInvestment, 0);
-
-          return (
-            <div key={index} className="card p-4 bg-[#1A1A1F] border-[#2A2823]">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${isCompleted ? 'bg-[#0F2A1A] text-[#4ADE80]' : 'bg-[#2A2823] text-[#8A8580]'}`}>
-                    {isCompleted ? '✔' : '🔒'}
+            return (
+              <div key={index} className="bg-white/90 backdrop-blur-md rounded-3xl p-4 shadow-sm border border-slate-200">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm ${isCompleted ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
+                      {isCompleted ? '✔' : '🔒'}
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-900 text-sm">UGX {tier.target.toLocaleString()}</div>
+                      <div className="text-[10px] text-slate-500 font-medium">Team Investment</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="font-bold text-[#F5F2ED] text-sm">UGX {tier.target.toLocaleString()}</div>
-                    <div className="text-[10px] text-[#8A8580]">Team Investment</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-[#E0A44C] text-sm">+UGX {tier.reward.toLocaleString()}</div>
-                  <div className={`text-[9px] font-bold px-2 py-0.5 rounded-full mt-1 inline-block ${isCompleted ? 'bg-[#0F2A1A] text-[#4ADE80]' : 'bg-[#2A2823] text-[#8A8580]'}`}>
-                    {isCompleted ? 'UNLOCKED' : 'LOCKED'}
+                  <div className="text-right">
+                    <div className="font-bold text-emerald-600 text-sm">+UGX {tier.reward.toLocaleString()}</div>
+                    <div className={`text-[9px] font-bold px-2 py-0.5 rounded-full mt-1 inline-block border ${isCompleted ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                      {isCompleted ? 'UNLOCKED' : 'LOCKED'}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Progress Bar */}
-              <div className="w-full h-1.5 bg-[#2A2823] rounded-full overflow-hidden mb-2">
-                <div
-                  className={`h-full rounded-full transition-all ${isCompleted ? 'bg-[#4ADE80]' : 'bg-[#C8833A]'}`}
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+                {/* Progress Bar */}
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-2">
+                  <div
+                    className={`h-full rounded-full transition-all ${isCompleted ? 'bg-emerald-500' : 'bg-emerald-400'}`}
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
 
-              {/* Progress Text */}
-              <div className="flex justify-between text-[10px] text-[#8A8580]">
-                <span>UGX {teamInvestment.toLocaleString()} / UGX {tier.target.toLocaleString()}</span>
-                {!isCompleted && (
-                  <span className="text-[#E0A44C] font-semibold">+UGX {remaining.toLocaleString()} to go</span>
-                )}
+                {/* Progress Text */}
+                <div className="flex justify-between text-[10px] text-slate-500 font-medium">
+                  <span>UGX {teamInvestment.toLocaleString()} / UGX {tier.target.toLocaleString()}</span>
+                  {!isCompleted && (
+                    <span className="text-emerald-600 font-bold">+UGX {remaining.toLocaleString()} to go</span>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </main>
   );
