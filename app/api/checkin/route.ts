@@ -8,6 +8,13 @@ import { verifySession, SESSION_COOKIE } from '@/lib/auth';
 
 const CHECKIN_BONUS = 200;
 
+// Helper: Get the YYYY-MM-DD string in East Africa Time (UTC+3)
+function getEATDateString(date: Date) {
+  // Shift the time by +3 hours so the UTC date matches the EAT date
+  const eatTime = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+  return eatTime.toISOString().split('T')[0];
+}
+
 export async function POST(req: NextRequest) {
   try {
     // 1. Auth
@@ -25,22 +32,15 @@ export async function POST(req: NextRequest) {
 
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-    // 3. Calculate today's date in East Africa Time (EAT = UTC+3)
+    // 3. Check if already checked in today
     const nowUTC = new Date();
-    const nowEAT = new Date(nowUTC.getTime() + 3 * 60 * 60 * 1000);
-    const todayStartEAT = Date.UTC(
-      nowEAT.getUTCFullYear(),
-      nowEAT.getUTCMonth(),
-      nowEAT.getUTCDate(),
-      0, 0, 0, 0
-    );
+    const todayEAT = getEATDateString(nowUTC);
 
-    // 4. Check if already checked in today
     if (user.last_checkin_at) {
-      const lastCheckinUTC = new Date(user.last_checkin_at).getTime();
-      const lastCheckinEAT = lastCheckinUTC + 3 * 60 * 60 * 1000;
+      const lastCheckinDate = new Date(user.last_checkin_at);
+      const lastCheckinEAT = getEATDateString(lastCheckinDate);
 
-      if (lastCheckinEAT >= todayStartEAT) {
+      if (lastCheckinEAT === todayEAT) {
         return NextResponse.json(
           { error: 'You have already checked in today. Come back tomorrow!' },
           { status: 400 }
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 5. Add bonus to balance
+    // 4. Add bonus to balance
     const newBalance = Number(user.balance ?? 0) + CHECKIN_BONUS;
 
     await supabaseAdmin
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
       })
       .eq('id', session.userId);
 
-    // 6. Log the transaction
+    // 5. Log the transaction
     await supabaseAdmin.from('tesla_transactions').insert({
       user_id: session.userId,
       type: 'daily_checkin',
@@ -96,27 +96,23 @@ export async function GET(req: NextRequest) {
 
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-    // Check if already checked in today (EAT timezone)
+    // Check if already checked in today
     let canCheckIn = true;
     if (user.last_checkin_at) {
       const nowUTC = new Date();
-      const nowEAT = new Date(nowUTC.getTime() + 3 * 60 * 60 * 1000);
-      const todayStartEAT = Date.UTC(
-        nowEAT.getUTCFullYear(),
-        nowEAT.getUTCMonth(),
-        nowEAT.getUTCDate(),
-        0, 0, 0, 0
-      );
-      const lastCheckinUTC = new Date(user.last_checkin_at).getTime();
-      const lastCheckinEAT = lastCheckinUTC + 3 * 60 * 60 * 1000;
-      if (lastCheckinEAT >= todayStartEAT) {
+      const todayEAT = getEATDateString(nowUTC);
+      
+      const lastCheckinDate = new Date(user.last_checkin_at);
+      const lastCheckinEAT = getEATDateString(lastCheckinDate);
+
+      if (lastCheckinEAT === todayEAT) {
         canCheckIn = false;
       }
     }
 
     return NextResponse.json({
       canCheckIn,
-      bonus: 200,
+      bonus: CHECKIN_BONUS,
       lastCheckinAt: user.last_checkin_at,
     });
   } catch (err) {
