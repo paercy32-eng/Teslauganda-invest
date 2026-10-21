@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { hashPassword, signSession, SESSION_COOKIE } from '@/lib/auth';
+import { signUserToken, USER_COOKIE_NAME, USER_COOKIE_OPTIONS } from '@/lib/jwt';
+import bcrypt from 'bcryptjs';
 
 function generateReferralCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = 'SAF';
+  let code = 'SKN-'; // Changed to SKN for Saiken
   for (let i = 0; i < 5; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
 }
@@ -18,32 +19,20 @@ export async function POST(req: NextRequest) {
 
     // --- Validation ---
     if (!phone || !password || !confirmPassword) {
-      return NextResponse.json(
-        { error: 'All fields are required.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'All fields are required.' }, { status: 400 });
     }
 
     if (password !== confirmPassword) {
-      return NextResponse.json(
-        { error: 'Passwords do not match.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Passwords do not match.' }, { status: 400 });
     }
 
     if (password.length < 6) {
-      return NextResponse.json(
-        { error: 'Password must be at least 6 characters.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Password must be at least 6 characters.' }, { status: 400 });
     }
 
     const cleanPhone = phone.trim();
     if (!/^\+?\d{9,15}$/.test(cleanPhone)) {
-      return NextResponse.json(
-        { error: 'Enter a valid phone number.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Enter a valid phone number.' }, { status: 400 });
     }
 
     // --- Check if phone already exists ---
@@ -54,13 +43,10 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (existing) {
-      return NextResponse.json(
-        { error: 'This phone number is already registered.' },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: 'This phone number is already registered.' }, { status: 409 });
     }
 
-    // --- Resolve referrer (if referral code supplied) ---
+    // --- Resolve referrer ---
     let referredBy: string | null = null;
     if (referralCode && referralCode.trim()) {
       const { data: referrer } = await supabaseAdmin
@@ -68,14 +54,11 @@ export async function POST(req: NextRequest) {
         .select('id')
         .eq('referral_code', referralCode.trim().toUpperCase())
         .maybeSingle();
-
-      if (referrer) {
-        referredBy = referrer.id;
-      }
+      if (referrer) referredBy = referrer.id;
     }
 
     // --- Hash password ---
-    const passwordHash = await hashPassword(password);
+    const passwordHash = await bcrypt.hash(password, 10);
 
     // --- Generate unique referral code ---
     let newCode = generateReferralCode();
@@ -89,10 +72,10 @@ export async function POST(req: NextRequest) {
       newCode = generateReferralCode();
     }
 
-    // --- Generate a default name since we removed the field ---
+    // --- Auto-generate name ---
     const defaultName = 'User ' + cleanPhone.slice(-4);
 
-    // --- Insert user (welcome bonus of 3000) ---
+    // --- Insert user ---
     const { data: newUser, error: insertErr } = await supabaseAdmin
       .from('users')
       .insert({
@@ -102,29 +85,26 @@ export async function POST(req: NextRequest) {
         balance: 3000,
         referral_code: newCode,
         referred_by: referredBy,
-        welcome_bonus_credited: true,
       })
       .select('id, name, phone, referral_code')
       .single();
 
     if (insertErr || !newUser) {
-      return NextResponse.json(
-        { error: 'Failed to create account. Please try again.' },
-        { status: 500 }
-      );
+      console.error('Insert error:', insertErr);
+      return NextResponse.json({ error: 'Failed to create account. Please try again.' }, { status: 500 });
     }
 
     // --- Log the welcome bonus transaction ---
-    await supabaseAdmin.from('tesla_transactions').insert({
+    await supabaseAdmin.from('transactions').insert({
       user_id: newUser.id,
-      type: 'welcome',
+      type: 'welcome_bonus',
       amount: 3000,
       status: 'completed',
       meta: { reason: 'Welcome bonus' },
     });
 
     // --- Create session cookie ---
-    const token = await signSession({
+    const token = signUserToken({
       userId: newUser.id,
       phone: newUser.phone,
     });
@@ -139,20 +119,11 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    res.cookies.set(SESSION_COOKIE, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30, // 30 days
-      path: '/',
-    });
+    res.cookies.set(USER_COOKIE_NAME, token, USER_COOKIE_OPTIONS);
 
     return res;
   } catch (err) {
     console.error('Register error:', err);
-    return NextResponse.json(
-      { error: 'Something went wrong. Please try again.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 });
   }
 }
