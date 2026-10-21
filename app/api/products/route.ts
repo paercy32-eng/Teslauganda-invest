@@ -1,26 +1,31 @@
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-export const fetchCache = 'force-no-store';
-
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
-export async function GET() {
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: NextRequest) {
   try {
-    const { data: products, error } = await supabaseAdmin
-      .from('tesla_products')
-      .select('id, name, subtitle, price, daily_profit, duration_days, image_url, tag, sort_order')
+    const { data, error } = await supabaseAdmin
+      .from('products')
+      .select('id, name, price, cycle_days, daily_return, is_active, created_at')
       .eq('is_active', true)
-      .order('sort_order', { ascending: true });
+      .order('price', { ascending: true });
 
     if (error) {
       console.error('Products fetch error:', error);
       return NextResponse.json({ error: 'Failed to load products' }, { status: 500 });
     }
 
-    return NextResponse.json({ products: products ?? [] });
+    return NextResponse.json(
+      { products: data ?? [] },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        },
+      }
+    );
   } catch (err) {
-    console.error('Products route error:', err);
+    console.error('Products endpoint error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
