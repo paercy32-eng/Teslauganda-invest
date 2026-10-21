@@ -9,11 +9,21 @@ type Tier = {
   isClaimed: boolean;
 };
 
+// Hardcoded 6 Tiers as requested
+const DEFAULT_TIERS: Tier[] = [
+  { target: 200000, reward: 10000, isClaimed: false },
+  { target: 500000, reward: 25000, isClaimed: false },
+  { target: 1000000, reward: 50000, isClaimed: false },
+  { target: 2000000, reward: 100000, isClaimed: false },
+  { target: 5000000, reward: 250000, isClaimed: false },
+  { target: 10000000, reward: 500000, isClaimed: false },
+];
+
 export default function RewardsPage() {
   const router = useRouter();
   const [teamInvestment, setTeamInvestment] = useState(0);
   const [teamSize, setTeamSize] = useState(0);
-  const [tiers, setTiers] = useState<Tier[]>([]);
+  const [tiers, setTiers] = useState<Tier[]>(DEFAULT_TIERS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,7 +43,11 @@ export default function RewardsPage() {
         const data = await res.json();
         setTeamInvestment(data.teamInvestment ?? 0);
         setTeamSize(data.teamSize ?? 0);
-        setTiers(data.tiers ?? []);
+        
+        // If the API returns tiers, use them. Otherwise, keep the default 6.
+        if (data.tiers && data.tiers.length > 0) {
+          setTiers(data.tiers);
+        }
       } catch (err) {
         console.error('Rewards load error:', err);
       } finally {
@@ -57,8 +71,6 @@ export default function RewardsPage() {
       <div 
         className="fixed inset-0 z-0 bg-cover bg-center"
         style={{ 
-          // Using a placeholder image of people counting money. 
-          // You can replace this URL with your own custom image later!
           backgroundImage: "url('https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80')" 
         }}
       />
