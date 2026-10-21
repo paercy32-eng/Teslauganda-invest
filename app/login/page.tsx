@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import SafranLogo from '@/components/SafranLogo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,7 +21,10 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, password }),
+        body: JSON.stringify({
+          phone: `+256${phone.replace(/^0+/, '')}`,
+          password,
+        }),
       });
 
       const data = await res.json();
@@ -41,61 +43,59 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen relative flex items-center justify-center px-4 overflow-hidden bg-[#131317]">
-      {/* Decorative Background Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-72 h-72 bg-[#C8833A] rounded-full mix-blend-screen filter blur-[100px] opacity-20"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-72 h-72 bg-[#E0A44C] rounded-full mix-blend-screen filter blur-[100px] opacity-10"></div>
+    <main className="min-h-screen relative flex items-center justify-center px-4 py-8 overflow-hidden bg-[#111827]">
+      {/* Background decorative steel/slate pattern */}
+      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 0%, #374151 0%, transparent 70%)' }}></div>
 
       <div className="w-full max-w-md relative z-10">
-        {/* Header */}
-        <div className="mb-8 px-2">
-          <SafranLogo size={40} textColor="#F5F2ED" accentColor="#1A1A1F" />
-          <h1 className="text-3xl font-bold text-[#F5F2ED] mt-6 mb-2">Welcome back</h1>
-          <p className="text-[#8A8580] text-sm">Log in to continue to your dashboard.</p>
+        <div className="mb-8 px-2 text-center">
+          {/* Industrial Gear Icon representing Pumps */}
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-[#EA580C] flex items-center justify-center shadow-lg shadow-[#EA580C]/30">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+            </div>
+          </div>
+          <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight">China Saiken Pumps</h1>
+          <p className="text-gray-400 text-sm">Sign in to your industrial dashboard.</p>
         </div>
 
-        {/* Form Card */}
-        <div className="bg-[#1A1A1F] border border-[#2A2823] rounded-3xl p-6 shadow-2xl">
-          <form onSubmit={handleSubmit} name="login-form" autoComplete="on" className="space-y-5">
-            {/* Phone Number */}
+        <div className="bg-[#1F2937] border border-[#374151] rounded-3xl p-6 shadow-2xl">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="login-phone" className="block text-[10px] text-[#8A8580] font-bold mb-2 tracking-wider uppercase">
-                Phone Number
-              </label>
-              <input
-                id="login-phone"
-                name="phone"
-                type="tel"
-                autoComplete="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Enter your phone number"
-                className="w-full bg-[#15151A] border border-[#2A2823] rounded-xl px-4 py-3.5 text-[#F5F2ED] placeholder-[#4A4843] focus:outline-none focus:border-[#C8833A] transition"
-                required
-              />
+              <label className="block text-[10px] text-gray-400 font-bold mb-2 tracking-wider uppercase">Phone Number</label>
+              <div className="flex items-center bg-[#111827] border border-[#374151] rounded-xl focus-within:border-[#EA580C] transition overflow-hidden">
+                <span className="pl-4 pr-2 text-white text-sm font-bold select-none border-r border-[#374151]">
+                  +256
+                </span>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').replace(/^0+/, ''))}
+                  placeholder="700123456"
+                  className="w-full bg-transparent px-3 py-3.5 text-white placeholder-gray-500 focus:outline-none text-sm"
+                  required
+                />
+              </div>
             </div>
 
-            {/* Password */}
             <div>
-              <label htmlFor="login-password" className="block text-[10px] text-[#8A8580] font-bold mb-2 tracking-wider uppercase">
-                Password
-              </label>
+              <label className="block text-[10px] text-gray-400 font-bold mb-2 tracking-wider uppercase">Password</label>
               <div className="relative">
                 <input
-                  id="login-password"
-                  name="password"
                   type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full bg-[#15151A] border border-[#2A2823] rounded-xl px-4 py-3.5 text-[#F5F2ED] placeholder-[#4A4843] focus:outline-none focus:border-[#C8833A] transition pr-12"
+                  className="w-full bg-[#111827] border border-[#374151] rounded-xl px-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:border-[#EA580C] transition pr-12 text-sm"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8A8580] text-sm font-semibold"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-semibold hover:text-white"
                 >
                   {showPassword ? 'Hide' : 'Show'}
                 </button>
@@ -103,7 +103,7 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="text-sm text-[#FF8A8A] bg-[#2A1416] rounded-xl px-4 py-3 border border-[#E5484D]/40">
+              <div className="text-xs text-red-400 bg-red-900/20 rounded-xl px-4 py-3 border border-red-500/30">
                 {error}
               </div>
             )}
@@ -111,16 +111,16 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-[#C8833A] to-[#E0A44C] text-white font-bold py-3.5 rounded-xl active:scale-[0.98] transition shadow-lg shadow-[#C8833A]/20"
+              className="w-full bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold py-3.5 rounded-xl active:scale-[0.98] transition text-sm mt-2 shadow-lg shadow-[#EA580C]/20"
             >
-              {loading ? 'Logging in…' : 'Log In'}
+              {loading ? 'Signing in…' : 'Sign In'}
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-[#8A8580]">
+          <div className="mt-6 text-center text-sm text-gray-400">
             Don't have an account?{' '}
-            <Link href="/register" className="text-[#E0A44C] font-bold hover:underline">
-              Sign up
+            <Link href="/register" className="text-[#EA580C] font-bold hover:underline">
+              Create one
             </Link>
           </div>
         </div>
