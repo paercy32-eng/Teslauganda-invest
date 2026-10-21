@@ -1,63 +1,50 @@
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-export const fetchCache = 'force-no-store';
-
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase-admin';
-import { verifyAdminSession, ADMIN_SESSION_COOKIE } from '@/lib/admin-auth';
+import { db } from '@/lib/firebase-admin';
+import { getCurrentAdmin } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 // GET — list deposits
 export async function GET(req: NextRequest) {
   try {
-    const token = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const session = await verifyAdminSession(token);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const admin = await getCurrentAdmin();
+    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status') ?? 'pending';
 
-    let query = supabaseAdmin
-      .from('tesla_deposits')
-      .select('id, user_id, amount, status, reference, payment_method, transaction_id, created_at, reviewed_at');
+    let query: any = db.collection('payments');
 
     if (status !== 'all') {
-      query = query.eq('status', status);
+      query = query.where('status', '==', status);
     }
 
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Admin deposits fetch error:', error);
-      return NextResponse.json({ error: 'Failed to load' }, { status: 500 });
-    }
-
-    const userIds = Array.from(new Set((data ?? []).map((d) => d.user_id)));
-    let userMap: Record<string, { name: string; phone: string }> = {};
-    if (userIds.length > 0) {
-      const { data: users } = await supabaseAdmin
-        .from('users')
-        .select('id, name, phone')
-        .in('id', userIds);
-      (users ?? []).forEach((u) => {
-        userMap[u.id] = { name: u.name, phone: u.phone };
-      });
-    }
-
-    const enriched = (data ?? []).map((d) => ({
-      ...d,
-      users: userMap[d.user_id] ?? null,
+    const snapshot = await query.get();
+    
+    const payments = snapshot.docs.map((doc: any) => ({
+      id: doc.id,
+      ...doc.data()
     }));
 
-    // Sort newest first
-    enriched.sort((a, b) => {
-      const aT = new Date(a.created_at).getTime();
-      const bT = new Date(b.created_at).getTime();
-      return bT - aT;
-    });
+    // Sort manually in JS since Firestore requires a composite index for where + orderBy
+    payments.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    // Fetch user details for each payment
+    const enrichedPayments = await Promise.all(payments.map(async (payment: any) => {
+      try {
+        const userDoc = await db.collection('users').doc(payment.user_id).get();
+        const userData = userDoc.data();
+        return {
+          ...payment,
+          users: userData ? { name: userData.name, phone: userData.phone } : null
+        };
+      } catch {
+        return { ...payment, users: null };
+      }
+    }));
 
     return NextResponse.json(
-      { deposits: enriched },
+      { deposits: enrichedPayments },
       {
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
@@ -65,18 +52,16 @@ export async function GET(req: NextRequest) {
       }
     );
   } catch (err) {
-    console.error('Admin deposits error:', err);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    console.error('Admin deposits fetch error:', err);
+    return NextResponse.json({ error: 'Failed to load' }, { status: 500 });
   }
 }
 
-// POST — approve or reject a deposit
+// POST — manually approve or reject a deposit (Fallback)
 export async function POST(req: NextRequest) {
   try {
-    const token = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const session = await verifyAdminSession(token);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const admin = await getCurrentAdmin();
+    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { depositId, action } = await req.json();
 
@@ -84,81 +69,59 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
-    const { data: dep } = await supabaseAdmin
-      .from('tesla_deposits')
-      .select('id, user_id, amount, status')
-      .eq('id', depositId)
-      .maybeSingle();
+    const paymentRef = db.collection('payments').doc(depositId);
+    const paymentDoc = await paymentRef.get();
 
-    if (!dep) return NextResponse.json({ error: 'Deposit not found' }, { status: 404 });
+    if (!paymentDoc.exists) {
+      return NextResponse.json({ error: 'Deposit not found' }, { status: 404 });
+    }
 
-    if (dep.status !== 'pending') {
-      return NextResponse.json({ error: `Already ${dep.status}` }, { status: 400 });
+    const paymentData = paymentDoc.data();
+    if (!paymentData) return NextResponse.json({ error: 'Data missing' }, { status: 404 });
+    
+    if (paymentData.status !== 'pending') {
+      return NextResponse.json({ error: `Already ${paymentData.status}` }, { status: 400 });
     }
 
     if (action === 'approve') {
-      const { data: user } = await supabaseAdmin
-        .from('users')
-        .select('balance, total_deposited')
-        .eq('id', dep.user_id)
-        .maybeSingle();
-
-      if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-
-      await supabaseAdmin
-        .from('users')
-        .update({
-          balance: Number(user.balance) + Number(dep.amount),
-          total_deposited: Number(user.total_deposited) + Number(dep.amount),
-        })
-        .eq('id', dep.user_id);
-
-      await supabaseAdmin
-        .from('tesla_deposits')
-        .update({
-          status: 'approved',
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq('id', depositId);
-
-      await supabaseAdmin.from('tesla_transactions').insert({
-        user_id: dep.user_id,
-        type: 'deposit',
-        amount: Number(dep.amount),
+      // Update payment status
+      await paymentRef.update({
         status: 'completed',
-        meta: { approved_by: session.username, source: 'admin_manual' },
+        reviewed_at: new Date().toISOString()
       });
 
-      await supabaseAdmin.from('tesla_admin_logs').insert({
-        admin_action: 'approve_deposit',
-        target_user_id: dep.user_id,
-        amount: Number(dep.amount),
-        reason: null,
-        meta: { deposit_id: depositId },
-      });
+      // Get user and update balance
+      const userRef = db.collection('users').doc(paymentData.user_id);
+      const userDoc = await userRef.get();
+      
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        const currentBalance = Number(userData?.balance) || 0;
+        await userRef.update({
+          balance: currentBalance + Number(paymentData.amount)
+        });
+      }
 
-      return NextResponse.json({ success: true, status: 'approved' });
+      // Log transaction
+      await db.collection('transactions').add({
+        user_id: paymentData.user_id,
+        type: 'deposit',
+        amount: Number(paymentData.amount),
+        status: 'completed',
+        meta: { reference: paymentData.reference, method: 'manual_admin' },
+        created_at: new Date().toISOString()
+      });
     }
 
-    // reject
-    await supabaseAdmin
-      .from('tesla_deposits')
-      .update({
+    if (action === 'reject') {
+      await paymentRef.update({
         status: 'rejected',
-        reviewed_at: new Date().toISOString(),
-      })
-      .eq('id', depositId);
+        reviewed_at: new Date().toISOString()
+      });
+    }
 
-    await supabaseAdmin.from('tesla_admin_logs').insert({
-      admin_action: 'reject_deposit',
-      target_user_id: dep.user_id,
-      amount: Number(dep.amount),
-      reason: null,
-      meta: { deposit_id: depositId },
-    });
-
-    return NextResponse.json({ success: true, status: 'rejected' });
-  } catch (err) {
+    return NextResponse.json({ success: true, status: action === 'approve' ? 'completed' : 'rejected' });
+  } catch (err: any) {
     console.error('Admin deposits action error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
