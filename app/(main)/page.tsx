@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ProductCard from '@/components/ProductCard';
-import SafranLogo from '@/components/SafranLogo';
 
 type Me = {
   id: string;
@@ -15,12 +14,9 @@ type Me = {
 type Product = {
   id: string;
   name: string;
-  subtitle: string | null;
   price: number;
-  daily_profit: number;
-  duration_days: number;
-  image_url: string | null;
-  tag: string | null;
+  cycle_days: number;
+  daily_return: number;
 };
 
 export default function HomePage() {
@@ -81,7 +77,7 @@ export default function HomePage() {
 
     setFeedback({
       ok: true,
-      msg: `🎉 You invested in ${product.name}! Daily return: UGX ${Number(product.daily_profit).toLocaleString()}`,
+      msg: `🎉 You invested in ${product.name}! Daily return: UGX ${Number(product.daily_return).toLocaleString()}`,
     });
     await loadMe();
     setTimeout(() => {
@@ -92,32 +88,50 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[#131317]">
-        <div className="text-[#8A8580]">Loading…</div>
+      <main className="min-h-screen flex items-center justify-center bg-[#111827]">
+        <div className="text-gray-400">Loading…</div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen px-4 py-6 animate-fade-in bg-[#131317]">
+    <main className="min-h-screen px-4 py-6 bg-[#111827] animate-fade-in pb-24">
+      
       {/* Header */}
       <div className="flex items-center justify-between mb-6 px-2">
-        <SafranLogo size={36} textColor="#F5F2ED" accentColor="#1A1A1F" />
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 rounded-xl bg-[#EA580C] flex items-center justify-center text-white font-bold shadow-lg shadow-[#EA580C]/20">
+            S
+          </div>
+          <div>
+            <h1 className="text-lg font-extrabold text-white leading-tight">SAIKEN</h1>
+            <p className="text-[10px] text-[#EA580C] font-bold tracking-wider">PUMPS</p>
+          </div>
+        </div>
         <div className="text-right">
-          <div className="text-[11px] text-[#8A8580]">Welcome back</div>
-          <div className="text-sm font-semibold text-[#F5F2ED]">{me?.name}</div>
+          <div className="text-[10px] text-gray-400">Welcome back</div>
+          <div className="text-sm font-semibold text-white">{me?.name}</div>
         </div>
       </div>
 
-      {/* Products */}
-      <h2 className="text-2xl font-bold mb-4 px-2 text-[#F5F2ED]">Products</h2>
+      {/* Balance Display */}
+      <div className="bg-[#1F2937] border border-[#374151] rounded-2xl p-4 mb-6 flex items-center justify-between shadow-sm">
+        <div>
+          <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Available Balance</div>
+          <div className="text-2xl font-bold text-white">UGX {me?.balance?.toLocaleString() ?? 0}</div>
+        </div>
+      </div>
 
-      <div className="space-y-4">
+      {/* Products List */}
+      <h2 className="text-lg font-bold mb-4 px-2 text-white">Investment Plans</h2>
+
+      <div className="space-y-3">
         {products.map((p) => (
           <ProductCard key={p.id} product={p} onRent={handleRent} />
         ))}
       </div>
 
+      {/* Purchase Modal */}
       {selected && (
         <RentModal
           product={selected}
@@ -134,9 +148,6 @@ export default function HomePage() {
   );
 }
 
-// ============================================================
-// RENT MODAL (Investment Confirmation) — CENTERED
-// ============================================================
 function RentModal({
   product,
   balance,
@@ -153,8 +164,8 @@ function RentModal({
   const [loading, setLoading] = useState(false);
 
   const price = Number(product.price);
-  const daily = Number(product.daily_profit);
-  const total = daily * product.duration_days;
+  const daily = Number(product.daily_return);
+  const total = daily * product.cycle_days;
   const shortfall = price - balance;
 
   async function go() {
@@ -169,27 +180,27 @@ function RentModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-[#1A1A1F] rounded-3xl p-5 max-h-[90vh] overflow-y-auto animate-fade-in border border-[#2A2823] shadow-2xl"
+        className="w-full max-w-md bg-[#1F2937] border border-[#374151] rounded-3xl p-5 max-h-[90vh] overflow-y-auto animate-fade-in shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-start mb-4">
           <div>
-            <div className="text-lg font-bold text-[#F5F2ED]">Confirm investment</div>
-            <div className="text-xs text-[#8A8580]">{product.name}</div>
+            <div className="text-lg font-bold text-white">Confirm Investment</div>
+            <div className="text-xs text-[#EA580C] font-bold">{product.name}</div>
           </div>
-          <button onClick={onClose} className="text-[#8A8580] text-xl">×</button>
+          <button onClick={onClose} className="text-gray-400 text-xl">×</button>
         </div>
 
-        <div className="bg-[#15151A] border border-[#2A2823] rounded-2xl p-3 text-xs mb-4 space-y-1.5">
+        <div className="bg-[#111827] border border-[#374151] rounded-2xl p-4 text-xs mb-4 space-y-2">
           <Row label="Price" value={`UGX ${price.toLocaleString()}`} />
           <Row label="Daily return" value={`UGX ${daily.toLocaleString()}`} highlight />
-          <Row label="Duration" value={`${product.duration_days} days`} />
+          <Row label="Duration" value={`${product.cycle_days} days`} />
           <Row label="Total return" value={`UGX ${total.toLocaleString()}`} bold />
           <Row label="Your balance" value={`UGX ${balance.toLocaleString()}`} />
         </div>
 
         {shortfall > 0 && !feedback && (
-          <div className="bg-[#2A1416] border border-[#E5484D]/40 rounded-2xl px-3 py-2 text-xs text-[#FF8A8A] mb-3">
+          <div className="bg-red-900/20 border border-red-500/30 rounded-2xl px-3 py-2 text-xs text-red-400 mb-3">
             You need UGX {shortfall.toLocaleString()} more. Recharge your balance.
           </div>
         )}
@@ -198,8 +209,8 @@ function RentModal({
           <div
             className={`rounded-2xl px-3 py-2 text-sm mb-3 border ${
               feedback.ok
-                ? 'bg-[#0F2A1A] border-[#4ADE80]/40 text-[#8AE6A8]'
-                : 'bg-[#2A1416] border-[#E5484D]/40 text-[#FF8A8A]'
+                ? 'bg-green-900/20 border-green-500/30 text-green-400'
+                : 'bg-red-900/20 border-red-500/30 text-red-400'
             }`}
           >
             {feedback.msg}
@@ -209,15 +220,15 @@ function RentModal({
         {!feedback?.ok && (
           <button
             onClick={go}
-            className="w-full bg-gradient-to-r from-[#C8833A] to-[#E0A44C] text-white font-bold py-3.5 rounded-xl active:scale-[0.98] transition shadow-lg shadow-[#C8833A]/20 disabled:opacity-50"
+            className="w-full bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold py-3.5 rounded-xl active:scale-[0.98] transition shadow-lg shadow-[#EA580C]/20 disabled:opacity-50"
             disabled={loading}
           >
             {loading ? 'Processing…' : `Invest UGX ${price.toLocaleString()}`}
           </button>
         )}
 
-        <p className="text-[10px] text-[#8A8580] text-center mt-3">
-          Daily returns are credited every 24 hours after purchase.
+        <p className="text-[10px] text-gray-400 text-center mt-3">
+          Daily returns are credited every 24 hours.
         </p>
       </div>
     </div>
@@ -237,10 +248,10 @@ function Row({
 }) {
   return (
     <div className="flex justify-between">
-      <span className="text-[#8A8580]">{label}</span>
+      <span className="text-gray-400">{label}</span>
       <span
         className={`${bold ? 'font-bold' : 'font-semibold'} ${
-          highlight ? 'text-[#E0A44C]' : 'text-[#F5F2ED]'
+          highlight ? 'text-[#EA580C]' : 'text-white'
         }`}
       >
         {value}
