@@ -62,7 +62,6 @@ export default function MyRobotPage() {
               <path d="M21 8L12 3L3 8V16L12 21L21 16V8Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
               <path d="M3 8L12 13L21 8" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
               <path d="M12 21V13" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-              {/* Inner highlight to make it look 3D */}
               <path d="M12 3L3 8L12 13L21 8L12 3Z" fill="#F1F5F9" />
             </svg>
           </div>
@@ -70,8 +69,6 @@ export default function MyRobotPage() {
           <div className="text-slate-400 mb-6 font-bold text-lg">
             No active pumps
           </div>
-          
-          {/* Removed the Browse Investments button */}
         </div>
       ) : (
         <div className="space-y-4">
