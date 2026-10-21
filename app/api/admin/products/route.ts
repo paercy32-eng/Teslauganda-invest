@@ -1,83 +1,86 @@
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-export const fetchCache = 'force-no-store';
-
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase-admin';
-import { verifyAdminSession, ADMIN_SESSION_COOKIE } from '@/lib/admin-auth';
+import { db } from '@/lib/firebase-admin';
+import { getCurrentAdmin } from '@/lib/auth';
 
-// GET — list all products (including inactive)
+export const dynamic = 'force-dynamic';
+
+// GET — list all products
 export async function GET(req: NextRequest) {
   try {
-    const token = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const session = await verifyAdminSession(token);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const admin = await getCurrentAdmin();
+    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { data, error } = await supabaseAdmin
-      .from('tesla_products')
-      .select('id, name, subtitle, price, daily_profit, duration_days, image_url, tag, is_active, sort_order')
-      .order('sort_order', { ascending: true });
+    const snapshot = await db.collection('products').get();
+    const products = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
 
-    if (error) {
-      console.error('Products fetch error:', error);
-      return NextResponse.json({ error: 'Failed to load' }, { status: 500 });
-    }
+    // Sort by price (lowest to highest)
+    products.sort((a: any, b: any) => Number(a.price) - Number(b.price));
 
-    return NextResponse.json({ products: data ?? [] });
+    return NextResponse.json(
+      { products },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        },
+      }
+    );
   } catch (err) {
-    console.error('Admin products GET error:', err);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    console.error('Admin products fetch error:', err);
+    return NextResponse.json({ error: 'Failed to load' }, { status: 500 });
   }
 }
 
-// POST — update a product
+// POST — update a product or toggle its status
 export async function POST(req: NextRequest) {
   try {
-    const token = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const session = await verifyAdminSession(token);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const admin = await getCurrentAdmin();
+    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { id, ...updates } = body;
+    const { action, productId } = body;
 
-    if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
-
-    // Only allow specific fields
-    const allowed: Record<string, unknown> = {};
-    if (typeof updates.name === 'string') allowed.name = updates.name;
-    if (typeof updates.subtitle === 'string') allowed.subtitle = updates.subtitle;
-    if (typeof updates.price === 'number') allowed.price = updates.price;
-    if (typeof updates.daily_profit === 'number') allowed.daily_profit = updates.daily_profit;
-    if (typeof updates.duration_days === 'number') allowed.duration_days = updates.duration_days;
-    if (typeof updates.image_url === 'string') allowed.image_url = updates.image_url;
-    if (typeof updates.tag === 'string') allowed.tag = updates.tag;
-    if (typeof updates.is_active === 'boolean') allowed.is_active = updates.is_active;
-
-    if (Object.keys(allowed).length === 0) {
-      return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
+    if (!productId || !action) {
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
-    const { error } = await supabaseAdmin
-      .from('tesla_products')
-      .update(allowed)
-      .eq('id', id);
+    const productRef = db.collection('products').doc(productId);
+    const productDoc = await productRef.get();
 
-    if (error) {
-      console.error('Product update error:', error);
-      return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
+    if (!productDoc.exists) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    await supabaseAdmin.from('tesla_admin_logs').insert({
-      admin_action: 'update_product',
-      reason: null,
-      meta: { product_id: id, updates: allowed },
-    });
+    if (action === 'toggle_status') {
+      const currentData = productDoc.data();
+      const newStatus = !currentData?.is_active;
+      
+      await productRef.update({ is_active: newStatus });
+      return NextResponse.json({ success: true, message: `Product ${newStatus ? 'activated' : 'deactivated'}` });
+    }
 
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error('Admin products POST error:', err);
+    if (action === 'update_details') {
+      const { name, price, cycle_days, daily_return } = body;
+      
+      if (!name || !price || !cycle_days || !daily_return) {
+        return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
+      }
+
+      await productRef.update({
+        name,
+        price: Number(price),
+        cycle_days: Number(cycle_days),
+        daily_return: Number(daily_return),
+      });
+
+      return NextResponse.json({ success: true, message: 'Product updated successfully' });
+    }
+
+    return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
+  } catch (err: any) {
+    console.error('Admin products action error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
