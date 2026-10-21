@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Verify the webhook signature to ensure it's actually from PesaJet
+    // 1. Verify the webhook signature
     const signature = req.headers.get('x-webhook-signature') || '';
     const body = await req.json();
 
@@ -16,74 +16,123 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Signature mismatch' }, { status: 401 });
     }
 
-    // 2. Extract details from the payload
+    // 2. Extract details
     const { event, status, reference, amount } = body;
+    console.log(`Received PesaJet webhook: ${event} for ref ${reference} (${status})`);
 
-    console.log(`Received PesaJet webhook: ${event} for ref ${reference}`);
+    const isSuccess = event === 'payment.completed' || status === 'COMPLETED';
+    const isFailure = event === 'payment.failed' || status === 'FAILED';
 
-    // 3. Handle successful payments
-    if (event === 'payment.completed' || status === 'COMPLETED') {
-      
-      // Find the pending payment in your database
-      const { data: payment, error: fetchErr } = await supabaseAdmin
-        .from('payments')
-        .select('id, user_id, status')
-        .eq('reference', reference)
-        .single();
+    if (!isSuccess && !isFailure) {
+      return NextResponse.json({ received: true }); // Ignore other statuses (like pending)
+    }
 
-      if (fetchErr || !payment) {
-        console.error('Payment record not found for reference:', reference);
-        return NextResponse.json({ received: true }); // Return 200 so they stop retrying
-      }
+    // ==========================================
+    // 3. CHECK IF IT'S A DEPOSIT (COLLECTION)
+    // ==========================================
+    const { data: payment } = await supabaseAdmin
+      .from('payments')
+      .select('id, user_id, status')
+      .eq('reference', reference)
+      .maybeSingle();
 
-      // Idempotency check: Only process if it's still pending
+    if (payment) {
       if (payment.status === 'pending') {
-        
-        // A. Mark payment as completed
-        await supabaseAdmin
-          .from('payments')
-          .update({ status: 'completed', reviewed_at: new Date().toISOString() })
-          .eq('id', payment.id);
-
-        // B. Credit the user's balance
-        // (Assuming you have a 'balance' column in your 'users' table)
-        const { data: user } = await supabaseAdmin
-          .from('users')
-          .select('balance')
-          .eq('id', payment.user_id)
-          .single();
-
-        if (user) {
-          const newBalance = Number(user.balance || 0) + Number(amount);
+        if (isSuccess) {
+          // Mark deposit as completed
           await supabaseAdmin
-            .from('users')
-            .update({ balance: newBalance })
-            .eq('id', payment.user_id);
-        }
+            .from('payments')
+            .update({ status: 'completed', reviewed_at: new Date().toISOString() })
+            .eq('id', payment.id);
 
-        // C. Optional: Add to transactions table for history
-        await supabaseAdmin
-          .from('transactions')
-          .insert({
+          // Credit user balance
+          const { data: user } = await supabaseAdmin
+            .from('users')
+            .select('balance')
+            .eq('id', payment.user_id)
+            .single();
+
+          if (user) {
+            await supabaseAdmin
+              .from('users')
+              .update({ balance: Number(user.balance || 0) + Number(amount) })
+              .eq('id', payment.user_id);
+          }
+
+          // Log transaction
+          await supabaseAdmin.from('tesla_transactions').insert({
             user_id: payment.user_id,
             amount: amount,
             type: 'deposit',
             status: 'completed',
-            reference: reference
+            meta: { reference: reference }
           });
 
-        console.log(`Successfully credited UGX ${amount} to user ${payment.user_id}`);
+          console.log(`Deposit successful: Credited UGX ${amount} to user ${payment.user_id}`);
+        } else {
+          // Mark deposit as failed
+          await supabaseAdmin.from('payments').update({ status: 'failed' }).eq('id', payment.id);
+          console.log(`Deposit failed for ref ${reference}`);
+        }
       }
-    } 
-    // 4. Handle failed payments
-    else if (event === 'payment.failed' || status === 'FAILED') {
-      await supabaseAdmin
-        .from('payments')
-        .update({ status: 'failed' })
-        .eq('reference', reference);
+      return NextResponse.json({ received: true });
     }
 
-    // Always return a 200 OK so PesaJet knows we received it
+    // ==========================================
+    // 4. CHECK IF IT'S A WITHDRAWAL (DISBURSEMENT)
+    // ==========================================
+    // Admin withdrawals use a 'meta' column to store the reference
+    const { data: withdrawal } = await supabaseAdmin
+      .from('tesla_withdrawals')
+      .select('id, user_id, amount, status')
+      .filter('meta->>payout_reference', 'eq', reference)
+      .maybeSingle();
+
+    if (withdrawal) {
+      if (withdrawal.status === 'approved') { // Only process if currently approved (waiting for PesaJet)
+        if (isSuccess) {
+          // Mark withdrawal as completed
+          await supabaseAdmin
+            .from('tesla_withdrawals')
+            .update({ status: 'completed' })
+            .eq('id', withdrawal.id);
+            
+          console.log(`Withdrawal ${withdrawal.id} successfully paid out to user.`);
+        } else {
+          // 🚨 PAYOUT FAILED: We must refund the user's balance
+          await supabaseAdmin
+            .from('tesla_withdrawals')
+            .update({ status: 'failed' })
+            .eq('id', withdrawal.id);
+
+          const { data: user } = await supabaseAdmin
+            .from('users')
+            .select('balance')
+            .eq('id', withdrawal.user_id)
+            .single();
+
+          if (user) {
+            await supabaseAdmin
+              .from('users')
+              .update({ balance: Number(user.balance || 0) + Number(withdrawal.amount) })
+              .eq('id', withdrawal.user_id);
+          }
+
+          // Update transaction log to failed
+          await supabaseAdmin
+            .from('tesla_transactions')
+            .update({ status: 'failed', type: 'withdrawal_failed' })
+            .eq('user_id', withdrawal.user_id)
+            .eq('meta->>withdrawal_id', withdrawal.id);
+
+          console.log(`Withdrawal failed: Refunded UGX ${withdrawal.amount} to user ${withdrawal.user_id}`);
+        }
+      }
+      return NextResponse.json({ received: true });
+    }
+
+    // If reference not found in either table
+    console.log(`Webhook reference ${reference} not found in database.`);
     return NextResponse.json({ received: true });
 
   } catch (error) {
