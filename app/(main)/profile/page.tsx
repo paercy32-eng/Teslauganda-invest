@@ -20,8 +20,6 @@ export default function ProfilePage() {
   
   // Background Carousel State
   const [bgIndex, setBgIndex] = useState(0);
-  
-  // YOUR ACTUAL IMAGES FROM THE PUBLIC FOLDER
   const bgImages = [
     '/1792617346732.jpg', 
     '/1792617375235.jpg', 
@@ -90,7 +88,6 @@ export default function ProfilePage() {
     loadBoundAccount();
     loadCheckinStatus();
 
-    // Carousel Timer: Changes image every 4 seconds
     const interval = setInterval(() => {
       setBgIndex((prev) => (prev + 1) % bgImages.length);
     }, 4000);
@@ -158,10 +155,7 @@ export default function ProfilePage() {
       const res = await fetch('/api/user/bind-account', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: bindPhone,
-          fullName: bindName,
-        }),
+        body: JSON.stringify({ phone: bindPhone, fullName: bindName }),
       });
       const data = await res.json();
       
@@ -184,7 +178,6 @@ export default function ProfilePage() {
     } catch {
       setBindMsg('Something went wrong.');
     }
-    
     setBindLoading(false);
   }
 
@@ -201,10 +194,10 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in pb-24 bg-slate-50">
-      {/* Header with New Logo */}
+      
+      {/* Header */}
       <div className="flex items-center justify-between px-2 mb-5">
         <div className="flex items-center gap-2">
-          {/* SAIKEN PUMPS LOGO */}
           <div className="relative flex items-center justify-center w-10 h-10 bg-emerald-600 rounded-xl shadow-lg shadow-emerald-600/30 overflow-hidden">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-white">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" fill="currentColor"/>
@@ -224,8 +217,6 @@ export default function ProfilePage() {
 
       {/* Balance & Stats Card (With Background Carousel) */}
       <div className="relative rounded-3xl mb-5 shadow-sm border border-slate-200 overflow-hidden bg-slate-900">
-        
-        {/* Background Images Carousel */}
         {bgImages.map((img, index) => (
           <div
             key={img}
@@ -235,11 +226,8 @@ export default function ProfilePage() {
             style={{ backgroundImage: `url('${img}')` }}
           />
         ))}
-        
-        {/* Dark Overlay for Readability */}
         <div className="absolute inset-0 bg-slate-900/60" />
 
-        {/* Card Content (Transparent Background) */}
         <div className="relative z-10 p-5">
           <div className="text-xs text-white/80 font-semibold mb-1 uppercase tracking-wider">Balance</div>
           <div className="text-4xl font-black text-white mb-5 drop-shadow-md">
@@ -263,63 +251,83 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Daily Check-in */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-4 mb-5 shadow-sm">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex-1">
-            <div className="font-bold text-slate-900 text-sm">Daily Check-in</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">
-              Earn UGX 200 every day
-            </div>
-          </div>
-          <button
-            onClick={handleCheckIn}
-            disabled={!canCheckIn || checkinLoading}
-            className={`px-5 py-2.5 rounded-xl text-xs font-bold active:scale-[0.98] transition ${
-              canCheckIn
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
-                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-            }`}
-          >
-            {checkinLoading ? '...' : canCheckIn ? 'Check In' : 'Claimed'}
-          </button>
+      {/* MINIMIZED: Daily Check-in (Slim compact bar) */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-3 mb-5 shadow-sm flex items-center justify-between gap-3">
+        <div>
+          <div className="font-bold text-slate-900 text-sm">Daily Check-in</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">Earn UGX 200 every day</div>
         </div>
-        {checkinMsg && (
-          <div className="mt-3 text-xs text-emerald-700 bg-emerald-50 rounded-xl px-3 py-2 border border-emerald-200">
-            {checkinMsg}
-          </div>
-        )}
+        <button
+          onClick={handleCheckIn}
+          disabled={!canCheckIn || checkinLoading}
+          className={`px-5 py-2 rounded-xl text-xs font-bold active:scale-[0.98] transition ${
+            canCheckIn
+              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
+              : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+          }`}
+        >
+          {checkinLoading ? '...' : canCheckIn ? 'Check In' : 'Claimed'}
+        </button>
       </div>
+      {checkinMsg && (
+        <div className="mb-4 text-xs text-emerald-700 bg-emerald-50 rounded-xl px-3 py-2 border border-emerald-200">
+          {checkinMsg}
+        </div>
+      )}
 
-      {/* Quick Actions List */}
-      <div className="space-y-3 mb-6">
-        <Link href="/history" className="block w-full bg-white border border-slate-200 rounded-2xl p-4 active:scale-[0.98] transition shadow-sm">
-          <div className="text-sm font-bold text-slate-900">Transaction History</div>
-          <div className="text-[11px] text-slate-500 mt-1">View deposits, income & withdrawals</div>
-        </Link>
-
-        <button
-          onClick={() => setShowBindAccount(true)}
-          className="block w-full text-left bg-white border border-slate-200 rounded-2xl p-4 active:scale-[0.98] transition shadow-sm"
-        >
-          <div className="text-sm font-bold text-slate-900">Bind Account</div>
-          <div className="text-[11px] text-slate-500 mt-1">
-            {boundPhone ? `Bound to ${boundPhone}` : 'Secure your withdrawals'}
+      {/* MINIMIZED: Quick Actions 2x2 Grid */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        
+        {/* Transaction History */}
+        <Link href="/history" className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 active:scale-[0.98] transition shadow-sm">
+          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 mb-1">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 8v4l3 3"></path>
+              <circle cx="12" cy="12" r="9"></circle>
+            </svg>
           </div>
-        </button>
-
-        <button
-          onClick={() => setShowGiftCard(true)}
-          className="block w-full text-left bg-white border border-slate-200 rounded-2xl p-4 active:scale-[0.98] transition shadow-sm"
-        >
-          <div className="text-sm font-bold text-slate-900">Gift Cards</div>
-          <div className="text-[11px] text-slate-500 mt-1">Redeem a code</div>
-        </button>
-
-        <Link href="/rewards" className="block w-full bg-white border border-slate-200 rounded-2xl p-4 active:scale-[0.98] transition shadow-sm">
-          <div className="text-sm font-bold text-slate-900">Rewards</div>
-          <div className="text-[11px] text-slate-500 mt-1">Team milestones</div>
+          <div className="text-xs font-bold text-slate-900 leading-tight">Transaction History</div>
         </Link>
+
+        {/* Bind Account */}
+        <button onClick={() => setShowBindAccount(true)} className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 active:scale-[0.98] transition shadow-sm">
+          <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-1">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <div className="text-xs font-bold text-slate-900 leading-tight">Bind Account</div>
+          <div className="text-[9px] text-slate-500 truncate w-full px-1">{boundPhone ? boundPhone : 'Not bound'}</div>
+        </button>
+
+        {/* Gift Cards */}
+        <button onClick={() => setShowGiftCard(true)} className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 active:scale-[0.98] transition shadow-sm">
+          <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 mb-1">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 12 20 22 4 22 4 12"></polyline>
+              <rect x="2" y="7" width="20" height="5"></rect>
+              <line x1="12" y1="22" x2="12" y2="7"></line>
+              <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+              <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+            </svg>
+          </div>
+          <div className="text-xs font-bold text-slate-900 leading-tight">Gift Cards</div>
+        </button>
+
+        {/* Rewards */}
+        <Link href="/rewards" className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 active:scale-[0.98] transition shadow-sm">
+          <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 mb-1">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 21h8"></path>
+              <path d="M12 17v4"></path>
+              <path d="M7 4h10l1 7H6L7 4z"></path>
+              <path d="M5 11h14"></path>
+            </svg>
+          </div>
+          <div className="text-xs font-bold text-slate-900 leading-tight">Rewards</div>
+        </Link>
+
       </div>
 
       <button
@@ -362,7 +370,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Bind Account Modal */}
       {showBindAccount && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setShowBindAccount(false)}>
           <div className="w-full max-w-md bg-white rounded-t-3xl p-5" onClick={(e) => e.stopPropagation()}>
@@ -425,4 +432,4 @@ export default function ProfilePage() {
       )}
     </main>
   );
-    }
+}
