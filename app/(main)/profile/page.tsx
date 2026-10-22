@@ -96,24 +96,30 @@ export default function ProfilePage() {
   }, [router, bgImages.length]);
 
   async function handleCheckIn() {
-    setCheckinLoading(true);
-    setCheckinMsg('');
-    try {
-      const res = await fetch('/api/checkin', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) {
-        setCheckinMsg(data.error || 'Check-in failed.');
-      } else {
-        setCheckinMsg(data.message || 'You earned UGX 200!');
-        setCanCheckIn(false);
-        await loadMe();
-      }
-    } catch {
-      setCheckinMsg('Something went wrong.');
-    } finally {
-      setCheckinLoading(false);
-      setTimeout(() => setCheckinMsg(''), 4000);
+  setCheckinLoading(true);
+  setCheckinMsg('');
+  try {
+    const res = await fetch('/api/checkin', { method: 'POST' });
+    const data = await res.json();
+    
+    if (!res.ok) {
+      setCheckinMsg(data.error || 'Check-in failed.');
+    } else {
+      setCheckinMsg(data.message || 'You earned UGX 200!');
+      setCanCheckIn(false);
+      
+      // OPTIMISTIC UPDATE: Instantly update the balance on screen
+      setMe((prev) => prev ? { ...prev, balance: data.newBalance } : prev);
+      
+      // Still call loadMe in the background to sync other data
+      loadMe();
     }
+  } catch {
+    setCheckinMsg('Something went wrong.');
+  } finally {
+    setCheckinLoading(false);
+    setTimeout(() => setCheckinMsg(''), 4000);
+  }
   }
 
   async function logout() {
