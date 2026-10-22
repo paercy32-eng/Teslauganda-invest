@@ -88,6 +88,7 @@ export default function ProfilePage() {
     loadBoundAccount();
     loadCheckinStatus();
 
+    // Carousel Timer
     const interval = setInterval(() => {
       setBgIndex((prev) => (prev + 1) % bgImages.length);
     }, 4000);
@@ -95,31 +96,32 @@ export default function ProfilePage() {
     return () => clearInterval(interval);
   }, [router, bgImages.length]);
 
+  // FIXED: Check-in updates balance instantly without race conditions
   async function handleCheckIn() {
-  setCheckinLoading(true);
-  setCheckinMsg('');
-  try {
-    const res = await fetch('/api/checkin', { method: 'POST' });
-    const data = await res.json();
-    
-    if (!res.ok) {
-      setCheckinMsg(data.error || 'Check-in failed.');
-    } else {
-      setCheckinMsg(data.message || 'You earned UGX 200!');
-      setCanCheckIn(false);
+    setCheckinLoading(true);
+    setCheckinMsg('');
+    try {
+      const res = await fetch('/api/checkin', { method: 'POST' });
+      const data = await res.json();
       
-      // OPTIMISTIC UPDATE: Instantly update the balance on screen
-      setMe((prev) => prev ? { ...prev, balance: data.newBalance } : prev);
-      
-      // Still call loadMe in the background to sync other data
-      loadMe();
+      if (!res.ok) {
+        setCheckinMsg(data.error || 'Check-in failed.');
+      } else {
+        setCheckinMsg(data.message || 'You earned UGX 200!');
+        setCanCheckIn(false);
+        
+        // Instantly update the balance using the exact value returned from the backend
+        setMe((prev) => {
+          if (!prev) return prev;
+          return { ...prev, balance: data.newBalance };
+        });
+      }
+    } catch {
+      setCheckinMsg('Something went wrong.');
+    } finally {
+      setCheckinLoading(false);
+      setTimeout(() => setCheckinMsg(''), 4000);
     }
-  } catch {
-    setCheckinMsg('Something went wrong.');
-  } finally {
-    setCheckinLoading(false);
-    setTimeout(() => setCheckinMsg(''), 4000);
-  }
   }
 
   async function logout() {
@@ -161,7 +163,10 @@ export default function ProfilePage() {
       const res = await fetch('/api/user/bind-account', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: bindPhone, fullName: bindName }),
+        body: JSON.stringify({
+          phone: bindPhone,
+          fullName: bindName,
+        }),
       });
       const data = await res.json();
       
@@ -184,6 +189,7 @@ export default function ProfilePage() {
     } catch {
       setBindMsg('Something went wrong.');
     }
+    
     setBindLoading(false);
   }
 
@@ -200,7 +206,6 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-screen px-4 py-6 animate-fade-in pb-24 bg-slate-50">
-      
       {/* Header */}
       <div className="flex items-center justify-between px-2 mb-5">
         <div className="flex items-center gap-2">
@@ -257,7 +262,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* MINIMIZED: Daily Check-in (Slim compact bar) */}
+      {/* MINIMIZED: Daily Check-in */}
       <div className="bg-white border border-slate-200 rounded-2xl p-3 mb-5 shadow-sm flex items-center justify-between gap-3">
         <div>
           <div className="font-bold text-slate-900 text-sm">Daily Check-in</div>
