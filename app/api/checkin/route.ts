@@ -1,20 +1,3 @@
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-export const fetchCache = 'force-no-store';
-
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase-admin';
-import { verifySession, SESSION_COOKIE } from '@/lib/auth';
-
-const CHECKIN_BONUS = 200;
-
-// Helper: Get the YYYY-MM-DD string in East Africa Time (UTC+3)
-function getEATDateString(date: Date) {
-  // Shift the time by +3 hours so the UTC date matches the EAT date
-  const eatTime = new Date(date.getTime() + 3 * 60 * 60 * 1000);
-  return eatTime.toISOString().split('T')[0];
-}
-
 export async function POST(req: NextRequest) {
   try {
     // 1. Auth
@@ -51,13 +34,19 @@ export async function POST(req: NextRequest) {
     // 4. Add bonus to balance
     const newBalance = Number(user.balance ?? 0) + CHECKIN_BONUS;
 
-    await supabaseAdmin
+    // 🚨 CHECK FOR DATABASE ERRORS HERE
+    const { error: updateError } = await supabaseAdmin
       .from('users')
       .update({
         balance: newBalance,
         last_checkin_at: nowUTC.toISOString(),
       })
       .eq('id', session.userId);
+
+    if (updateError) {
+      console.error('DB Update failed:', updateError);
+      return NextResponse.json({ error: 'Failed to update balance in database' }, { status: 500 });
+    }
 
     // 5. Log the transaction
     await supabaseAdmin.from('tesla_transactions').insert({
@@ -71,52 +60,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       bonus: CHECKIN_BONUS,
-      newBalance,
+      newBalance, // Return the new balance to the frontend
       message: `You received UGX ${CHECKIN_BONUS.toLocaleString()} for checking in today!`,
     });
 
   } catch (err) {
     console.error('Check-in error:', err);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
-  }
-}
-
-export async function GET(req: NextRequest) {
-  try {
-    const token = req.cookies.get(SESSION_COOKIE)?.value;
-    if (!token) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    const session = await verifySession(token);
-    if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
-
-    const { data: user } = await supabaseAdmin
-      .from('users')
-      .select('last_checkin_at')
-      .eq('id', session.userId)
-      .maybeSingle();
-
-    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-
-    // Check if already checked in today
-    let canCheckIn = true;
-    if (user.last_checkin_at) {
-      const nowUTC = new Date();
-      const todayEAT = getEATDateString(nowUTC);
-      
-      const lastCheckinDate = new Date(user.last_checkin_at);
-      const lastCheckinEAT = getEATDateString(lastCheckinDate);
-
-      if (lastCheckinEAT === todayEAT) {
-        canCheckIn = false;
-      }
-    }
-
-    return NextResponse.json({
-      canCheckIn,
-      bonus: CHECKIN_BONUS,
-      lastCheckinAt: user.last_checkin_at,
-    });
-  } catch (err) {
-    console.error('Check-in GET error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
