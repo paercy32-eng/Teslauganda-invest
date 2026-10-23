@@ -8,7 +8,6 @@ import { verifySession, SESSION_COOKIE } from '@/lib/auth';
 
 const CHECKIN_BONUS = 200;
 
-// Helper: Get the YYYY-MM-DD string in East Africa Time (UTC+3)
 function getEATDateString(date: Date) {
   const eatTime = new Date(date.getTime() + 3 * 60 * 60 * 1000);
   return eatTime.toISOString().split('T')[0];
@@ -16,13 +15,11 @@ function getEATDateString(date: Date) {
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Auth
     const token = req.cookies.get(SESSION_COOKIE)?.value;
     if (!token) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     const session = await verifySession(token);
     if (!session) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
 
-    // 2. Load user
     const { data: user } = await supabaseAdmin
       .from('users')
       .select('id, balance, last_checkin_at')
@@ -31,7 +28,6 @@ export async function POST(req: NextRequest) {
 
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-    // 3. Check if already checked in today
     const nowUTC = new Date();
     const todayEAT = getEATDateString(nowUTC);
 
@@ -47,10 +43,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 4. Add bonus to balance
     const newBalance = Number(user.balance ?? 0) + CHECKIN_BONUS;
 
-    // VERIFY THE UPDATE ACTUALLY WORKED
     const { data: updatedUser, error: updateError } = await supabaseAdmin
       .from('users')
       .update({
@@ -66,7 +60,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Database failed to update balance' }, { status: 500 });
     }
 
-    // 5. Log the transaction
     await supabaseAdmin.from('tesla_transactions').insert({
       user_id: session.userId,
       type: 'daily_checkin',
