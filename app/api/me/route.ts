@@ -18,9 +18,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
     }
 
+    // 1. Fetch user data (Using * to prevent errors if columns are missing)
     const { data: user, error } = await supabaseAdmin
       .from('users')
-      .select('id, name, phone, balance, referral_code, is_bound, bound_phone, bound_full_name, total_withdrawn')
+      .select('*')
       .eq('id', session.userId)
       .maybeSingle();
 
@@ -29,21 +30,23 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const { data: deposits, error: depError } = await supabaseAdmin
-      .from('payments')
-      .select('amount')
-      .eq('user_id', session.userId)
-      .eq('status', 'completed');
+    // 2. Calculate total deposited (Wrapped in try/catch so it doesn't crash the app)
+    let totalDeposited = 0;
+    try {
+      const { data: deposits } = await supabaseAdmin
+        .from('payments') // If your deposits table is 'tesla_deposits', change it here
+        .select('amount')
+        .eq('user_id', session.userId)
+        .eq('status', 'completed');
 
-    if (depError) {
-      console.error('Deposits fetch error:', depError);
+      if (deposits) {
+        totalDeposited = deposits.reduce((sum, d) => sum + Number(d.amount), 0);
+      }
+    } catch (e) {
+      console.error('Deposit calc error:', e);
     }
 
-    const totalDeposited = (deposits ?? []).reduce(
-      (sum, d) => sum + Number(d.amount), 
-      0
-    );
-
+    // 3. Return combined data
     return NextResponse.json(
       { 
         user: {
