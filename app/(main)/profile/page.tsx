@@ -27,6 +27,10 @@ export default function ProfilePage() {
     '/1792617441023.jpg'
   ];
 
+  // Install App (PWA) State
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isIOS, setIsIOS] = useState(false);
+
   // Bound Account State
   const [boundPhone, setBoundPhone] = useState('');
   const [boundName, setBoundName] = useState('');
@@ -93,35 +97,65 @@ export default function ProfilePage() {
       setBgIndex((prev) => (prev + 1) % bgImages.length);
     }, 4000);
 
-    return () => clearInterval(interval);
+    // Detect iOS for install instructions
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
+    setIsIOS(isIosDevice);
+
+    // Listen for Android install prompt
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, [router, bgImages.length]);
 
-  // FIXED: Check-in updates balance instantly without race conditions
-  async function handleCheckIn() {
-  setCheckinLoading(true);
-  setCheckinMsg('');
-  try {
-    const res = await fetch('/api/checkin', { method: 'POST' });
-    const data = await res.json();
-    
-    if (!res.ok) {
-      setCheckinMsg(data.error || 'Check-in failed.');
-    } else {
-      setCheckinMsg(data.message || 'You earned UGX 200!');
-      setCanCheckIn(false);
-      
-      // Instantly update the UI balance without refreshing the page
-      setMe((prev) => {
-        if (!prev) return prev;
-        return { ...prev, balance: data.newBalance };
-      });
+  async function handleInstallApp() {
+    if (isIOS) {
+      alert("To install on iPhone:\n1. Tap the 'Share' button at the bottom of Safari.\n2. Scroll down and tap 'Add to Home Screen'.");
+      return;
     }
-  } catch {
-    setCheckinMsg('Something went wrong.');
-  } finally {
-    setCheckinLoading(false);
-    setTimeout(() => setCheckinMsg(''), 4000);
+
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    } else {
+      alert("To install:\n1. Open your browser menu (three dots).\n2. Tap 'Install App' or 'Add to Home Screen'.");
+    }
   }
+
+  async function handleCheckIn() {
+    setCheckinLoading(true);
+    setCheckinMsg('');
+    try {
+      const res = await fetch('/api/checkin', { method: 'POST' });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        setCheckinMsg(data.error || 'Check-in failed.');
+      } else {
+        setCheckinMsg(data.message || 'You earned UGX 200!');
+        setCanCheckIn(false);
+        
+        setMe((prev) => {
+          if (!prev) return prev;
+          return { ...prev, balance: data.newBalance };
+        });
+      }
+    } catch {
+      setCheckinMsg('Something went wrong.');
+    } finally {
+      setCheckinLoading(false);
+      setTimeout(() => setCheckinMsg(''), 4000);
+    }
   }
 
   async function logout() {
@@ -163,10 +197,7 @@ export default function ProfilePage() {
       const res = await fetch('/api/user/bind-account', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: bindPhone,
-          fullName: bindName,
-        }),
+        body: JSON.stringify({ phone: bindPhone, fullName: bindName }),
       });
       const data = await res.json();
       
@@ -189,7 +220,6 @@ export default function ProfilePage() {
     } catch {
       setBindMsg('Something went wrong.');
     }
-    
     setBindLoading(false);
   }
 
@@ -226,7 +256,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Balance & Stats Card (With Background Carousel) */}
+      {/* Balance & Stats Card */}
       <div className="relative rounded-3xl mb-5 shadow-sm border border-slate-200 overflow-hidden bg-slate-900">
         {bgImages.map((img, index) => (
           <div
@@ -262,7 +292,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* MINIMIZED: Daily Check-in */}
+      {/* Daily Check-in */}
       <div className="bg-white border border-slate-200 rounded-2xl p-3 mb-5 shadow-sm flex items-center justify-between gap-3">
         <div>
           <div className="font-bold text-slate-900 text-sm">Daily Check-in</div>
@@ -286,10 +316,9 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* MINIMIZED: Quick Actions 2x2 Grid */}
+      {/* Quick Actions 2x2 Grid */}
       <div className="grid grid-cols-2 gap-3 mb-6">
         
-        {/* Transaction History */}
         <Link href="/history" className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 active:scale-[0.98] transition shadow-sm">
           <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 mb-1">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -300,7 +329,6 @@ export default function ProfilePage() {
           <div className="text-xs font-bold text-slate-900 leading-tight">Transaction History</div>
         </Link>
 
-        {/* Bind Account */}
         <button onClick={() => setShowBindAccount(true)} className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 active:scale-[0.98] transition shadow-sm">
           <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-1">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -312,7 +340,6 @@ export default function ProfilePage() {
           <div className="text-[9px] text-slate-500 truncate w-full px-1">{boundPhone ? boundPhone : 'Not bound'}</div>
         </button>
 
-        {/* Gift Cards */}
         <button onClick={() => setShowGiftCard(true)} className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 active:scale-[0.98] transition shadow-sm">
           <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 mb-1">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -326,7 +353,6 @@ export default function ProfilePage() {
           <div className="text-xs font-bold text-slate-900 leading-tight">Gift Cards</div>
         </button>
 
-        {/* Rewards */}
         <Link href="/rewards" className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 active:scale-[0.98] transition shadow-sm">
           <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 mb-1">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -340,6 +366,19 @@ export default function ProfilePage() {
         </Link>
 
       </div>
+
+      {/* INSTALL APP BUTTON */}
+      <button
+        onClick={handleInstallApp}
+        className="w-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold py-3 rounded-2xl active:scale-[0.98] transition shadow-sm flex items-center justify-center gap-2 mb-3"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Install Saiken App
+      </button>
 
       <button
         onClick={logout}
