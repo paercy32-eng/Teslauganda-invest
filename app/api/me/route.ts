@@ -18,7 +18,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
     }
 
-    // 1. Fetch user data (added total_withdrawn)
     const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('id, name, phone, balance, referral_code, is_bound, bound_phone, bound_full_name, total_withdrawn')
@@ -26,22 +25,25 @@ export async function GET(req: NextRequest) {
       .maybeSingle();
 
     if (error || !user) {
+      console.error('User fetch error:', error);
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // 2. Calculate total deposited by summing completed payments
-    const { data: deposits } = await supabaseAdmin
+    const { data: deposits, error: depError } = await supabaseAdmin
       .from('payments')
       .select('amount')
       .eq('user_id', session.userId)
       .eq('status', 'completed');
+
+    if (depError) {
+      console.error('Deposits fetch error:', depError);
+    }
 
     const totalDeposited = (deposits ?? []).reduce(
       (sum, d) => sum + Number(d.amount), 
       0
     );
 
-    // 3. Return combined data
     return NextResponse.json(
       { 
         user: {
