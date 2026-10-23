@@ -98,30 +98,30 @@ export default function ProfilePage() {
 
   // FIXED: Check-in updates balance instantly without race conditions
   async function handleCheckIn() {
-    setCheckinLoading(true);
-    setCheckinMsg('');
-    try {
-      const res = await fetch('/api/checkin', { method: 'POST' });
-      const data = await res.json();
+  setCheckinLoading(true);
+  setCheckinMsg('');
+  try {
+    const res = await fetch('/api/checkin', { method: 'POST' });
+    const data = await res.json();
+    
+    if (!res.ok) {
+      setCheckinMsg(data.error || 'Check-in failed.');
+    } else {
+      setCheckinMsg(data.message || 'You earned UGX 200!');
+      setCanCheckIn(false);
       
-      if (!res.ok) {
-        setCheckinMsg(data.error || 'Check-in failed.');
-      } else {
-        setCheckinMsg(data.message || 'You earned UGX 200!');
-        setCanCheckIn(false);
-        
-        // Instantly update the balance using the exact value returned from the backend
-        setMe((prev) => {
-          if (!prev) return prev;
-          return { ...prev, balance: data.newBalance };
-        });
-      }
-    } catch {
-      setCheckinMsg('Something went wrong.');
-    } finally {
-      setCheckinLoading(false);
-      setTimeout(() => setCheckinMsg(''), 4000);
+      // Instantly update the UI balance without refreshing the page
+      setMe((prev) => {
+        if (!prev) return prev;
+        return { ...prev, balance: data.newBalance };
+      });
     }
+  } catch {
+    setCheckinMsg('Something went wrong.');
+  } finally {
+    setCheckinLoading(false);
+    setTimeout(() => setCheckinMsg(''), 4000);
+  }
   }
 
   async function logout() {
