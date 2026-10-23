@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import WelcomeModal from "@/components/WelcomeModal";
+import { RegisterSW } from "@/components/RegisterSW";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -36,6 +37,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} bg-slate-50 text-slate-900 min-h-screen`}>
+        <RegisterSW />
         <div className="max-w-md mx-auto min-h-screen relative">
           {children}
           <BottomNav />
