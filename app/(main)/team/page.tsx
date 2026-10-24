@@ -35,6 +35,9 @@ export default function TeamPage() {
   const [data, setData] = useState<ReferralsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeLevel, setActiveLevel] = useState<1 | 2 | 3>(1);
+  
+  // State to hold the dynamic domain
+  const [baseUrl, setBaseUrl] = useState('');
 
   async function loadReferrals() {
     setLoading(true);
@@ -60,14 +63,36 @@ export default function TeamPage() {
 
   useEffect(() => {
     loadReferrals();
+    // Get the current domain (e.g., https://pumps.vortexgain.com)
+    if (typeof window !== 'undefined') {
+      setBaseUrl(window.location.origin);
+    }
   }, []);
 
+  // Improved copy function with a fallback for mobile browsers
   async function copyToClipboard(text: string, type: 'code' | 'link') {
     try {
-      await navigator.clipboard.writeText(text);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback for older browsers or in-app browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'absolute';
+        textArea.style.left = '-999999px';
+        document.body.prepend(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+        } catch (error) {
+          console.error('Copy fallback failed', error);
+        } finally {
+          textArea.remove();
+        }
+      }
       toast.success(type === 'code' ? 'Code copied!' : 'Link copied!');
-    } catch {
-      toast.error('Could not copy');
+    } catch (err) {
+      toast.error('Could not copy. Please long-press to copy.');
     }
   }
 
@@ -105,7 +130,9 @@ export default function TeamPage() {
       : data.counts.level3;
 
   const currentEarnings = sumEarnings(currentLevelList);
-  const referralLink = `https://chinasaikenpumps.vercel.app/register?ref=${data.referralCode}`;
+  
+  // Use the dynamic domain
+  const referralLink = `${baseUrl}/register?ref=${data.referralCode}`;
 
   return (
     <div className="animate-fade-in bg-gray-50 min-h-screen pb-24">
@@ -120,7 +147,6 @@ export default function TeamPage() {
         
         {/* Educational Image Section */}
         <div className="mb-5 rounded-2xl overflow-hidden shadow-sm border border-gray-200 relative">
-          {/* 👇 YOUR NEW IMAGE IS HERE */}
           <img 
             src="/grok_image_1792588008016.jpg" 
             alt="Engineers teaching pump operation" 
@@ -230,4 +256,4 @@ export default function TeamPage() {
       </div>
     </div>
   );
-}
+              }
