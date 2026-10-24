@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import WelcomeModal from "@/components/WelcomeModal";
-import { RegisterSW } from "@/components/RegisterSW";
+import Script from "next/script";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -37,12 +37,23 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} bg-slate-50 text-slate-900 min-h-screen`}>
-        <RegisterSW />
         <div className="max-w-md mx-auto min-h-screen relative">
           {children}
           <BottomNav />
           <WelcomeModal />
         </div>
+        
+        {/* This automatically registers the service worker for the Install App feature */}
+        <Script id="register-sw" strategy="afterInteractive">
+          {`
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.register('/sw.js')
+                .catch(function(err) {
+                  console.log('Service Worker registration failed: ', err);
+                });
+            }
+          `}
+        </Script>
       </body>
     </html>
   );
